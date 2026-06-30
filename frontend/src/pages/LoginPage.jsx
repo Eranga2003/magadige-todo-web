@@ -4,19 +4,15 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Mail, Lock, Check } from 'lucide-react';
 
-interface LoginPageProps {
-  onNavigateToRegister: () => void;
-}
-
-export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToRegister }) => {
+export const LoginPage = ({ onNavigateToRegister }) => {
   const { login, socialLogin, error: authError, clearError } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationError(null);
     clearError();
@@ -34,7 +30,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToRegister }) =>
     setIsSubmitting(true);
     try {
       await login(email, password);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setValidationError(err.message || 'Authentication failed. Please verify your credentials.');
     } finally {
@@ -42,7 +38,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToRegister }) =>
     }
   };
 
-  const handleSocialLogin = async (provider: 'GOOGLE' | 'FACEBOOK') => {
+  const handleSocialLogin = async (provider) => {
     setValidationError(null);
     clearError();
     setIsSubmitting(true);
@@ -59,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToRegister }) =>
         name: mockName,
         email: mockEmail,
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setValidationError(err.message || `Social login via ${provider} failed`);
     } finally {

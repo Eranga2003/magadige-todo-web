@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/Button';
 import { User, ShieldAlert, LogOut, CheckCircle2, FileText, Smartphone } from 'lucide-react';
 
-export const DashboardPage: React.FC = () => {
+export const DashboardPage = () => {
   const { user, logout } = useAuth();
 
   if (!user) return null;

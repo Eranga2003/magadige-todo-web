@@ -4,9 +4,9 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 
-const AppContent: React.FC = () => {
+const AppContent = () => {
   const { isAuthenticated, loading } = useAuth();
-  const [view, setView] = useState<'login' | 'register'>('login');
+  const [view, setView] = useState('login');
 
   if (loading) {
     return (
@@ -33,7 +33,7 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+const App = () => {
   return (
     <AuthProvider>
       <AppContent />

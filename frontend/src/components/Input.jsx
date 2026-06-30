@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  error?: string;
-  icon?: React.ReactNode;
-}
-
-export const Input: React.FC<InputProps> = ({
+export const Input = ({
   label,
   error,
   icon,

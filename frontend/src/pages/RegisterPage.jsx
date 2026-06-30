@@ -15,19 +15,15 @@ import {
   UserSquare2 
 } from 'lucide-react';
 
-interface RegisterPageProps {
-  onNavigateToLogin: () => void;
-}
-
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin }) => {
+export const RegisterPage = ({ onNavigateToLogin }) => {
   const { register, socialLogin, error: authError, clearError } = useAuth();
   
   // Onboarding wizard steps: 1 = System Purpose, 2 = Current Method, 3 = Account Credentials
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState(1);
   
   // Questionnaire choices
-  const [usageType, setUsageType] = useState<'OWN' | 'TEAM' | null>(null);
-  const [currentManagementMethod, setCurrentManagementMethod] = useState<'PAPER' | 'APP' | null>(null);
+  const [usageType, setUsageType] = useState(null);
+  const [currentManagementMethod, setCurrentManagementMethod] = useState(null);
   
   // Form fields
   const [name, setName] = useState('');
@@ -36,11 +32,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin })
   const [confirmPassword, setConfirmPassword] = useState('');
   
   // Local error state (validation)
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Social Login Mock Flow Handler
-  const handleSocialRegister = async (provider: 'GOOGLE' | 'FACEBOOK') => {
+  const handleSocialRegister = async (provider) => {
     if (!usageType || !currentManagementMethod) {
       setValidationError('Please complete the onboarding steps first.');
       return;
@@ -64,7 +60,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin })
         usageType,
         currentManagementMethod,
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setValidationError(err.message || 'Social sign up failed');
     } finally {
@@ -97,7 +93,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin })
     if (step === 3) setStep(2);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationError(null);
     clearError();
@@ -144,11 +140,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin })
         usageType,
         currentManagementMethod,
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       // Detailed validation errors from backend
       if (err.errors && Array.isArray(err.errors)) {
-        setValidationError(err.errors.map((e: any) => e.message).join(' '));
+        setValidationError(err.errors.map((e) => e.message).join(' '));
       } else {
         setValidationError(err.message || 'An error occurred during registration.');
       }
@@ -305,7 +301,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin })
                   }`}>
                     <FileText size={24} />
                   </div>
-                  <span className="font-bold text-black font-semibold">Writing on Paper</span>
+                  <span className="font-bold text-black">Writing on Paper</span>
                   <span className="text-xs text-gray-500 text-center mt-1">Notebooks or sticky notes</span>
                   {currentManagementMethod === 'PAPER' && (
                     <div className="absolute top-3 right-3 bg-orange-500 text-white rounded-full p-0.5">
@@ -325,7 +321,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigateToLogin })
                   }`}>
                     <Smartphone size={24} />
                   </div>
-                  <span className="font-bold text-black font-semibold">Using an App</span>
+                  <span className="font-bold text-black">Using an App</span>
                   <span className="text-xs text-gray-500 text-center mt-1">Calendar or list apps</span>
                   {currentManagementMethod === 'APP' && (
                     <div className="absolute top-3 right-3 bg-orange-500 text-white rounded-full p-0.5">
