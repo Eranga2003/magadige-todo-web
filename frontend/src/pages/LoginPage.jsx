@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { signInWithGoogle, signInWithFacebook } from '../services/firebase';
 import { Mail, Lock, Check } from 'lucide-react';
 
 export const LoginPage = ({ onNavigateToRegister }) => {
@@ -44,16 +45,16 @@ export const LoginPage = ({ onNavigateToRegister }) => {
     setIsSubmitting(true);
 
     try {
-      // Simulate OAuth redirect or popup resolving, passing token
-      const mockName = provider === 'GOOGLE' ? 'Google Explorer' : 'Facebook Member';
-      const mockEmail = `${provider.toLowerCase()}_user_${Math.floor(Math.random() * 10000)}@example.com`;
-      const mockToken = `mock_${provider.toLowerCase()}_auth_token_${Date.now()}`;
+      // Call Firebase Auth popup in the browser
+      const { token, name, email } = provider === 'GOOGLE' 
+        ? await signInWithGoogle() 
+        : await signInWithFacebook();
 
       await socialLogin({
         provider,
-        token: mockToken,
-        name: mockName,
-        email: mockEmail,
+        token,
+        name,
+        email,
       });
     } catch (err) {
       console.error(err);

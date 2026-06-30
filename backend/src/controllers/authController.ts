@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { getDb } from '../utils/firebase';
+import { getDb, getAuth } from '../utils/firebase';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 
@@ -153,19 +153,36 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
  */
 export async function socialLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { provider, token: socialToken, name, email, usageType, currentManagementMethod } = req.body;
+    const { provider, token: socialToken, name: clientProvidedName, email: clientProvidedEmail, usageType, currentManagementMethod } = req.body;
     const db = getDb();
+    const auth = getAuth();
 
     let socialId = '';
-    
-    // Simulate or perform validation of OAuth token
-    if (socialToken.startsWith('mock_') || process.env.GOOGLE_CLIENT_ID === 'placeholder_google_client_id') {
+    let email = clientProvidedEmail;
+    let name = clientProvidedName;
+
+    // Verify token using Firebase Auth
+    if (socialToken.startsWith('mock_')) {
+      // Developer Mode: Simulated token validation
       socialId = `${provider.toLowerCase()}_user_id_${Buffer.from(name).toString('hex').slice(0, 10)}`;
     } else {
-      if (provider === 'GOOGLE') {
-        socialId = `google_verified_${socialToken.slice(-10)}`;
-      } else if (provider === 'FACEBOOK') {
-        socialId = `facebook_verified_${socialToken.slice(-10)}`;
+      // Real Mode: Verify the actual Firebase ID Token
+      try {
+        const decodedToken = await auth.verifyIdToken(socialToken);
+        socialId = decodedToken.uid;
+        if (decodedToken.email) {
+          email = decodedToken.email;
+        }
+        if (decodedToken.name) {
+          name = decodedToken.name;
+        }
+      } catch (err: any) {
+        console.error('Firebase Token Verification failed:', err.message);
+        res.status(401).json({
+          status: 'error',
+          message: 'Firebase token verification failed. The provided authentication token is invalid or expired.',
+        });
+        return;
       }
     }
 
@@ -203,7 +220,7 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
     }
 
     if (!user) {
-      // User does not exist, perform automatic signup
+      // User does not exist, perform automatic signup (onboarding is included in this request)
       const userId = db.ref().child('users').push().key;
       if (!userId) {
         throw new Error('Failed to generate a user ID for social signup.');

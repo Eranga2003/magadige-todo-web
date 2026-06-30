@@ -2,6 +2,7 @@ import admin from 'firebase-admin';
 
 let isFirebaseConfigured = false;
 let db: admin.database.Database | null = null;
+let authInstance: admin.auth.Auth | null = null;
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -23,8 +24,9 @@ if (projectId && clientEmail && privateKey) {
       });
     }
     db = admin.database();
+    authInstance = admin.auth();
     isFirebaseConfigured = true;
-    console.log('✅ Firebase Admin SDK successfully connected to Realtime Database!');
+    console.log('✅ Firebase Admin SDK successfully connected to Realtime Database & Auth!');
   } catch (error: any) {
     console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
   }
@@ -35,11 +37,20 @@ if (projectId && clientEmail && privateKey) {
 
 /**
  * Returns the active Firebase Realtime Database reference
- * Throws a clean, actionable error if configuration is missing
  */
 export function getDb(): admin.database.Database {
   if (!isFirebaseConfigured || !db) {
     throw new Error('Database connection failed. Please provide valid Firebase credentials in backend/.env');
   }
   return db;
+}
+
+/**
+ * Returns the active Firebase Authentication reference
+ */
+export function getAuth(): admin.auth.Auth {
+  if (!isFirebaseConfigured || !authInstance) {
+    throw new Error('Firebase Auth initialization failed. Please provide valid Firebase credentials in backend/.env');
+  }
+  return authInstance;
 }

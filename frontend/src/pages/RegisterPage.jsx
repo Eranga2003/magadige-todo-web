@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { signInWithGoogle, signInWithFacebook } from '../services/firebase';
 import { 
   User, 
   Users, 
@@ -35,7 +36,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
   const [validationError, setValidationError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Social Login Mock Flow Handler
+  // Social Login Auth Flow Handler
   const handleSocialRegister = async (provider) => {
     if (!usageType || !currentManagementMethod) {
       setValidationError('Please complete the onboarding steps first.');
@@ -47,22 +48,22 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
     setIsSubmitting(true);
     
     try {
-      // Create a mock token based on provider and choices
-      const mockName = provider === 'GOOGLE' ? 'Google Explorer' : 'Facebook Member';
-      const mockEmail = `${provider.toLowerCase()}_user_${Math.floor(Math.random() * 10000)}@example.com`;
-      const mockToken = `mock_${provider.toLowerCase()}_auth_token_${Date.now()}`;
+      // Call Firebase Auth popup in the browser
+      const { token, name, email } = provider === 'GOOGLE' 
+        ? await signInWithGoogle() 
+        : await signInWithFacebook();
       
       await socialLogin({
         provider,
-        token: mockToken,
-        name: mockName,
-        email: mockEmail,
+        token,
+        name,
+        email,
         usageType,
         currentManagementMethod,
       });
     } catch (err) {
       console.error(err);
-      setValidationError(err.message || 'Social sign up failed');
+      setValidationError(err.message || `${provider} sign up failed`);
     } finally {
       setIsSubmitting(false);
     }
