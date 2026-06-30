@@ -55,6 +55,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
         token,
         name,
         email,
+        action: 'LOGIN',
       });
     } catch (err) {
       console.error(err);

@@ -35,6 +35,9 @@ export const socialLoginSchema = z.object({
   email: z.string().email('Invalid email address').optional(),
   usageType: z.enum(['OWN', 'TEAM']).optional(),
   currentManagementMethod: z.enum(['PAPER', 'APP']).optional(),
+  action: z.enum(['LOGIN', 'REGISTER'], {
+    errorMap: () => ({ message: 'Action must be LOGIN or REGISTER' }),
+  }),
 });
 
 /**

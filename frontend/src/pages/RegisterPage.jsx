@@ -60,6 +60,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
         email,
         usageType,
         currentManagementMethod,
+        action: 'REGISTER',
       });
     } catch (err) {
       console.error(err);

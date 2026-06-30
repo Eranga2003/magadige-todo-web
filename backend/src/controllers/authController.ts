@@ -148,7 +148,16 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
  */
 export async function socialLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { provider, token: socialToken, name: clientProvidedName, email: clientProvidedEmail, usageType, currentManagementMethod } = req.body;
+    const { 
+      provider, 
+      token: socialToken, 
+      name: clientProvidedName, 
+      email: clientProvidedEmail, 
+      usageType, 
+      currentManagementMethod,
+      action 
+    } = req.body;
+    
     const db = getDb();
     const auth = getAuth();
 
@@ -207,14 +216,31 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
         user = userDocSnapshot.data();
         userDocRef = userDocSnapshot.ref;
 
-        // Link the social provider using set (fully mock-compatible)
+        // Link the social provider
         user[providerField] = socialId;
         await userDocRef.set(user);
       }
     }
 
-    if (!user) {
-      // User does not exist, perform automatic signup (onboarding is included in this request)
+    // Security Check: If it is a sign-in (LOGIN) flow, user MUST already be registered in the database
+    if (action === 'LOGIN' && !user) {
+      res.status(404).json({
+        status: 'error',
+        message: 'This account is not registered. Please register with us first.',
+      });
+      return;
+    }
+
+    // Security Check: If it is a registration (REGISTER) flow, create the document
+    if (action === 'REGISTER' && !user) {
+      if (!usageType || !currentManagementMethod) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Onboarding parameters (usageType, currentManagementMethod) are required for registration.',
+        });
+        return;
+      }
+
       userDocRef = db.collection('users').doc();
       const userId = userDocRef.id;
 
@@ -224,8 +250,8 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
         name,
         googleId: provider === 'GOOGLE' ? socialId : null,
         facebookId: provider === 'FACEBOOK' ? socialId : null,
-        usageType: usageType || 'OWN',
-        currentManagementMethod: currentManagementMethod || 'PAPER',
+        usageType,
+        currentManagementMethod,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
