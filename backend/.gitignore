@@ -1,0 +1,14 @@
+# Node dependencies
+node_modules/
+
+# Compilation output
+dist/
+
+# Local Environment secrets
+.env
+
+# SQLite database files and logs
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
