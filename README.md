@@ -1,4 +1,4 @@
-# 🤖 Magadige — AI-Powered Productivity OS
+# 🤖 Magadige — AI-Powered TODO Assistant
 
 > *Your intelligent companion for the journey ahead.*
 
