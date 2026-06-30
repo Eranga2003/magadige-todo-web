@@ -12,14 +12,13 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const { email, password, name, usageType, currentManagementMethod } = req.body;
     const db = getDb();
 
-    // Check if email already exists in Firebase RTDB
+    // Check if email already exists in Firestore
     const emailQuery = await db
-      .ref('users')
-      .orderByChild('email')
-      .equalTo(email)
-      .once('value');
+      .collection('users')
+      .where('email', '==', email)
+      .get();
 
-    if (emailQuery.exists()) {
+    if (!emailQuery.empty) {
       res.status(409).json({
         status: 'error',
         message: 'A user with this email address already exists.',
@@ -31,13 +30,10 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Generate a unique user ID using Firebase RTDB push key
-    const userId = db.ref().child('users').push().key;
-    if (!userId) {
-      throw new Error('Failed to generate a user ID.');
-    }
+    // Create unique doc reference in users collection
+    const userDocRef = db.collection('users').doc();
+    const userId = userDocRef.id;
 
-    // Create user in the database
     const newUser = {
       id: userId,
       email,
@@ -51,7 +47,8 @@ export async function register(req: Request, res: Response, next: NextFunction):
       updatedAt: new Date().toISOString(),
     };
 
-    await db.ref(`users/${userId}`).set(newUser);
+    // Save document to Firestore
+    await userDocRef.set(newUser);
 
     // Generate JWT token
     const token = generateToken({ userId });
@@ -85,14 +82,13 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     const { email, password } = req.body;
     const db = getDb();
 
-    // Find user by email in Firebase RTDB
+    // Find user by email in Firestore
     const emailQuery = await db
-      .ref('users')
-      .orderByChild('email')
-      .equalTo(email)
-      .once('value');
+      .collection('users')
+      .where('email', '==', email)
+      .get();
 
-    if (!emailQuery.exists()) {
+    if (emailQuery.empty) {
       res.status(401).json({
         status: 'error',
         message: 'Invalid email or password.',
@@ -100,10 +96,9 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
-    // Firebase returns an object map of matching keys, get the first match
-    const usersMap = emailQuery.val();
-    const userId = Object.keys(usersMap)[0];
-    const user = usersMap[userId];
+    // Get document snapshot and data
+    const userDocSnapshot = emailQuery.docs[0];
+    const user: any = userDocSnapshot.data();
 
     // Verify if user created account with email/password
     if (!user.passwordHash) {
@@ -186,45 +181,42 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
       }
     }
 
-    // Search for user by social credential
+    // Search for user by social credential in Firestore
     const providerField = provider === 'GOOGLE' ? 'googleId' : 'facebookId';
     const socialQuery = await db
-      .ref('users')
-      .orderByChild(providerField)
-      .equalTo(socialId)
-      .once('value');
+      .collection('users')
+      .where(providerField, '==', socialId)
+      .get();
 
     let user: any = null;
+    let userDocRef: any = null;
 
-    if (socialQuery.exists()) {
-      const usersMap = socialQuery.val();
-      const userId = Object.keys(usersMap)[0];
-      user = usersMap[userId];
+    if (!socialQuery.empty) {
+      const userDocSnapshot = socialQuery.docs[0];
+      user = userDocSnapshot.data();
+      userDocRef = userDocSnapshot.ref;
     } else if (email) {
       // Fallback: search if user exists with the same email address
       const emailQuery = await db
-        .ref('users')
-        .orderByChild('email')
-        .equalTo(email)
-        .once('value');
+        .collection('users')
+        .where('email', '==', email)
+        .get();
 
-      if (emailQuery.exists()) {
-        const usersMap = emailQuery.val();
-        const userId = Object.keys(usersMap)[0];
-        user = usersMap[userId];
+      if (!emailQuery.empty) {
+        const userDocSnapshot = emailQuery.docs[0];
+        user = userDocSnapshot.data();
+        userDocRef = userDocSnapshot.ref;
 
-        // Link the social provider
-        await db.ref(`users/${user.id}/${providerField}`).set(socialId);
+        // Link the social provider using set (fully mock-compatible)
         user[providerField] = socialId;
+        await userDocRef.set(user);
       }
     }
 
     if (!user) {
       // User does not exist, perform automatic signup (onboarding is included in this request)
-      const userId = db.ref().child('users').push().key;
-      if (!userId) {
-        throw new Error('Failed to generate a user ID for social signup.');
-      }
+      userDocRef = db.collection('users').doc();
+      const userId = userDocRef.id;
 
       user = {
         id: userId,
@@ -238,7 +230,7 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
         updatedAt: new Date().toISOString(),
       };
 
-      await db.ref(`users/${userId}`).set(user);
+      await userDocRef.set(user);
     }
 
     // Generate JWT token
@@ -280,9 +272,12 @@ export async function getMe(req: AuthenticatedRequest, res: Response, next: Next
       return;
     }
 
-    const snapshot = await db.ref(`users/${userId}`).once('value');
+    const userDocSnapshot = await db
+      .collection('users')
+      .doc(userId)
+      .get();
 
-    if (!snapshot.exists()) {
+    if (!userDocSnapshot.exists) {
       res.status(404).json({
         status: 'error',
         message: 'User profile not found.',
@@ -290,7 +285,7 @@ export async function getMe(req: AuthenticatedRequest, res: Response, next: Next
       return;
     }
 
-    const user = snapshot.val();
+    const user: any = userDocSnapshot.data();
 
     res.status(200).json({
       status: 'success',

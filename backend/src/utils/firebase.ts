@@ -1,4 +1,10 @@
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import dotenv from 'dotenv';
+
+// Load environment variables immediately on module import
+dotenv.config();
 
 let isFirebaseConfigured = false;
 let dbInstance: any = null;
@@ -7,92 +13,104 @@ let authInstance: any = null;
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-const databaseURL = process.env.FIREBASE_DATABASE_URL;
 
-// --- IN-MEMORY DATABASE FALLBACK FOR DEVELOPER MODE ---
+// --- IN-MEMORY DATABASE FALLBACK FOR OFFLINE DEVELOPER MODE (FIRESTORE) ---
 const memoryDbStore: Record<string, any> = {};
 
-class MockSnapshot {
-  private data: any;
-  constructor(data: any) {
-    this.data = data;
+class MockDocSnapshot {
+  id: string;
+  private docData: any;
+  exists: boolean;
+
+  constructor(id: string, docData: any) {
+    this.id = id;
+    this.docData = docData;
+    this.exists = docData !== undefined && docData !== null;
   }
-  exists() {
-    return this.data !== undefined && this.data !== null && Object.keys(this.data).length > 0;
-  }
-  val() {
-    return this.data;
+
+  data() {
+    return this.docData;
   }
 }
 
-class MockRef {
-  private path: string;
-  constructor(path: string) {
-    this.path = path;
+class MockQuerySnapshot {
+  docs: MockDocSnapshot[];
+  empty: boolean;
+
+  constructor(docs: MockDocSnapshot[]) {
+    this.docs = docs;
+    this.empty = docs.length === 0;
+  }
+}
+
+class MockDocRef {
+  id: string;
+  private collectionName: string;
+
+  constructor(collectionName: string, id: string) {
+    this.collectionName = collectionName;
+    this.id = id;
   }
 
-  child(subpath: string) {
-    return new MockRef(`${this.path}/${subpath}`);
+  async get() {
+    const data = memoryDbStore[`${this.collectionName}/${this.id}`];
+    return new MockDocSnapshot(this.id, data);
   }
 
-  push() {
-    const key = `mock_key_${Math.random().toString(36).substring(2, 11)}`;
-    return {
-      key,
-      ref: new MockRef(`${this.path}/${key}`),
-    };
-  }
-
-  async set(value: any) {
-    const cleanPath = this.path.startsWith('/') ? this.path.substring(1) : this.path;
-    memoryDbStore[cleanPath] = JSON.parse(JSON.stringify(value));
+  async set(data: any) {
+    memoryDbStore[`${this.collectionName}/${this.id}`] = JSON.parse(JSON.stringify(data));
     return;
   }
+}
 
-  orderByChild(childField: string) {
-    return new MockQuery(this.path, childField);
+class MockCollectionRef {
+  private name: string;
+  private queries: Array<{ field: string; op: string; value: any }> = [];
+
+  constructor(name: string) {
+    this.name = name;
   }
 
-  async once(eventType: string) {
-    const cleanPath = this.path.startsWith('/') ? this.path.substring(1) : this.path;
-    
-    if (cleanPath === 'users') {
-      const allUsers: Record<string, any> = {};
-      for (const [key, value] of Object.entries(memoryDbStore)) {
-        if (key.startsWith('users/')) {
-          allUsers[value.id] = value;
+  doc(id?: string) {
+    const docId = id || `mock_doc_${Math.random().toString(36).substring(2, 11)}`;
+    return new MockDocRef(this.name, docId);
+  }
+
+  where(field: string, op: string, value: any) {
+    const query = new MockCollectionRef(this.name);
+    query.queries = [...this.queries, { field, op, value }];
+    return query;
+  }
+
+  async get() {
+    const matchedDocs: MockDocSnapshot[] = [];
+    const prefix = `${this.name}/`;
+
+    for (const [key, data] of Object.entries(memoryDbStore)) {
+      if (key.startsWith(prefix)) {
+        const id = key.substring(prefix.length);
+        
+        let matches = true;
+        for (const q of this.queries) {
+          if (q.op === '==' && data[q.field] !== q.value) {
+            matches = false;
+            break;
+          }
+        }
+        
+        if (matches) {
+          matchedDocs.push(new MockDocSnapshot(id, data));
         }
       }
-      return new MockSnapshot(allUsers);
     }
-
-    return new MockSnapshot(memoryDbStore[cleanPath]);
+    
+    return new MockQuerySnapshot(matchedDocs);
   }
 }
 
-class MockQuery {
-  private path: string;
-  private childField: string;
-  private equalValue: any = null;
-
-  constructor(path: string, childField: string) {
-    this.path = path;
-    this.childField = childField;
-  }
-
-  equalTo(value: any) {
-    this.equalValue = value;
-    return this;
-  }
-
-  async once(eventType: string) {
-    const matchedUsers: Record<string, any> = {};
-    for (const [key, value] of Object.entries(memoryDbStore)) {
-      if (key.startsWith('users/') && value && value[this.childField] === this.equalValue) {
-        matchedUsers[value.id] = value;
-      }
-    }
-    return new MockSnapshot(matchedUsers);
+class MockFirestore {
+  collection(name: string) {
+    return new MockCollectionRef(name);
   }
 }
 
@@ -109,29 +127,22 @@ class MockAuth {
   }
 }
 
-class MockDb {
-  ref(path: string) {
-    return new MockRef(path);
-  }
-}
-
 // --- INITIALIZATION ---
 if (projectId && clientEmail && privateKey) {
   try {
-    if (admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: cert({
           projectId,
           clientEmail,
           privateKey: privateKey.replace(/\\n/g, '\n'),
         }),
-        databaseURL,
       });
     }
-    dbInstance = admin.database();
-    authInstance = admin.auth();
+    dbInstance = getFirestore();
+    authInstance = getAdminAuth();
     isFirebaseConfigured = true;
-    console.log('✅ Firebase Admin SDK successfully connected to Realtime Database & Auth!');
+    console.log('✅ Firebase Admin SDK successfully connected to Cloud Firestore & Auth!');
   } catch (error: any) {
     console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
   }
@@ -139,21 +150,21 @@ if (projectId && clientEmail && privateKey) {
 
 if (!isFirebaseConfigured) {
   console.warn('⚠️  DATABASE WARNING: Firebase credentials not set in backend/.env!');
-  console.log('💡 Developer Mode active: Using in-memory fallback database. Registration & logins will work locally.');
-  dbInstance = new MockDb();
+  console.log('💡 Developer Mode active: Using in-memory fallback Cloud Firestore. Registration & logins will work locally.');
+  dbInstance = new MockFirestore();
   authInstance = new MockAuth();
 }
 
 /**
- * Returns the active Firebase Realtime Database reference (or in-memory mock fallback)
+ * Returns the active Firestore Database reference (or in-memory mock fallback)
  */
-export function getDb(): admin.database.Database {
+export function getDb() {
   return dbInstance;
 }
 
 /**
  * Returns the active Firebase Authentication reference (or in-memory mock fallback)
  */
-export function getAuth(): admin.auth.Auth {
+export function getAuth() {
   return authInstance;
 }
