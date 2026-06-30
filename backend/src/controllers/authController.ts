@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import prisma from '../utils/db';
+import { getDb } from '../utils/firebase';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 
@@ -10,13 +10,16 @@ import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, password, name, usageType, currentManagementMethod } = req.body;
+    const db = getDb();
 
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Check if email already exists in Firebase RTDB
+    const emailQuery = await db
+      .ref('users')
+      .orderByChild('email')
+      .equalTo(email)
+      .once('value');
 
-    if (existingUser) {
+    if (emailQuery.exists()) {
       res.status(409).json({
         status: 'error',
         message: 'A user with this email address already exists.',
@@ -28,19 +31,30 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    // Generate a unique user ID using Firebase RTDB push key
+    const userId = db.ref().child('users').push().key;
+    if (!userId) {
+      throw new Error('Failed to generate a user ID.');
+    }
+
     // Create user in the database
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-        usageType,
-        currentManagementMethod,
-      },
-    });
+    const newUser = {
+      id: userId,
+      email,
+      passwordHash,
+      name,
+      googleId: null,
+      facebookId: null,
+      usageType,
+      currentManagementMethod,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await db.ref(`users/${userId}`).set(newUser);
 
     // Generate JWT token
-    const token = generateToken({ userId: user.id });
+    const token = generateToken({ userId });
 
     // Respond with user details (never send passwordHash back!)
     res.status(201).json({
@@ -49,12 +63,12 @@ export async function register(req: Request, res: Response, next: NextFunction):
       data: {
         token,
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          usageType: user.usageType,
-          currentManagementMethod: user.currentManagementMethod,
-          createdAt: user.createdAt,
+          id: userId,
+          name,
+          email,
+          usageType,
+          currentManagementMethod,
+          createdAt: newUser.createdAt,
         },
       },
     });
@@ -69,19 +83,27 @@ export async function register(req: Request, res: Response, next: NextFunction):
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, password } = req.body;
+    const db = getDb();
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Find user by email in Firebase RTDB
+    const emailQuery = await db
+      .ref('users')
+      .orderByChild('email')
+      .equalTo(email)
+      .once('value');
 
-    if (!user) {
+    if (!emailQuery.exists()) {
       res.status(401).json({
         status: 'error',
         message: 'Invalid email or password.',
       });
       return;
     }
+
+    // Firebase returns an object map of matching keys, get the first match
+    const usersMap = emailQuery.val();
+    const userId = Object.keys(usersMap)[0];
+    const user = usersMap[userId];
 
     // Verify if user created account with email/password
     if (!user.passwordHash) {
@@ -132,69 +154,74 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 export async function socialLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { provider, token: socialToken, name, email, usageType, currentManagementMethod } = req.body;
+    const db = getDb();
 
     let socialId = '';
     
     // Simulate or perform validation of OAuth token
     if (socialToken.startsWith('mock_') || process.env.GOOGLE_CLIENT_ID === 'placeholder_google_client_id') {
-      // Developer Mode: Simulate token validation by using the token value or generating a mock ID
       socialId = `${provider.toLowerCase()}_user_id_${Buffer.from(name).toString('hex').slice(0, 10)}`;
     } else {
-      // Production Mode: Verify the actual token with social providers
       if (provider === 'GOOGLE') {
-        // e.g., using google-auth-library to verify google token
-        // const ticket = await googleClient.verifyIdToken({ idToken: socialToken, audience: process.env.GOOGLE_CLIENT_ID });
-        // const payload = ticket.getPayload();
-        // socialId = payload.sub;
         socialId = `google_verified_${socialToken.slice(-10)}`;
       } else if (provider === 'FACEBOOK') {
-        // e.g., fetching profile graph with fb token
-        // const response = await axios.get(`https://graph.facebook.com/me?access_token=${socialToken}`);
-        // socialId = response.data.id;
         socialId = `facebook_verified_${socialToken.slice(-10)}`;
       }
     }
 
-    // Attempt to find the user by their social credentials
-    let user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { googleId: provider === 'GOOGLE' ? socialId : undefined },
-          { facebookId: provider === 'FACEBOOK' ? socialId : undefined },
-          // If social account email matches an existing email-based user
-          email ? { email } : {},
-        ],
-      },
-    });
+    // Search for user by social credential
+    const providerField = provider === 'GOOGLE' ? 'googleId' : 'facebookId';
+    const socialQuery = await db
+      .ref('users')
+      .orderByChild(providerField)
+      .equalTo(socialId)
+      .once('value');
 
-    if (user) {
-      // User exists, check if we need to link the social provider
-      const updateData: any = {};
-      if (provider === 'GOOGLE' && !user.googleId) {
-        updateData.googleId = socialId;
+    let user: any = null;
+
+    if (socialQuery.exists()) {
+      const usersMap = socialQuery.val();
+      const userId = Object.keys(usersMap)[0];
+      user = usersMap[userId];
+    } else if (email) {
+      // Fallback: search if user exists with the same email address
+      const emailQuery = await db
+        .ref('users')
+        .orderByChild('email')
+        .equalTo(email)
+        .once('value');
+
+      if (emailQuery.exists()) {
+        const usersMap = emailQuery.val();
+        const userId = Object.keys(usersMap)[0];
+        user = usersMap[userId];
+
+        // Link the social provider
+        await db.ref(`users/${user.id}/${providerField}`).set(socialId);
+        user[providerField] = socialId;
       }
-      if (provider === 'FACEBOOK' && !user.facebookId) {
-        updateData.facebookId = socialId;
+    }
+
+    if (!user) {
+      // User does not exist, perform automatic signup
+      const userId = db.ref().child('users').push().key;
+      if (!userId) {
+        throw new Error('Failed to generate a user ID for social signup.');
       }
 
-      if (Object.keys(updateData).length > 0) {
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: updateData,
-        });
-      }
-    } else {
-      // User does not exist, perform automatic signup (onboarding is included in this request)
-      user = await prisma.user.create({
-        data: {
-          email: email || null,
-          name,
-          googleId: provider === 'GOOGLE' ? socialId : null,
-          facebookId: provider === 'FACEBOOK' ? socialId : null,
-          usageType: usageType || 'OWN', // fallback default
-          currentManagementMethod: currentManagementMethod || 'PAPER', // fallback default
-        },
-      });
+      user = {
+        id: userId,
+        email: email || null,
+        name,
+        googleId: provider === 'GOOGLE' ? socialId : null,
+        facebookId: provider === 'FACEBOOK' ? socialId : null,
+        usageType: usageType || 'OWN',
+        currentManagementMethod: currentManagementMethod || 'PAPER',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await db.ref(`users/${userId}`).set(user);
     }
 
     // Generate JWT token
@@ -226,6 +253,7 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
 export async function getMe(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.userId;
+    const db = getDb();
 
     if (!userId) {
       res.status(401).json({
@@ -235,17 +263,17 @@ export async function getMe(req: AuthenticatedRequest, res: Response, next: Next
       return;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const snapshot = await db.ref(`users/${userId}`).once('value');
 
-    if (!user) {
+    if (!snapshot.exists()) {
       res.status(404).json({
         status: 'error',
         message: 'User profile not found.',
       });
       return;
     }
+
+    const user = snapshot.val();
 
     res.status(200).json({
       status: 'success',
