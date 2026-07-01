@@ -4,6 +4,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { signInWithGoogle, signInWithFacebook } from '../services/firebase';
 import { Mail, Lock, Check } from 'lucide-react';
+import { getColor } from '../utils/color';
 
 export const LoginPage = ({ onNavigateToRegister }) => {
   const { login, socialLogin, error: authError, clearError } = useAuth();
@@ -86,7 +87,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         {/* Shield Check logo */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-200 mb-4 animate-bounce-slow">
+        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${getColor('primary.base')} text-white shadow-lg ${getColor('primary.shadow')} mb-4 animate-bounce-slow`}>
           <Check size={32} className="stroke-[3]" />
         </div>
         <h2 className="text-3xl font-extrabold text-black tracking-tight">
@@ -96,7 +97,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
           New here?{' '}
           <button 
             onClick={onNavigateToRegister} 
-            className="font-bold text-orange-600 hover:text-orange-500 underline transition-colors cursor-pointer"
+            className={`font-bold ${getColor('primary.accentText')} ${getColor('primary.textHover')} underline transition-colors cursor-pointer`}
           >
             Create an account & start onboarding
           </button>
@@ -132,7 +133,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4.5 w-4.5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded cursor-pointer"
+                  className={`h-4.5 w-4.5 ${getColor('primary.accentText')} ${getColor('primary.ring')} border-gray-300 rounded cursor-pointer`}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm font-semibold text-gray-900 cursor-pointer">
                   Remember me
@@ -140,7 +141,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-bold text-orange-600 hover:text-orange-500 transition-colors">
+                <a href="#" className={`font-bold ${getColor('primary.accentText')} ${getColor('primary.textHover')} transition-colors`}>
                   Forgot password?
                 </a>
               </div>
@@ -186,8 +187,8 @@ export const LoginPage = ({ onNavigateToRegister }) => {
 
           {/* Error Banner */}
           {(validationError || authError) && (
-            <div className="mt-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-semibold flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 flex-shrink-0"></span>
+            <div className={`mt-5 p-3 ${getColor('danger.bg')} border ${getColor('danger.border')} ${getColor('danger.text')} rounded-lg text-sm font-semibold flex items-start gap-2`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${getColor('danger.dot')} mt-1.5 flex-shrink-0`}></span>
               <p>{validationError || authError}</p>
             </div>
           )}

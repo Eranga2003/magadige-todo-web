@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { signInWithGoogle, signInWithFacebook } from '../services/firebase';
+import { getColor } from '../utils/color';
 import { 
   User, 
   Users, 
@@ -176,7 +177,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         {/* Modern Orange/White Shield Logo Placeholder */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-200 mb-4 animate-bounce-slow">
+        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${getColor('primary.base')} text-white shadow-lg ${getColor('primary.shadow')} mb-4 animate-bounce-slow`}>
           <Check size={32} className="stroke-[3]" />
         </div>
         <h2 className="text-3xl font-extrabold text-black tracking-tight">
@@ -186,7 +187,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
           Already registered?{' '}
           <button 
             onClick={onNavigateToLogin} 
-            className="font-bold text-orange-600 hover:text-orange-500 underline transition-colors cursor-pointer"
+            className={`font-bold ${getColor('primary.accentText')} ${getColor('primary.textHover')} underline transition-colors cursor-pointer`}
           >
             Sign in here
           </button>
@@ -201,21 +202,21 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                  step >= 1 ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                  step >= 1 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
                 }`}>1</span>
                 <span className="text-xs font-bold text-black hidden sm:inline">Goal</span>
               </div>
-              <div className={`flex-1 h-[2px] mx-2 transition-all duration-300 ${step >= 2 ? 'bg-orange-500' : 'bg-gray-200'}`}></div>
+              <div className={`flex-1 h-[2px] mx-2 transition-all duration-300 ${step >= 2 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
               <div className="flex items-center gap-2">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                  step >= 2 ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                  step >= 2 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
                 }`}>2</span>
                 <span className="text-xs font-bold text-black hidden sm:inline">Routine</span>
               </div>
-              <div className={`flex-1 h-[2px] mx-2 transition-all duration-300 ${step >= 3 ? 'bg-orange-500' : 'bg-gray-200'}`}></div>
+              <div className={`flex-1 h-[2px] mx-2 transition-all duration-300 ${step >= 3 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
               <div className="flex items-center gap-2">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                  step >= 3 ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                  step >= 3 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
                 }`}>3</span>
                 <span className="text-xs font-bold text-black hidden sm:inline">Register</span>
               </div>
@@ -233,19 +234,19 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div
                   onClick={() => setUsageType('OWN')}
-                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-orange-500 hover:shadow-sm ${
-                    usageType === 'OWN' ? 'border-orange-500 bg-orange-50/20' : 'border-gray-200'
+                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 ${getColor('primary.hoverBorder')} hover:shadow-sm ${
+                    usageType === 'OWN' ? `${getColor('primary.border')} ${getColor('primary.bgLightSelected')}` : 'border-gray-200'
                   }`}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-                    usageType === 'OWN' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-600'
+                    usageType === 'OWN' ? `${getColor('primary.base')} text-white` : `${getColor('primary.bgLight')} ${getColor('primary.accentText')}`
                   }`}>
                     <User size={24} />
                   </div>
                   <span className="font-bold text-black">Own Usage</span>
                   <span className="text-xs text-gray-500 text-center mt-1">Personal schedules & habits</span>
                   {usageType === 'OWN' && (
-                    <div className="absolute top-3 right-3 bg-orange-500 text-white rounded-full p-0.5">
+                    <div className={`absolute top-3 right-3 ${getColor('primary.base')} text-white rounded-full p-0.5`}>
                       <Check size={12} strokeWidth={3} />
                     </div>
                   )}
@@ -253,19 +254,19 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
                 <div
                   onClick={() => setUsageType('TEAM')}
-                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-orange-500 hover:shadow-sm ${
-                    usageType === 'TEAM' ? 'border-orange-500 bg-orange-50/20' : 'border-gray-200'
+                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 ${getColor('primary.hoverBorder')} hover:shadow-sm ${
+                    usageType === 'TEAM' ? `${getColor('primary.border')} ${getColor('primary.bgLightSelected')}` : 'border-gray-200'
                   }`}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-                    usageType === 'TEAM' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-600'
+                    usageType === 'TEAM' ? `${getColor('primary.base')} text-white` : `${getColor('primary.bgLight')} ${getColor('primary.accentText')}`
                   }`}>
                     <Users size={24} />
                   </div>
                   <span className="font-bold text-black">Team Usage</span>
                   <span className="text-xs text-gray-500 text-center mt-1">Workspaces & task sharing</span>
                   {usageType === 'TEAM' && (
-                    <div className="absolute top-3 right-3 bg-orange-500 text-white rounded-full p-0.5">
+                    <div className={`absolute top-3 right-3 ${getColor('primary.base')} text-white rounded-full p-0.5`}>
                       <Check size={12} strokeWidth={3} />
                     </div>
                   )}
@@ -294,19 +295,19 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div
                   onClick={() => setCurrentManagementMethod('PAPER')}
-                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-orange-500 hover:shadow-sm ${
-                    currentManagementMethod === 'PAPER' ? 'border-orange-500 bg-orange-50/20' : 'border-gray-200'
+                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 ${getColor('primary.hoverBorder')} hover:shadow-sm ${
+                    currentManagementMethod === 'PAPER' ? `${getColor('primary.border')} ${getColor('primary.bgLightSelected')}` : 'border-gray-200'
                   }`}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-                    currentManagementMethod === 'PAPER' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-600'
+                    currentManagementMethod === 'PAPER' ? `${getColor('primary.base')} text-white` : `${getColor('primary.bgLight')} ${getColor('primary.accentText')}`
                   }`}>
                     <FileText size={24} />
                   </div>
                   <span className="font-bold text-black">Writing on Paper</span>
                   <span className="text-xs text-gray-500 text-center mt-1">Notebooks or sticky notes</span>
                   {currentManagementMethod === 'PAPER' && (
-                    <div className="absolute top-3 right-3 bg-orange-500 text-white rounded-full p-0.5">
+                    <div className={`absolute top-3 right-3 ${getColor('primary.base')} text-white rounded-full p-0.5`}>
                       <Check size={12} strokeWidth={3} />
                     </div>
                   )}
@@ -314,19 +315,19 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
                 <div
                   onClick={() => setCurrentManagementMethod('APP')}
-                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-orange-500 hover:shadow-sm ${
-                    currentManagementMethod === 'APP' ? 'border-orange-500 bg-orange-50/20' : 'border-gray-200'
+                  className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl cursor-pointer transition-all duration-200 ${getColor('primary.hoverBorder')} hover:shadow-sm ${
+                    currentManagementMethod === 'APP' ? `${getColor('primary.border')} ${getColor('primary.bgLightSelected')}` : 'border-gray-200'
                   }`}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-                    currentManagementMethod === 'APP' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-600'
+                    currentManagementMethod === 'APP' ? `${getColor('primary.base')} text-white` : `${getColor('primary.bgLight')} ${getColor('primary.accentText')}`
                   }`}>
                     <Smartphone size={24} />
                   </div>
                   <span className="font-bold text-black">Using an App</span>
                   <span className="text-xs text-gray-500 text-center mt-1">Calendar or list apps</span>
                   {currentManagementMethod === 'APP' && (
-                    <div className="absolute top-3 right-3 bg-orange-500 text-white rounded-full p-0.5">
+                    <div className={`absolute top-3 right-3 ${getColor('primary.base')} text-white rounded-full p-0.5`}>
                       <Check size={12} strokeWidth={3} />
                     </div>
                   )}
@@ -438,8 +439,8 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
           {/* Validation or API Errors */}
           {(validationError || authError) && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-semibold flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 flex-shrink-0"></span>
+            <div className={`mt-4 p-3 ${getColor('danger.bg')} border ${getColor('danger.border')} ${getColor('danger.text')} rounded-lg text-sm font-semibold flex items-start gap-2`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${getColor('danger.dot')} mt-1.5 flex-shrink-0`}></span>
               <p>{validationError || authError}</p>
             </div>
           )}
