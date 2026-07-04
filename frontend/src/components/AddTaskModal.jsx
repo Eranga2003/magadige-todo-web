@@ -633,7 +633,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => setModalView('STANDARD')}
+                    onClick={handleClose}
                     className="!w-auto !py-1.5 !px-4 !text-xs"
                     disabled={isGenerating}
                   >
@@ -692,7 +692,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setModalView('STANDARD')}
+                      onClick={handleClose}
                       className="!w-auto !py-1.5 !px-4 !text-xs"
                     >
                       Cancel
@@ -773,7 +773,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => setModalView('STANDARD')}
+                    onClick={handleClose}
                     className="!w-auto !py-1.5 !px-4 !text-xs"
                     disabled={isGenerating}
                   >
@@ -832,7 +832,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setModalView('STANDARD')}
+                      onClick={handleClose}
                       className="!w-auto !py-1.5 !px-4 !text-xs"
                     >
                       Cancel
