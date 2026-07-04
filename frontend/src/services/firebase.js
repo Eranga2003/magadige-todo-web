@@ -25,6 +25,7 @@ if (firebaseConfig.apiKey) {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     auth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
     facebookProvider = new FacebookAuthProvider();
     isFirebaseClientConfigured = true;
     console.log('✅ Client-side Firebase App successfully initialized!');
