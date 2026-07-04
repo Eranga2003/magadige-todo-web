@@ -576,14 +576,13 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button
+                <button
                   type="button"
-                  variant="secondary"
                   onClick={handleClose}
-                  className="!w-auto !py-1.5 !px-4 !text-xs"
+                  className="w-auto flex items-center justify-center gap-1.5 py-1.5 px-4 font-bold rounded-xl border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-xs cursor-pointer focus:outline-none"
                 >
                   Cancel
-                </Button>
+                </button>
                 <Button
                   type="submit"
                   disabled={!title.trim()}
@@ -647,15 +646,14 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
                     onClick={handleClose}
-                    className="!w-auto !py-1.5 !px-4 !text-xs"
                     disabled={isGenerating}
+                    className="w-auto flex items-center justify-center gap-1.5 py-1.5 px-4 font-bold rounded-xl border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-xs cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
-                  </Button>
+                  </button>
                   <Button
                     onClick={() => handleAIGenerate(breakerText)}
                     disabled={!breakerText.trim() || isGenerating}
@@ -706,14 +704,13 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     Back to text
                   </button>
                   <div className="flex items-center gap-2">
-                    <Button
+                    <button
                       type="button"
-                      variant="secondary"
                       onClick={handleClose}
-                      className="!w-auto !py-1.5 !px-4 !text-xs"
+                      className="w-auto flex items-center justify-center gap-1.5 py-1.5 px-4 font-bold rounded-xl border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-xs cursor-pointer focus:outline-none"
                     >
                       Cancel
-                    </Button>
+                    </button>
                     <Button
                       onClick={handleAddSubtasks}
                       className="!w-auto !py-1.5 !px-4 !text-xs"
@@ -787,15 +784,14 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
                     onClick={handleClose}
-                    className="!w-auto !py-1.5 !px-4 !text-xs"
                     disabled={isGenerating}
+                    className="w-auto flex items-center justify-center gap-1.5 py-1.5 px-4 font-bold rounded-xl border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-xs cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
-                  </Button>
+                  </button>
                   <Button
                     onClick={() => handleAIGenerate(transcription)}
                     disabled={!transcription.trim() || isGenerating || isRecording}
@@ -846,14 +842,13 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     Back to text
                   </button>
                   <div className="flex items-center gap-2">
-                    <Button
+                    <button
                       type="button"
-                      variant="secondary"
                       onClick={handleClose}
-                      className="!w-auto !py-1.5 !px-4 !text-xs"
+                      className="w-auto flex items-center justify-center gap-1.5 py-1.5 px-4 font-bold rounded-xl border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-xs cursor-pointer focus:outline-none"
                     >
                       Cancel
-                    </Button>
+                    </button>
                     <Button
                       onClick={handleAddSubtasks}
                       className="!w-auto !py-1.5 !px-4 !text-xs"
