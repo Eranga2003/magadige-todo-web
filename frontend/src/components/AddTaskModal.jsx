@@ -43,6 +43,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   // Voice states
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState('');
+  const [attachedFile, setAttachedFile] = useState(null);
   
   // Dropdown states
   const [showDateDropdown, setShowDateDropdown] = useState(false);
@@ -50,6 +51,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
 
   const fileInputRef = useRef(null);
+  const attachmentInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const modalRef = useRef(null);
 
@@ -75,6 +77,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     setGeneratedSubtasks([]);
     setSelectedSubtasks({});
     setTranscription('');
+    setAttachedFile(null);
     setIsGenerating(false);
     setIsRecording(false);
     setModalView('STANDARD');
@@ -359,13 +362,38 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 )}
               </div>
 
-              <button
-                type="button"
-                className="flex items-center gap-1.5 text-xs font-bold text-gray-400 border border-gray-150 rounded-lg px-2.5 py-1.5 focus:outline-none"
-              >
-                <Paperclip size={13} />
-                <span>Attachment</span>
-              </button>
+              {attachedFile ? (
+                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5">
+                  <Paperclip size={13} />
+                  <span className="truncate max-w-[100px]">{attachedFile.name}</span>
+                  <button 
+                    type="button" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAttachedFile(null);
+                    }}
+                    className="hover:text-red-500 cursor-pointer focus:outline-none ml-1 flex items-center justify-center"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => attachmentInputRef.current.click()}
+                  className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none transition-colors"
+                >
+                  <Paperclip size={13} className="text-gray-500" />
+                  <span>Attachment</span>
+                </button>
+              )}
+
+              <input 
+                type="file" 
+                ref={attachmentInputRef} 
+                onChange={(e) => setAttachedFile(e.target.files[0] || null)} 
+                className="hidden" 
+              />
 
               <div className="relative">
                 <button
