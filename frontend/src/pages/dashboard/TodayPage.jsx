@@ -113,9 +113,9 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
                         }`}
                       >
                         {completingTasks[task.id] ? (
-                          <Check size={10} className="text-white stroke-[3.5] animate-scale-up" />
+                          <Check size={12} strokeWidth={3} className="text-white" />
                         ) : (
-                          <Check size={10} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                          <Check size={12} strokeWidth={3} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                         )}
                       </button>
                       <div className="flex-1 min-w-0">

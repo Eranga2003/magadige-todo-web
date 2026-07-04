@@ -5,14 +5,21 @@ let audioCtx = null;
  */
 function getAudioContext() {
   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContext) return null;
+  if (!AudioContext) {
+    console.warn("⚠️ AudioContext is not supported by this browser!");
+    return null;
+  }
   
   if (!audioCtx) {
+    console.log("🔊 Web Audio: Creating new AudioContext instance...");
     audioCtx = new AudioContext();
   }
   
   if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
+    console.log("🔊 Web Audio: AudioContext is suspended. Resuming now...");
+    audioCtx.resume()
+      .then(() => console.log("🔊 Web Audio: Context resumed! Current State:", audioCtx.state))
+      .catch((err) => console.error("❌ Web Audio: Resume failed:", err));
   }
   
   return audioCtx;
@@ -33,11 +40,9 @@ export const playBubbleSound = () => {
     osc.type = 'sine';
     const now = ctx.currentTime;
 
-    // Pitch sweep: from 420Hz (medium-low) to 1200Hz (high pop) in 0.06 seconds
     osc.frequency.setValueAtTime(420, now);
     osc.frequency.exponentialRampToValueAtTime(1200, now + 0.06);
 
-    // Volume envelope: quick attack, fast decay to prevent pops
     gain.gain.setValueAtTime(0.001, now);
     gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02); // Peak volume
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06); // Decay
@@ -48,7 +53,7 @@ export const playBubbleSound = () => {
     osc.start(now);
     osc.stop(now + 0.06);
   } catch (error) {
-    // Fail silently to avoid interrupting interface loop
+    console.error("❌ Web Audio: playBubbleSound failed:", error);
   }
 };
 
@@ -61,6 +66,7 @@ export const playTickSound = () => {
     const ctx = getAudioContext();
     if (!ctx) return;
 
+    console.log("🔊 Web Audio: Synthesizing Tick sound...");
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -80,7 +86,7 @@ export const playTickSound = () => {
     osc.start(now);
     osc.stop(now + 0.04);
   } catch (error) {
-    // Ignore
+    console.error("❌ Web Audio: playTickSound failed:", error);
   }
 };
 
@@ -93,9 +99,9 @@ export const playChimeSound = () => {
     const ctx = getAudioContext();
     if (!ctx) return;
 
+    console.log("🔔 Web Audio: Synthesizing Chime sound...");
     const now = ctx.currentTime;
     
-    // Notes: C5 (523Hz) followed by E5 (659Hz) 0.08 seconds later
     const notes = [523.25, 659.25];
 
     notes.forEach((freq, index) => {
@@ -119,6 +125,6 @@ export const playChimeSound = () => {
       osc.stop(noteStart + 0.25);
     });
   } catch (error) {
-    // Fail silently
+    console.error("❌ Web Audio: playChimeSound failed:", error);
   }
 };
