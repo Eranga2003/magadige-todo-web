@@ -86,7 +86,11 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     setIsRecording(false);
     setModalView('STANDARD');
     if (recognitionRef.current) {
-      recognitionRef.current.abort();
+      try {
+        recognitionRef.current.abort();
+      } catch (err) {
+        console.warn("⚠️ SpeechRecognition abort bypassed:", err);
+      }
     }
   };
 
