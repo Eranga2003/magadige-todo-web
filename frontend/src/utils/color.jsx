@@ -1,35 +1,35 @@
 import React from 'react';
 
-// Centralized Color Design System Tokens (Tailwind utility classes - Purple/Blue Theme)
+// Centralized Color Design System Tokens (Tailwind utility classes - Dark Blue/Light Blue Theme)
 export const themeColors = {
   primary: {
-    // Brand base color (Solid Purple)
-    base: 'bg-purple-600',
-    // Premium theme mix gradient (Purple to Blue)
-    gradient: 'bg-gradient-to-r from-purple-600 to-blue-600',
+    // Brand base color (Solid Dark Blue)
+    base: 'bg-blue-700',
+    // Premium theme mix gradient (Dark Blue to Light Sky Blue)
+    gradient: 'bg-gradient-to-r from-blue-800 to-sky-500',
     // Actions & Hovers
-    hover: 'hover:bg-purple-700',
-    hoverGradient: 'hover:from-purple-700 hover:to-blue-700',
-    border: 'border-purple-600',
-    borderHover: 'hover:border-purple-700',
-    borderLight: 'border-purple-200',
+    hover: 'hover:bg-blue-800',
+    hoverGradient: 'hover:from-blue-900 hover:to-sky-600',
+    border: 'border-blue-700',
+    borderHover: 'hover:border-blue-800',
+    borderLight: 'border-blue-200',
     // Text accents
-    text: 'text-purple-600',
-    textDark: 'text-purple-700',
-    textHover: 'hover:text-purple-500',
+    text: 'text-blue-700',
+    textDark: 'text-blue-800',
+    textHover: 'hover:text-blue-600',
     // Highlight backgrounds
-    bgLight: 'bg-purple-50',
-    bgLightHover: 'hover:bg-purple-50',
-    bgLightSelected: 'bg-purple-50/20',
+    bgLight: 'bg-blue-50',
+    bgLightHover: 'hover:bg-blue-50',
+    bgLightSelected: 'bg-blue-50/20',
     // Inputs & focus states
-    ring: 'focus:ring-purple-500',
-    ringBorder: 'focus:border-purple-500',
-    ringText: 'text-purple-600',
-    shadow: 'shadow-purple-200',
-    accentText: 'text-purple-600',
-    hoverBorder: 'hover:border-purple-500',
-    disabledBg: 'disabled:bg-purple-300',
-    disabledBorder: 'disabled:border-purple-300',
+    ring: 'focus:ring-blue-600',
+    ringBorder: 'focus:border-blue-600',
+    ringText: 'text-blue-700',
+    shadow: 'shadow-blue-200',
+    accentText: 'text-blue-700',
+    hoverBorder: 'hover:border-blue-600',
+    disabledBg: 'disabled:bg-blue-300',
+    disabledBorder: 'disabled:border-blue-300',
   },
   secondary: {
     base: 'bg-white',
@@ -46,7 +46,7 @@ export const themeColors = {
     bgCard: 'bg-white',
     borderCard: 'border-gray-100',
     borderInput: 'border-gray-200',
-    borderInputFocus: 'focus:border-purple-500',
+    borderInputFocus: 'focus:border-blue-700',
     textTitle: 'text-black',
     textSubtitle: 'text-gray-500',
     textBody: 'text-gray-600',
@@ -67,7 +67,7 @@ export const themeColors = {
 
 /**
  * Retrieves color class strings from the centralized themeColors configuration by dot-separated path.
- * e.g., getColor('primary.base') => 'bg-purple-600'
+ * e.g., getColor('primary.base') => 'bg-blue-700'
  */
 export function getColor(path) {
   const keys = path.split('.');
