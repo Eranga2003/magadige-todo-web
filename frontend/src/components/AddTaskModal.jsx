@@ -295,6 +295,8 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     PERSONAL: { label: 'Personal', icon: <User size={14} className="text-green-500" /> },
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black/35 flex items-center justify-center p-4 z-50 animate-fade-in select-none">
       
