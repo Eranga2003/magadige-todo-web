@@ -55,10 +55,6 @@ export const DashboardPage = () => {
 
   // Complete a task
   const handleCompleteTask = (taskId) => {
-    playTickSound();
-    setTimeout(() => {
-      playChimeSound();
-    }, 120);
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
     );

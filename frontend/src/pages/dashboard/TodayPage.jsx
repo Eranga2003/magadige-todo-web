@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sun, Plus, Calendar, Flag, CheckCircle, Check } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
+import { playTickSound, playChimeSound } from '../../utils/audio';
 
 export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -12,6 +13,10 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [completingTasks, setCompletingTasks] = useState({});
 
   const handleComplete = (taskId) => {
+    playTickSound();
+    setTimeout(() => {
+      playChimeSound();
+    }, 100);
     setCompletingTasks((prev) => ({ ...prev, [taskId]: true }));
     setTimeout(() => {
       onCompleteTask(taskId);
@@ -119,7 +124,7 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
                         }`}>{task.title}</h3>
                         {task.description && (
                           <p className={`text-xs mt-1 leading-snug transition-all duration-200 ${
-                            completingTasks[task.id] ? 'text-gray-305 line-through' : 'text-gray-500'
+                            completingTasks[task.id] ? 'text-gray-300 line-through' : 'text-gray-500'
                           }`}>{task.description}</p>
                         )}
                       </div>

@@ -3,6 +3,7 @@ import { Inbox, Plus, Calendar, Flag, Tag, X, ListTodo, AlertCircle, Check } fro
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { playTickSound, playChimeSound } from '../../utils/audio';
 
 export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -15,6 +16,10 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [completingTasks, setCompletingTasks] = useState({});
 
   const handleComplete = (taskId) => {
+    playTickSound();
+    setTimeout(() => {
+      playChimeSound();
+    }, 100);
     setCompletingTasks((prev) => ({ ...prev, [taskId]: true }));
     setTimeout(() => {
       if (onCompleteTask) onCompleteTask(taskId);

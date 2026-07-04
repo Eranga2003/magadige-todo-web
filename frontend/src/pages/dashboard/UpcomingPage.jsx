@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Plus, ChevronRight, Check } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
+import { playTickSound, playChimeSound } from '../../utils/audio';
 
 export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -13,6 +14,10 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [completingTasks, setCompletingTasks] = useState({});
 
   const handleComplete = (taskId) => {
+    playTickSound();
+    setTimeout(() => {
+      playChimeSound();
+    }, 100);
     setCompletingTasks((prev) => ({ ...prev, [taskId]: true }));
     setTimeout(() => {
       onCompleteTask(taskId);

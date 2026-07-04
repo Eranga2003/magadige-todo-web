@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Flag, Check, ListFilter } from 'lucide-react';
 import { getColor } from '../../utils/color';
+import { playTickSound, playChimeSound } from '../../utils/audio';
 
 export const FiltersLabelsPage = ({ tasks = [], onCompleteTask }) => {
   const [selectedFilter, setSelectedFilter] = useState('ALL'); // ALL, P1, P2, P3, P4
@@ -8,6 +9,10 @@ export const FiltersLabelsPage = ({ tasks = [], onCompleteTask }) => {
   const [completingTasks, setCompletingTasks] = useState({});
 
   const handleComplete = (taskId) => {
+    playTickSound();
+    setTimeout(() => {
+      playChimeSound();
+    }, 100);
     setCompletingTasks((prev) => ({ ...prev, [taskId]: true }));
     setTimeout(() => {
       onCompleteTask(taskId);
