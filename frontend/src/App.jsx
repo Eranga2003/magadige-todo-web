@@ -13,7 +13,7 @@ const AppContent = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <div className="relative flex items-center justify-center">
-          <div className={`w-16 h-16 border-4 ${getColor('primary.borderLight')} border-t-blue-700 rounded-full animate-spin`}></div>
+          <div className={`w-16 h-16 border-4 ${getColor('primary.borderLight')} border-t-blue-600 rounded-full animate-spin`}></div>
           <div className={`absolute ${getColor('primary.text')} font-extrabold text-sm`}>M</div>
         </div>
         <p className="mt-4 text-sm font-semibold text-gray-500 animate-pulse">
