@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
+import { playBubbleSound, playChimeSound } from '../utils/audio';
 
 // Import subpages
 import { InboxPage } from './dashboard/InboxPage';
@@ -52,6 +53,7 @@ export const DashboardPage = () => {
 
   // Complete a task
   const handleCompleteTask = (taskId) => {
+    playChimeSound();
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
     );
@@ -94,6 +96,7 @@ export const DashboardPage = () => {
             <div className="flex items-center justify-between px-2">
               <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
+                onMouseEnter={playBubbleSound}
                 className="flex items-center gap-2 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
               >
                 <div className={`w-7.5 h-7.5 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center font-bold text-sm shadow-sm`}>
@@ -106,11 +109,15 @@ export const DashboardPage = () => {
               </button>
 
               <div className="flex items-center gap-1.5">
-                <button className="text-gray-500 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-none">
+                <button 
+                  onMouseEnter={playBubbleSound}
+                  className="text-gray-500 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-none"
+                >
                   <Bell size={16} />
                 </button>
                 <button 
                   onClick={() => setIsSidebarCollapsed(true)}
+                  onMouseEnter={playBubbleSound}
                   className="text-gray-500 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-none"
                 >
                   <Menu size={16} />
@@ -142,6 +149,7 @@ export const DashboardPage = () => {
                 setActiveTab('INBOX');
                 // Auto trigger focus inside InboxPage composer by setting state
               }}
+              onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-2 text-sm font-extrabold ${getColor('primary.gradient')} text-white px-3.5 py-2.5 rounded-xl hover:shadow-md hover:scale-101 active:scale-99 transition-all duration-200 cursor-pointer`}
             >
               <Plus size={16} /> Add task
@@ -151,7 +159,10 @@ export const DashboardPage = () => {
           {/* Navigation links list */}
           <nav className="space-y-1">
             {/* Search link emulation */}
-            <button className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer focus:outline-none">
+            <button 
+              onMouseEnter={playBubbleSound}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer focus:outline-none"
+            >
               <span className="flex items-center gap-3">
                 <Search size={16} className="text-gray-400" /> Search
               </span>
@@ -163,6 +174,7 @@ export const DashboardPage = () => {
             {/* Inbox */}
             <button 
               onClick={() => { setActiveTab('INBOX'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'INBOX' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
@@ -184,6 +196,7 @@ export const DashboardPage = () => {
             {/* Today */}
             <button 
               onClick={() => { setActiveTab('TODAY'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'TODAY' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
@@ -205,6 +218,7 @@ export const DashboardPage = () => {
             {/* Upcoming */}
             <button 
               onClick={() => { setActiveTab('UPCOMING'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'UPCOMING' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
@@ -217,6 +231,7 @@ export const DashboardPage = () => {
             {/* Filters */}
             <button 
               onClick={() => { setActiveTab('FILTERS'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'FILTERS' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
@@ -229,6 +244,7 @@ export const DashboardPage = () => {
             {/* Reporting */}
             <button 
               onClick={() => { setActiveTab('REPORTING'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'REPORTING' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
@@ -243,10 +259,16 @@ export const DashboardPage = () => {
           <div className="space-y-2 pt-4 border-t border-gray-200">
             <h4 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider px-3">My Projects</h4>
             <div className="space-y-0.5">
-              <button className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+              <button 
+                onMouseEnter={playBubbleSound}
+                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
+              >
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> # Work
               </button>
-              <button className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+              <button 
+                onMouseEnter={playBubbleSound}
+                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
+              >
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> # Personal
               </button>
             </div>
@@ -255,10 +277,16 @@ export const DashboardPage = () => {
 
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-gray-200 space-y-2 text-gray-500">
-          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+          <button 
+            onMouseEnter={playBubbleSound}
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
+          >
             <Users size={16} /> Add a team
           </button>
-          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+          <button 
+            onMouseEnter={playBubbleSound}
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
+          >
             <HelpCircle size={16} /> Help & resources
           </button>
         </div>
