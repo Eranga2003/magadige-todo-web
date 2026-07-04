@@ -19,6 +19,7 @@ import {
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
 import { playBubbleSound, playChimeSound } from '../utils/audio';
+import { AddTaskModal } from '../components/AddTaskModal';
 
 // Import subpages
 import { InboxPage } from './dashboard/InboxPage';
@@ -34,6 +35,7 @@ export const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState('INBOX'); // INBOX, TODAY, UPCOMING, FILTERS, REPORTING
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   
   // Seed task data for interactive dashboard
   const [tasks, setTasks] = useState([
@@ -145,10 +147,7 @@ export const DashboardPage = () => {
           {/* Quick Add action */}
           <div className="px-2">
             <button 
-              onClick={() => {
-                setActiveTab('INBOX');
-                // Auto trigger focus inside InboxPage composer by setting state
-              }}
+              onClick={() => setIsAddTaskModalOpen(true)}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-2 text-sm font-extrabold ${getColor('primary.gradient')} text-white px-3.5 py-2.5 rounded-xl hover:shadow-md hover:scale-101 active:scale-99 transition-all duration-200 cursor-pointer`}
             >
@@ -313,6 +312,13 @@ export const DashboardPage = () => {
           {renderActiveSection()}
         </main>
       </div>
+
+      {/* Global Add Task Pop-up Modal */}
+      <AddTaskModal 
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onAddTask={handleAddTask}
+      />
 
     </div>
   );
