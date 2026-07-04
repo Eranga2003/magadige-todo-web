@@ -70,33 +70,46 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   }, [isOpen]);
 
   const resetState = () => {
-    setTitle('');
-    setDescription('');
-    setDueDate('TODAY');
-    setPriority('P4');
-    setProject('INBOX');
-    setBreakerText('');
-    setGeneratedSubtasks([]);
-    setSelectedSubtasks({});
-    setTranscription('');
-    setAttachedFile(null);
-    setReminderTime('');
-    setShowReminderDropdown(false);
-    setIsGenerating(false);
-    setIsRecording(false);
-    setModalView('STANDARD');
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch (err) {
-        console.warn("⚠️ SpeechRecognition abort bypassed:", err);
+    console.log("✏️ AddTaskModal: resetState starting...");
+    try {
+      setTitle('');
+      setDescription('');
+      setDueDate('TODAY');
+      setPriority('P4');
+      setProject('INBOX');
+      setBreakerText('');
+      setGeneratedSubtasks([]);
+      setSelectedSubtasks({});
+      setTranscription('');
+      setAttachedFile(null);
+      setReminderTime('');
+      setShowReminderDropdown(false);
+      setIsGenerating(false);
+      setIsRecording(false);
+      setModalView('STANDARD');
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (err) {
+          console.warn("⚠️ SpeechRecognition abort bypassed:", err);
+        }
       }
+      console.log("✏️ AddTaskModal: resetState completed successfully.");
+    } catch (err) {
+      console.error("❌ AddTaskModal: resetState failed with error:", err);
     }
   };
 
   const handleClose = () => {
+    console.log("✏️ AddTaskModal: handleClose invoked!");
     resetState();
-    onClose();
+    console.log("✏️ AddTaskModal: triggering onClose prop callback...");
+    if (typeof onClose === 'function') {
+      onClose();
+      console.log("✏️ AddTaskModal: onClose prop invoked successfully.");
+    } else {
+      console.error("❌ AddTaskModal: onClose prop is not a valid function:", onClose);
+    }
   };
 
   // 1. Text File Upload handler
