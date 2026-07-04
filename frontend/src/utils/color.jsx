@@ -1,28 +1,35 @@
 import React from 'react';
 
-// Centralized Color Design System Tokens (Tailwind utility classes)
+// Centralized Color Design System Tokens (Tailwind utility classes - Purple/Blue Theme)
 export const themeColors = {
   primary: {
-    // Brand base color (Orange theme)
-    base: 'bg-orange-500',
-    hover: 'hover:bg-orange-600',
-    border: 'border-orange-500',
-    borderHover: 'hover:border-orange-600',
-    borderLight: 'border-orange-200',
-    text: 'text-orange-500',
-    textDark: 'text-orange-600',
-    textHover: 'hover:text-orange-500',
-    bgLight: 'bg-orange-50',
-    bgLightHover: 'hover:bg-orange-50',
-    bgLightSelected: 'bg-orange-50/20',
-    ring: 'focus:ring-orange-500',
-    ringBorder: 'focus:border-orange-500',
-    ringText: 'text-orange-600',
-    shadow: 'shadow-orange-200',
-    accentText: 'text-orange-600',
-    hoverBorder: 'hover:border-orange-500',
-    disabledBg: 'disabled:bg-orange-300',
-    disabledBorder: 'disabled:border-orange-300',
+    // Brand base color (Solid Purple)
+    base: 'bg-purple-600',
+    // Premium theme mix gradient (Purple to Blue)
+    gradient: 'bg-gradient-to-r from-purple-600 to-blue-600',
+    // Actions & Hovers
+    hover: 'hover:bg-purple-700',
+    hoverGradient: 'hover:from-purple-700 hover:to-blue-700',
+    border: 'border-purple-600',
+    borderHover: 'hover:border-purple-700',
+    borderLight: 'border-purple-200',
+    // Text accents
+    text: 'text-purple-600',
+    textDark: 'text-purple-700',
+    textHover: 'hover:text-purple-500',
+    // Highlight backgrounds
+    bgLight: 'bg-purple-50',
+    bgLightHover: 'hover:bg-purple-50',
+    bgLightSelected: 'bg-purple-50/20',
+    // Inputs & focus states
+    ring: 'focus:ring-purple-500',
+    ringBorder: 'focus:border-purple-500',
+    ringText: 'text-purple-600',
+    shadow: 'shadow-purple-200',
+    accentText: 'text-purple-600',
+    hoverBorder: 'hover:border-purple-500',
+    disabledBg: 'disabled:bg-purple-300',
+    disabledBorder: 'disabled:border-purple-300',
   },
   secondary: {
     base: 'bg-white',
@@ -39,7 +46,7 @@ export const themeColors = {
     bgCard: 'bg-white',
     borderCard: 'border-gray-100',
     borderInput: 'border-gray-200',
-    borderInputFocus: 'focus:border-orange-500',
+    borderInputFocus: 'focus:border-purple-500',
     textTitle: 'text-black',
     textSubtitle: 'text-gray-500',
     textBody: 'text-gray-600',
@@ -60,7 +67,7 @@ export const themeColors = {
 
 /**
  * Retrieves color class strings from the centralized themeColors configuration by dot-separated path.
- * e.g., getColor('primary.base') => 'bg-orange-500'
+ * e.g., getColor('primary.base') => 'bg-purple-600'
  */
 export function getColor(path) {
   const keys = path.split('.');

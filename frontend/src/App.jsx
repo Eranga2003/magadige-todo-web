@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { getColor } from './utils/color';
 
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -12,8 +13,8 @@ const AppContent = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <div className="relative flex items-center justify-center">
-          <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
-          <div className="absolute text-orange-500 font-extrabold text-sm">M</div>
+          <div className={`w-16 h-16 border-4 ${getColor('primary.borderLight')} border-t-purple-600 rounded-full animate-spin`}></div>
+          <div className={`absolute ${getColor('primary.text')} font-extrabold text-sm`}>M</div>
         </div>
         <p className="mt-4 text-sm font-semibold text-gray-500 animate-pulse">
           Securing workspace session...
