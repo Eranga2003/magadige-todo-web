@@ -84,7 +84,7 @@ export const DashboardPage = () => {
       
       {/* 1. SIDEBAR PANEL */}
       <aside 
-        className={`bg-gray-50 border-r border-gray-150 flex flex-col justify-between transition-all duration-300 ${
+        className={`bg-gray-50 border-r border-gray-200 flex flex-col justify-between transition-all duration-300 ${
           isSidebarCollapsed ? 'w-0 overflow-hidden border-none' : 'w-64'
         }`}
       >
@@ -240,7 +240,7 @@ export const DashboardPage = () => {
           </nav>
 
           {/* Section: Projects list */}
-          <div className="space-y-2 pt-4 border-t border-gray-150">
+          <div className="space-y-2 pt-4 border-t border-gray-200">
             <h4 className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider px-3">My Projects</h4>
             <div className="space-y-0.5">
               <button className="w-full flex items-center gap-3 px-3 py-1.5 text-xs font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
@@ -254,7 +254,7 @@ export const DashboardPage = () => {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-gray-150 space-y-2 text-gray-500">
+        <div className="p-3 border-t border-gray-200 space-y-2 text-gray-500">
           <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-xs font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
             <Users size={16} /> Add a team
           </button>
