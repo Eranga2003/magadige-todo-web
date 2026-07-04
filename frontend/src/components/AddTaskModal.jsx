@@ -504,7 +504,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                             setShowReminderDropdown(false);
                           }
                         }}
-                        className="w-full text-xs font-bold text-gray-800 border border-gray-200 rounded-md p-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                        className="w-full text-xxs font-semibold text-gray-700 border border-gray-200 rounded-md p-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
                       />
                     </div>
                   </div>
