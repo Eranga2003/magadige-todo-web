@@ -44,11 +44,13 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
+  const [reminderTime, setReminderTime] = useState('');
   
   // Dropdown states
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const [showReminderDropdown, setShowReminderDropdown] = useState(false);
 
   const fileInputRef = useRef(null);
   const attachmentInputRef = useRef(null);
@@ -78,6 +80,8 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     setSelectedSubtasks({});
     setTranscription('');
     setAttachedFile(null);
+    setReminderTime('');
+    setShowReminderDropdown(false);
     setIsGenerating(false);
     setIsRecording(false);
     setModalView('STANDARD');
@@ -435,13 +439,77 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 )}
               </div>
 
-              <button
-                type="button"
-                className="flex items-center gap-1.5 text-xs font-bold text-gray-400 border border-gray-150 rounded-lg px-2.5 py-1.5 focus:outline-none"
-              >
-                <Clock size={13} />
-                <span>Reminders</span>
-              </button>
+              <div className="relative">
+                {reminderTime ? (
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5 animate-scale-up">
+                    <Clock size={13} />
+                    <span>{reminderTime}</span>
+                    <button 
+                      type="button" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setReminderTime('');
+                      }}
+                      className="hover:text-red-500 cursor-pointer focus:outline-none ml-1 flex items-center justify-center"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReminderDropdown(!showReminderDropdown);
+                      setShowDateDropdown(false);
+                      setShowPriorityDropdown(false);
+                      setShowProjectDropdown(false);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none transition-colors"
+                  >
+                    <Clock size={13} className="text-gray-500" />
+                    <span>Reminders</span>
+                  </button>
+                )}
+
+                {showReminderDropdown && (
+                  <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-150 rounded-xl shadow-lg p-3 z-50 animate-scale-up space-y-2">
+                    <p className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider">Select Time</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {['09:00 AM', '12:00 PM', '03:00 PM', '06:00 PM'].map((timeOption) => (
+                        <button
+                          key={timeOption}
+                          type="button"
+                          onClick={() => {
+                            setReminderTime(timeOption);
+                            setShowReminderDropdown(false);
+                          }}
+                          className="px-2 py-1 bg-gray-50 hover:bg-gray-100 rounded text-xxs font-bold text-gray-700 transition-colors text-center cursor-pointer"
+                        >
+                          {timeOption}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="border-t border-gray-100 pt-2">
+                      <label className="block text-xxs font-extrabold text-gray-400 uppercase tracking-wider mb-1">Custom Time</label>
+                      <input 
+                        type="time" 
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const [h, m] = e.target.value.split(':');
+                            const hh = parseInt(h);
+                            const ampm = hh >= 12 ? 'PM' : 'AM';
+                            const hours12 = hh % 12 || 12;
+                            const formatted = `${hours12.toString().padStart(2, '0')}:${m} ${ampm}`;
+                            setReminderTime(formatted);
+                            setShowReminderDropdown(false);
+                          }
+                        }}
+                        className="w-full text-xs font-bold text-gray-800 border border-gray-200 rounded-md p-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"
