@@ -142,7 +142,7 @@ export const DashboardPage = () => {
                 setActiveTab('INBOX');
                 // Auto trigger focus inside InboxPage composer by setting state
               }}
-              className={`w-full flex items-center gap-2 text-xs font-extrabold ${getColor('primary.gradient')} text-white px-3.5 py-2.5 rounded-xl hover:shadow-md hover:scale-101 active:scale-99 transition-all duration-200 cursor-pointer`}
+              className={`w-full flex items-center gap-2 text-sm font-extrabold ${getColor('primary.gradient')} text-white px-3.5 py-2.5 rounded-xl hover:shadow-md hover:scale-101 active:scale-99 transition-all duration-200 cursor-pointer`}
             >
               <Plus size={16} /> Add task
             </button>
@@ -151,11 +151,11 @@ export const DashboardPage = () => {
           {/* Navigation links list */}
           <nav className="space-y-1">
             {/* Search link emulation */}
-            <button className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-gray-600 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer focus:outline-none">
+            <button className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer focus:outline-none">
               <span className="flex items-center gap-3">
                 <Search size={16} className="text-gray-400" /> Search
               </span>
-              <kbd className="text-xxs text-gray-400 bg-white border border-gray-200 px-1 py-0.5 rounded shadow-xxs">
+              <kbd className="text-xs text-gray-400 bg-white border border-gray-200 px-1 py-0.5 rounded shadow-xxs">
                 Ctrl K
               </kbd>
             </button>
@@ -163,7 +163,7 @@ export const DashboardPage = () => {
             {/* Inbox */}
             <button 
               onClick={() => { setActiveTab('INBOX'); setShowProfileMenu(false); }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'INBOX' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
                   : 'text-gray-600 hover:bg-gray-200/40'
@@ -173,7 +173,7 @@ export const DashboardPage = () => {
                 <Inbox size={16} className={activeTab === 'INBOX' ? getColor('primary.text') : 'text-gray-400'} /> Inbox
               </span>
               {inboxCount > 0 && (
-                <span className={`text-xxs font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                   activeTab === 'INBOX' ? 'bg-white text-current' : 'bg-gray-200 text-gray-500'
                 }`}>
                   {inboxCount}
@@ -184,7 +184,7 @@ export const DashboardPage = () => {
             {/* Today */}
             <button 
               onClick={() => { setActiveTab('TODAY'); setShowProfileMenu(false); }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'TODAY' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
                   : 'text-gray-600 hover:bg-gray-200/40'
@@ -194,7 +194,7 @@ export const DashboardPage = () => {
                 <Calendar size={16} className={activeTab === 'TODAY' ? getColor('primary.text') : 'text-gray-400'} /> Today
               </span>
               {todayCount > 0 && (
-                <span className={`text-xxs font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                   activeTab === 'TODAY' ? 'bg-white text-current' : 'bg-gray-200 text-gray-500'
                 }`}>
                   {todayCount}
@@ -205,7 +205,7 @@ export const DashboardPage = () => {
             {/* Upcoming */}
             <button 
               onClick={() => { setActiveTab('UPCOMING'); setShowProfileMenu(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'UPCOMING' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
                   : 'text-gray-600 hover:bg-gray-200/40'
@@ -217,7 +217,7 @@ export const DashboardPage = () => {
             {/* Filters */}
             <button 
               onClick={() => { setActiveTab('FILTERS'); setShowProfileMenu(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'FILTERS' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
                   : 'text-gray-600 hover:bg-gray-200/40'
@@ -229,7 +229,7 @@ export const DashboardPage = () => {
             {/* Reporting */}
             <button 
               onClick={() => { setActiveTab('REPORTING'); setShowProfileMenu(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'REPORTING' 
                   ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
                   : 'text-gray-600 hover:bg-gray-200/40'
@@ -241,12 +241,12 @@ export const DashboardPage = () => {
 
           {/* Section: Projects list */}
           <div className="space-y-2 pt-4 border-t border-gray-200">
-            <h4 className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider px-3">My Projects</h4>
+            <h4 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider px-3">My Projects</h4>
             <div className="space-y-0.5">
-              <button className="w-full flex items-center gap-3 px-3 py-1.5 text-xs font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+              <button className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> # Work
               </button>
-              <button className="w-full flex items-center gap-3 px-3 py-1.5 text-xs font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+              <button className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> # Personal
               </button>
             </div>
@@ -255,10 +255,10 @@ export const DashboardPage = () => {
 
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-gray-200 space-y-2 text-gray-500">
-          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-xs font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
             <Users size={16} /> Add a team
           </button>
-          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-xs font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
+          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none">
             <HelpCircle size={16} /> Help & resources
           </button>
         </div>
