@@ -12,6 +12,7 @@ import {
   Briefcase,
   User,
   Check,
+  Plus,
   Upload,
   Mic,
   MicOff,
