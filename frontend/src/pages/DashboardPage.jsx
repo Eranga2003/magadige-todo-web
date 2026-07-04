@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
-import { playBubbleSound, playChimeSound } from '../utils/audio';
+import { playBubbleSound, playChimeSound, playTickSound } from '../utils/audio';
 import { AddTaskModal } from '../components/AddTaskModal';
 
 // Import subpages
@@ -55,7 +55,10 @@ export const DashboardPage = () => {
 
   // Complete a task
   const handleCompleteTask = (taskId) => {
-    playChimeSound();
+    playTickSound();
+    setTimeout(() => {
+      playChimeSound();
+    }, 120);
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
     );
@@ -65,7 +68,7 @@ export const DashboardPage = () => {
   const renderActiveSection = () => {
     switch (activeTab) {
       case 'INBOX':
-        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} />;
+        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
       case 'TODAY':
         return <TodayPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
       case 'UPCOMING':
@@ -75,7 +78,7 @@ export const DashboardPage = () => {
       case 'REPORTING':
         return <ReportingPage tasks={tasks} />;
       default:
-        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} />;
+        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
     }
   };
 

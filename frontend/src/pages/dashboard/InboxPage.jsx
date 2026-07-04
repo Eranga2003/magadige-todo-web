@@ -1,15 +1,30 @@
 import React, { useState } from 'react';
-import { Inbox, Plus, Calendar, Flag, Tag, X, ListTodo, AlertCircle } from 'lucide-react';
+import { Inbox, Plus, Calendar, Flag, Tag, X, ListTodo, AlertCircle, Check } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 
-export const InboxPage = ({ tasks = [], onAddTask }) => {
+export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('P4'); // P1 = High, P2 = Medium, P3 = Low, P4 = None
   const [dueDate, setDueDate] = useState('TODAY'); // TODAY, TOMORROW, UPCOMING, NONE
+  
+  // Animation state for completion checkmarks
+  const [completingTasks, setCompletingTasks] = useState({});
+
+  const handleComplete = (taskId) => {
+    setCompletingTasks((prev) => ({ ...prev, [taskId]: true }));
+    setTimeout(() => {
+      if (onCompleteTask) onCompleteTask(taskId);
+      setCompletingTasks((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    }, 450); // 450ms animation delay
+  };
 
   const handleOpenComposer = () => {
     setIsAdding(true);
@@ -69,14 +84,27 @@ export const InboxPage = ({ tasks = [], onAddTask }) => {
               className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-gray-200 hover:shadow-sm transition-all duration-200 group"
             >
               <button 
-                className={`w-5.5 h-5.5 rounded-full border-2 ${priorityMeta[task.priority].border} flex items-center justify-center cursor-pointer hover:bg-gray-50 flex-shrink-0 mt-0.5`}
+                onClick={() => handleComplete(task.id)}
+                className={`w-5.5 h-5.5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
+                  completingTasks[task.id]
+                    ? 'bg-green-500 border-green-500 text-white scale-90'
+                    : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
+                }`}
               >
-                <div className="w-2.5 h-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-current"></div>
+                {completingTasks[task.id] ? (
+                  <Check size={10} className="text-white stroke-[3.5] animate-scale-up" />
+                ) : (
+                  <Check size={10} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                )}
               </button>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight">{task.title}</h3>
+                <h3 className={`font-semibold text-sm leading-tight transition-all duration-200 ${
+                  completingTasks[task.id] ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
+                }`}>{task.title}</h3>
                 {task.description && (
-                  <p className="text-gray-500 text-xs mt-1 leading-snug">{task.description}</p>
+                  <p className={`text-xs mt-1 leading-snug transition-all duration-200 ${
+                    completingTasks[task.id] ? 'text-gray-300 line-through' : 'text-gray-500'
+                  }`}>{task.description}</p>
                 )}
                 <div className="flex items-center gap-3 mt-2 text-xxs font-bold">
                   {task.dueDate !== 'NONE' && (

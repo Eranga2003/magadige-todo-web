@@ -53,6 +53,38 @@ export const playBubbleSound = () => {
 };
 
 /**
+ * Synthesizes a crisp, mechanical tick/click sound.
+ * Decays quickly from 800Hz to 100Hz in 0.04s.
+ */
+export const playTickSound = () => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    const now = ctx.currentTime;
+
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.04);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.005); // Attack
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04); // Decay
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.04);
+  } catch (error) {
+    // Ignore
+  }
+};
+
+/**
  * Synthesizes a happy, harmonic chime arpeggio.
  * Plays two rising sine wave notes to reward task completions.
  */
