@@ -278,7 +278,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                     </li>
                   ))
                 ) : (
-                  !isAdding || activeInputDayNum !== dayNum ? (
+                  activeInputDayNum !== dayNum ? (
                     <li className="text-[12.5px] text-[#5b6b8c] opacity-60 italic p-1.5 select-none">
                       No tasks yet
                     </li>
