@@ -32,6 +32,30 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
   // Dynamic Month Days Length
   const totalDays = new Date(year, month + 1, 0).getDate();
 
+  // Priority styling for colored bars
+  const priorityMeta = {
+    P1: {
+      bg: 'bg-red-50/70 border-red-200/80',
+      text: 'text-red-750',
+      checkboxBorder: 'border-red-400',
+    },
+    P2: {
+      bg: 'bg-orange-50/70 border-orange-200/80',
+      text: 'text-orange-750',
+      checkboxBorder: 'border-orange-400',
+    },
+    P3: {
+      bg: 'bg-blue-50/70 border-blue-200/80',
+      text: 'text-blue-750',
+      checkboxBorder: 'border-blue-400',
+    },
+    P4: {
+      bg: 'bg-[#e7f0fe]/65 border-[#c9dbfb]/60',
+      text: 'text-[#1d4ed8]',
+      checkboxBorder: 'border-[#7fa8f2]',
+    }
+  };
+
   // Extract tasks belonging to a specific day number of the current month
   const getTasksForDayNumber = (dayNum) => {
     const cardDate = new Date(year, month, dayNum);
@@ -246,13 +270,17 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                   dayTasks.map((task) => (
                     <li 
                       key={task.id} 
-                      className={`todo-item flex items-start gap-2 text-[13px] p-1.5 rounded-lg transition-colors hover:bg-[#f3f8ff] group ${task.completed ? 'done' : ''}`}
+                      className={`todo-item flex items-start gap-2 text-[12.5px] py-1.5 px-2.5 rounded-lg border transition-all hover:scale-[1.01] hover:shadow-xs group cursor-pointer ${
+                        task.completed ? 'opacity-55 line-through' : ''
+                      } ${priorityMeta[task.priority]?.bg || priorityMeta.P4.bg} ${priorityMeta[task.priority]?.border || priorityMeta.P4.border}`}
                     >
                       {/* Checkbox */}
                       <div 
                         onClick={() => handleToggleComplete(task)}
-                        className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 border-[#7fa8f2] flex items-center justify-center cursor-pointer mt-0.5 bg-white transition-all ${
-                          task.completed ? 'checked bg-[#2563eb] border-[#2563eb]' : ''
+                        className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 flex items-center justify-center cursor-pointer mt-0.5 bg-white transition-all ${
+                          task.completed 
+                            ? 'checked bg-[#2563eb] border-[#2563eb]' 
+                            : (priorityMeta[task.priority]?.checkboxBorder || 'border-[#7fa8f2]')
                         }`}
                       >
                         {task.completed && (
@@ -261,8 +289,8 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                       </div>
 
                       {/* Title text */}
-                      <span className={`todo-text flex-1 leading-snug word-break-all text-[#132242] font-semibold ${
-                        task.completed ? 'line-through text-[#5b6b8c] opacity-65' : ''
+                      <span className={`todo-text flex-1 leading-snug word-break-all font-semibold ${
+                        task.completed ? 'line-through text-[#5b6b8c] opacity-65' : (priorityMeta[task.priority]?.text || priorityMeta.P4.text)
                       }`}>
                         {task.title}
                       </span>
