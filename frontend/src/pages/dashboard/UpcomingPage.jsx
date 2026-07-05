@@ -3,6 +3,7 @@ import { Calendar, Plus, ChevronRight, Check, Pencil, MessageSquare } from 'luci
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { playTickSound, playChimeSound } from '../../utils/audio';
+import { MiniCalendarPicker } from '../../components/MiniCalendarPicker';
 
 export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -280,21 +281,11 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                                   <Calendar size={13} />
                                 </button>
                                 {activeDatePickerTaskId === task.id && (
-                                  <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50 animate-scale-up">
-                                    {Object.entries(dateLabels).map(([key, label]) => (
-                                      <button
-                                        key={key}
-                                        onClick={() => {
-                                          handleChangeTaskDate(task.id, key);
-                                          setActiveDatePickerTaskId(null);
-                                        }}
-                                        className="w-full flex items-center justify-between px-3 py-1.5 text-xxs text-gray-700 hover:bg-gray-50 font-bold transition-colors text-left cursor-pointer"
-                                      >
-                                        <span>{label}</span>
-                                        {task.dueDate === key && <Check size={10} className="text-blue-600" />}
-                                      </button>
-                                    ))}
-                                  </div>
+                                  <MiniCalendarPicker
+                                    value={task.dueDate}
+                                    onChange={(newDate) => handleChangeTaskDate(task.id, newDate)}
+                                    onClose={() => setActiveDatePickerTaskId(null)}
+                                  />
                                 )}
                               </div>
 

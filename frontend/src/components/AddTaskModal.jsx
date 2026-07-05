@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from './Button';
+import { MiniCalendarPicker } from './MiniCalendarPicker';
 
 export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   // Modal Navigation view
@@ -363,25 +364,14 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                   className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none transition-colors"
                 >
                   <Calendar size={13} className="text-gray-500" />
-                  <span>{dueDate === 'NONE' ? 'Date' : dateLabels[dueDate]}</span>
+                  <span>{dueDate === 'NONE' ? 'Date' : (dateLabels[dueDate] || dueDate)}</span>
                 </button>
                 {showDateDropdown && (
-                  <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-50 animate-scale-up">
-                    {Object.entries(dateLabels).map(([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => {
-                          setDueDate(key);
-                          setShowDateDropdown(false);
-                        }}
-                        className="w-full flex items-center justify-between px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 font-bold transition-colors text-left cursor-pointer"
-                      >
-                        <span>{label}</span>
-                        {dueDate === key && <Check size={12} className="text-blue-600" />}
-                      </button>
-                    ))}
-                  </div>
+                  <MiniCalendarPicker
+                    value={dueDate}
+                    onChange={(newDate) => setDueDate(newDate)}
+                    onClose={() => setShowDateDropdown(false)}
+                  />
                 )}
               </div>
 

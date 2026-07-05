@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Flag, Check, ListFilter, Pencil, Calendar, MessageSquare } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { playTickSound, playChimeSound } from '../../utils/audio';
+import { MiniCalendarPicker } from '../../components/MiniCalendarPicker';
 
 export const FiltersLabelsPage = ({ tasks = [], onCompleteTask, onUpdateTask }) => {
   const [selectedFilter, setSelectedFilter] = useState('ALL'); // ALL, P1, P2, P3, P4
@@ -242,21 +243,11 @@ export const FiltersLabelsPage = ({ tasks = [], onCompleteTask, onUpdateTask }) 
                           <Calendar size={13} />
                         </button>
                         {activeDatePickerTaskId === task.id && (
-                          <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50 animate-scale-up">
-                            {Object.entries(dateLabels).map(([key, label]) => (
-                              <button
-                                key={key}
-                                onClick={() => {
-                                  handleChangeTaskDate(task.id, key);
-                                  setActiveDatePickerTaskId(null);
-                                }}
-                                className="w-full flex items-center justify-between px-3 py-1.5 text-xxs text-gray-700 hover:bg-gray-50 font-bold transition-colors text-left cursor-pointer"
-                              >
-                                <span>{label}</span>
-                                {task.dueDate === key && <Check size={10} className="text-blue-600" />}
-                              </button>
-                            ))}
-                          </div>
+                          <MiniCalendarPicker
+                            value={task.dueDate}
+                            onChange={(newDate) => handleChangeTaskDate(task.id, newDate)}
+                            onClose={() => setActiveDatePickerTaskId(null)}
+                          />
                         )}
                       </div>
 
