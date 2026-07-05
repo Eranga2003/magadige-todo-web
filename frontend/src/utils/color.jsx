@@ -65,28 +65,28 @@ export const themeColors = {
   },
   taskColors: {
     pink: {
-      bg: 'bg-pink-50/75 border-pink-200/80',
-      text: 'text-pink-700',
-      checkboxBorder: 'border-pink-400',
-      dot: 'bg-pink-500',
+      bg: 'bg-pink-500 border-pink-600',
+      text: 'text-white',
+      checkboxBorder: 'border-white/80',
+      dot: 'bg-white',
     },
     green: {
-      bg: 'bg-emerald-50/75 border-emerald-200/80',
-      text: 'text-emerald-700',
-      checkboxBorder: 'border-emerald-400',
-      dot: 'bg-emerald-500',
+      bg: 'bg-emerald-600 border-emerald-700',
+      text: 'text-white',
+      checkboxBorder: 'border-white/80',
+      dot: 'bg-white',
     },
     yellow: {
-      bg: 'bg-amber-50/75 border-amber-200/80',
-      text: 'text-amber-700',
-      checkboxBorder: 'border-amber-400',
-      dot: 'bg-amber-500',
+      bg: 'bg-amber-500 border-amber-600',
+      text: 'text-white',
+      checkboxBorder: 'border-white/80',
+      dot: 'bg-white',
     },
     blue: {
-      bg: 'bg-blue-50/75 border-blue-200/80',
-      text: 'text-blue-700',
-      checkboxBorder: 'border-blue-400',
-      dot: 'bg-blue-500',
+      bg: 'bg-blue-600 border-blue-700',
+      text: 'text-white',
+      checkboxBorder: 'border-white/80',
+      dot: 'bg-white',
     }
   }
 };

@@ -278,20 +278,24 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                       {/* Checkbox */}
                       <div 
                         onClick={() => handleToggleComplete(task)}
-                        className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 flex items-center justify-center cursor-pointer mt-0.5 bg-white transition-all ${
+                        className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 flex items-center justify-center cursor-pointer mt-0.5 transition-all ${
                           task.completed 
-                            ? 'checked bg-[#2563eb] border-[#2563eb]' 
-                            : (priorityMeta[task.priority]?.checkboxBorder || 'border-[#7fa8f2]')
+                            ? 'bg-white border-white' 
+                            : `bg-transparent ${priorityMeta[task.priority]?.checkboxBorder || 'border-white/80'}`
                         }`}
                       >
                         {task.completed && (
-                          <div className="w-1 h-2 border-r-2 border-b-2 border-white transform rotate-45 -translate-y-[1.5px]" />
+                          <div className={`w-1 h-2 border-r-2 border-b-2 transform rotate-45 -translate-y-[1.5px] ${
+                            task.priority === 'P1' ? 'border-pink-500' :
+                            task.priority === 'P2' ? 'border-amber-500' :
+                            task.priority === 'P3' ? 'border-emerald-600' : 'border-blue-600'
+                          }`} />
                         )}
                       </div>
 
                       {/* Title text */}
                       <span className={`todo-text flex-1 leading-snug word-break-all font-semibold ${
-                        task.completed ? 'line-through text-[#5b6b8c] opacity-65' : (priorityMeta[task.priority]?.text || priorityMeta.P4.text)
+                        task.completed ? 'line-through text-white/70' : (priorityMeta[task.priority]?.text || priorityMeta.P4.text)
                       }`}>
                         {task.title}
                       </span>
