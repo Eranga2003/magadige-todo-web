@@ -273,7 +273,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                       key={task.id} 
                       className={`todo-item flex items-start gap-2 text-[12.5px] py-1.5 px-2.5 rounded-lg border transition-all hover:scale-[1.01] hover:shadow-xs group cursor-pointer ${
                         task.completed ? 'opacity-55 line-through' : ''
-                      } ${priorityMeta[task.priority]?.bg || priorityMeta.P4.bg} ${priorityMeta[task.priority]?.border || priorityMeta.P4.border}`}
+                      } ${priorityMeta[task.priority]?.bg || priorityMeta.P4.bg}`}
                     >
                       {/* Checkbox */}
                       <div 
