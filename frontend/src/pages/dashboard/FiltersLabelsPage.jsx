@@ -105,17 +105,17 @@ export const FiltersLabelsPage = ({ tasks = [], onCompleteTask, onUpdateTask }) 
 
   const filterOptions = [
     { key: 'ALL', label: 'All Priorities', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
-    { key: 'P1', label: '🚩 Priority 1 (High)', color: 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200' },
-    { key: 'P2', label: '🚩 Priority 2 (Medium)', color: 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200' },
-    { key: 'P3', label: '🚩 Priority 3 (Low)', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200' },
-    { key: 'P4', label: '🚩 Priority 4 (None)', color: 'bg-gray-50 text-gray-500 hover:bg-gray-150 border border-gray-200' },
+    { key: 'P1', label: '🚩 Priority 1 (Pink)', color: 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200' },
+    { key: 'P2', label: '🚩 Priority 2 (Yellow)', color: 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' },
+    { key: 'P3', label: '🚩 Priority 3 (Green)', color: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' },
+    { key: 'P4', label: '🚩 Priority 4 (Blue)', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200' },
   ];
 
   const priorityMeta = {
-    P1: { border: 'border-red-500', color: 'text-red-500' },
-    P2: { border: 'border-orange-500', color: 'text-orange-500' },
-    P3: { border: 'border-blue-500', color: 'text-blue-500' },
-    P4: { border: 'border-gray-300', color: 'text-gray-400' },
+    P1: { border: 'border-pink-300', color: 'text-pink-600' },
+    P2: { border: 'border-amber-300', color: 'text-amber-600' },
+    P3: { border: 'border-emerald-300', color: 'text-emerald-600' },
+    P4: { border: 'border-blue-300', color: 'text-blue-600' },
   };
 
   return (

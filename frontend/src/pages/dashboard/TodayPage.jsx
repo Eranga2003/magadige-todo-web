@@ -125,10 +125,10 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
   };
 
   const priorityMeta = {
-    P1: { label: 'Priority 1', color: 'text-red-500', border: 'border-red-500', bg: 'bg-red-50/50' },
-    P2: { label: 'Priority 2', color: 'text-orange-500', border: 'border-orange-500', bg: 'bg-orange-50/50' },
-    P3: { label: 'Priority 3', color: 'text-blue-500', border: 'border-blue-500', bg: 'bg-blue-50/50' },
-    P4: { label: 'Priority 4', color: 'text-gray-400', border: 'border-gray-300', bg: 'bg-gray-50' },
+    P1: { label: 'Priority 1 (Pink)', color: 'text-pink-600', border: 'border-pink-200', bg: 'bg-pink-50/50' },
+    P2: { label: 'Priority 2 (Yellow)', color: 'text-amber-600', border: 'border-amber-200', bg: 'bg-amber-50/50' },
+    P3: { label: 'Priority 3 (Green)', color: 'text-emerald-600', border: 'border-emerald-200', bg: 'bg-emerald-50/50' },
+    P4: { label: 'Priority 4 (Blue)', color: 'text-blue-600', border: 'border-blue-200', bg: 'bg-blue-50/50' },
   };
 
   // Group tasks by priority

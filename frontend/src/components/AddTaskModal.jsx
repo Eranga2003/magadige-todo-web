@@ -280,10 +280,10 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   };
 
   const priorityMeta = {
-    P1: { label: 'Priority 1', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' },
-    P2: { label: 'Priority 2', color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-200' },
-    P3: { label: 'Priority 3', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
-    P4: { label: 'Priority 4', color: 'text-gray-400', bg: 'bg-gray-50', border: 'border-gray-200' },
+    P1: { label: 'Priority 1 (Pink)', color: 'text-pink-600', bg: 'bg-pink-50/50', border: 'border-pink-200' },
+    P2: { label: 'Priority 2 (Yellow)', color: 'text-amber-600', bg: 'bg-amber-50/50', border: 'border-amber-200' },
+    P3: { label: 'Priority 3 (Green)', color: 'text-emerald-600', bg: 'bg-emerald-50/50', border: 'border-emerald-200' },
+    P4: { label: 'Priority 4 (Blue)', color: 'text-blue-600', bg: 'bg-blue-50/50', border: 'border-blue-200' },
   };
 
   const dateLabels = {
