@@ -156,10 +156,10 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
       {/* Top Header Section */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
         <div>
-          <p className="font-['JetBrains_Mono'] text-xs font-bold tracking-widest text-[#2563eb] uppercase mb-2">
+          <p className="font-mono text-xs font-bold tracking-widest text-[#2563eb] uppercase mb-2">
             30-day sprint
           </p>
-          <h1 className="font-['Space_Grotesk'] text-3xl md:text-4xl font-bold tracking-tight mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
             {MONTHS[month]} {year}
           </h1>
           <p className="text-sm text-[#5b6b8c] font-medium">
@@ -209,17 +209,17 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
               className={`focus-calendar-card card ${isTdy ? 'today' : ''} relative bg-white border-2 border-[#dbe6fb] rounded-[20px] p-4.5 min-h-[210px] flex flex-col overflow-hidden`}
             >
               {/* Large Watermark day number */}
-              <div className="absolute top-[-18px] right-[-6px] font-['Space_Grotesk'] font-bold text-[88px] text-[#2563eb] opacity-7 select-none pointer-events-none leading-none">
+              <div className="absolute top-[-18px] right-[-6px] font-bold text-[88px] text-[#2563eb] opacity-7 select-none pointer-events-none leading-none">
                 {String(dayNum).padStart(2, '0')}
               </div>
 
               {/* Head Block */}
               <div className="flex justify-between items-start mb-2.5 z-10 select-none">
                 <div className="flex flex-col">
-                  <span className="font-['JetBrains_Mono'] text-[10.5px] font-bold tracking-widest text-[#5b6b8c] uppercase">
+                  <span className="font-mono text-[10.5px] font-bold tracking-widest text-[#5b6b8c] uppercase">
                     {weekdayFor(dayNum)}
                   </span>
-                  <span className="font-['Space_Grotesk'] text-2xl font-bold text-[#0f2a5c] leading-tight">
+                  <span className="text-2xl font-bold text-[#0f2a5c] leading-tight">
                     {dayNum}
                   </span>
                   {isTdy && (
@@ -308,7 +308,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                     className="h-full bg-gradient-to-r from-[#7fa8f2] to-[#2563eb] rounded-full transition-all duration-300"
                   />
                 </div>
-                <span className="text-[11px] text-[#5b6b8c] font-bold font-['JetBrains_Mono']">
+                <span className="text-[11px] text-[#5b6b8c] font-bold font-mono">
                   {done}/{total}
                 </span>
               </div>
