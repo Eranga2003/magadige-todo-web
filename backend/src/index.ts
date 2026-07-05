@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/authRoutes';
 import taskRoutes from './routes/taskRoutes';
+import workspaceRoutes from './routes/workspaceRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/auth', authLimiter);
 // 4. Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api', workspaceRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

@@ -27,6 +27,8 @@ import { TodayPage } from './dashboard/TodayPage';
 import { UpcomingPage } from './dashboard/UpcomingPage';
 import { FiltersLabelsPage } from './dashboard/FiltersLabelsPage';
 import { ReportingPage } from './dashboard/ReportingPage';
+import { WorkspacePage } from './dashboard/WorkspacePage';
+import { WorkspaceDashboard } from './dashboard/WorkspaceDashboard';
 
 import { taskService } from '../services/api';
 
@@ -34,13 +36,24 @@ export const DashboardPage = () => {
   const { user, logout } = useAuth();
   
   // Navigation & Layout states
-  const [activeTab, setActiveTab] = useState('INBOX'); // INBOX, TODAY, UPCOMING, FILTERS, REPORTING
+  const [activeTab, setActiveTab] = useState('INBOX'); // INBOX, TODAY, UPCOMING, FILTERS, REPORTING, WORKSPACE, WORKSPACE_DASHBOARD
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
+
+  // Auto-open workspace dashboard if redirected from invitation acceptance
+  useEffect(() => {
+    const redirectWsId = localStorage.getItem('magadige_active_workspace_id');
+    if (redirectWsId) {
+      localStorage.removeItem('magadige_active_workspace_id');
+      setSelectedWorkspaceId(redirectWsId);
+      setActiveTab('WORKSPACE_DASHBOARD');
+    }
+  }, []);
 
   // Sync tasks on dashboard mount / login session
   useEffect(() => {
@@ -123,6 +136,25 @@ export const DashboardPage = () => {
         return <FiltersLabelsPage tasks={tasks} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'REPORTING':
         return <ReportingPage tasks={tasks} />;
+      case 'WORKSPACE':
+        return (
+          <WorkspacePage 
+            onSelectWorkspace={(wsId) => {
+              setSelectedWorkspaceId(wsId);
+              setActiveTab('WORKSPACE_DASHBOARD');
+            }} 
+          />
+        );
+      case 'WORKSPACE_DASHBOARD':
+        return (
+          <WorkspaceDashboard 
+            workspaceId={selectedWorkspaceId} 
+            onBackToWorkspaces={() => {
+              setSelectedWorkspaceId(null);
+              setActiveTab('WORKSPACE');
+            }}
+          />
+        );
       default:
         return <InboxPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
     }
@@ -299,7 +331,20 @@ export const DashboardPage = () => {
                   : 'text-gray-600 hover:bg-gray-200/40'
               }`}
             >
-              <BarChart3 size={16} className={activeTab === 'REPORTING' ? getColor('primary.text') : 'text-gray-400'} /> Reporting
+              <BarChart3 size={16} className={activeTab === 'REPORTING' ? getColor('primary.text') : 'text-gray-400'} /> Productivity
+            </button>
+
+            {/* Workspace */}
+            <button 
+              onClick={() => { setActiveTab('WORKSPACE'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
+                activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD'
+                  ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
+                  : 'text-gray-600 hover:bg-gray-200/40'
+              }`}
+            >
+              <Users size={16} className={activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD' ? getColor('primary.text') : 'text-gray-400'} /> Workspace
             </button>
           </nav>
 

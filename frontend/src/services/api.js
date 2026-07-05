@@ -111,3 +111,48 @@ export const taskService = {
     });
   },
 };
+
+/**
+ * Workspace service module
+ */
+export const workspaceService = {
+  async createWorkspace(data) {
+    return fetchAPI('/workspaces', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getWorkspaces() {
+    return fetchAPI('/workspaces');
+  },
+
+  async getWorkspace(id) {
+    return fetchAPI(`/workspaces/${id}`);
+  },
+
+  async inviteMember(workspaceId, email) {
+    return fetchAPI(`/workspaces/${workspaceId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async validateToken(token) {
+    return fetchAPI(`/invitations/validate/${token}`);
+  },
+
+  async acceptInvitation(token) {
+    return fetchAPI('/invitations/accept', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  async createWorkspaceProject(workspaceId, name) {
+    return fetchAPI(`/workspaces/${workspaceId}/projects`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+};

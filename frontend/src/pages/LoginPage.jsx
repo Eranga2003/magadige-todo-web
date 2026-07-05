@@ -6,10 +6,10 @@ import { signInWithGoogle, signInWithFacebook } from '../services/firebase';
 import { Mail, Lock, Check } from 'lucide-react';
 import { getColor } from '../utils/color';
 
-export const LoginPage = ({ onNavigateToRegister }) => {
+export const LoginPage = ({ onNavigateToRegister, prefilledEmail }) => {
   const { login, socialLogin, error: authError, clearError } = useAuth();
   
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(prefilledEmail || '');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,6 +114,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
               required
+              disabled={!!prefilledEmail}
               icon={<Mail size={20} />}
             />
 
