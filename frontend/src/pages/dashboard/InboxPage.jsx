@@ -155,45 +155,41 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
 
       {/* Task List */}
       {tasks.length > 0 ? (
-        <div className="space-y-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {tasks.map((task) => (
             <div 
               key={task.id} 
-              className="p-4 bg-white border border-gray-100 rounded-xl hover:border-gray-200 hover:shadow-sm transition-all duration-200 group"
+              className={`bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-xxs hover:shadow-md hover:scale-[1.01] hover:border-gray-200 transition-all duration-300 flex flex-col group relative ${
+                (task.completed || completingTasks[task.id]) ? 'opacity-65' : ''
+              }`}
             >
-              <div className="flex items-start gap-3 w-full">
-                <button 
-                  onClick={() => handleComplete(task.id)}
-                  className={`w-5.5 h-5.5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
-                    (task.completed || completingTasks[task.id])
-                      ? 'bg-green-500 border-green-500 text-white'
-                      : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
-                  }`}
-                >
-                  {(task.completed || completingTasks[task.id]) ? (
-                    <Check size={12} strokeWidth={3} className="text-white" />
-                  ) : (
-                    <Check size={12} strokeWidth={3} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </button>
-                
+              {/* Colorful Priority Header Strip */}
+              <div className={`h-1.5 w-full ${
+                task.priority === 'P1' ? 'bg-pink-500' :
+                task.priority === 'P2' ? 'bg-amber-500' :
+                task.priority === 'P3' ? 'bg-emerald-500' : 'bg-blue-600'
+              }`} />
+
+              <div className="p-4 flex flex-col flex-1 gap-2.5">
                 {editingTaskId === task.id ? (
                   /* Inline Editor */
-                  <div className="flex-1 space-y-2">
-                    <input 
-                      type="text" 
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                      required
-                    />
-                    <textarea 
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
-                      placeholder="Add description..."
-                    />
-                    <div className="flex justify-end gap-1.5">
+                  <div className="flex-1 space-y-2.5 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <input 
+                        type="text" 
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                        required
+                      />
+                      <textarea 
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
+                        placeholder="Add description..."
+                      />
+                    </div>
+                    <div className="flex justify-end gap-1.5 pt-1">
                       <button 
                         type="button" 
                         onClick={() => setEditingTaskId(null)}
@@ -212,24 +208,46 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                   </div>
                 ) : (
                   <>
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`font-semibold text-sm leading-tight transition-all duration-200 ${
-                        (task.completed || completingTasks[task.id]) ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
-                      }`}>{task.title}</h3>
+                    <div className="flex-1 flex flex-col gap-2 min-w-0">
+                      {/* Top Checkbox & Title Row */}
+                      <div className="flex items-start gap-2.5 w-full">
+                        <button 
+                          onClick={() => handleComplete(task.id)}
+                          className={`w-5 h-5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
+                            (task.completed || completingTasks[task.id])
+                              ? 'bg-green-500 border-green-500 text-white'
+                              : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
+                          }`}
+                        >
+                          {(task.completed || completingTasks[task.id]) ? (
+                            <Check size={11} strokeWidth={3.5} className="text-white" />
+                          ) : (
+                            <Check size={11} strokeWidth={3.5} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
+                        </button>
+
+                        <h3 className={`font-semibold text-sm leading-snug word-break-all flex-1 transition-all duration-200 ${
+                          (task.completed || completingTasks[task.id]) ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
+                        }`}>{task.title}</h3>
+                      </div>
+
+                      {/* Description Area */}
                       {task.description && (
-                        <p className={`text-xs mt-1 leading-snug transition-all duration-200 ${
+                        <p className={`text-xs leading-relaxed transition-all duration-200 break-words line-clamp-3 pl-7 ${
                           (task.completed || completingTasks[task.id]) ? 'text-gray-305 line-through opacity-70' : 'text-gray-500'
                         }`}>{task.description}</p>
                       )}
-                      <div className="flex items-center gap-2 mt-1.5 text-[10px] font-extrabold">
+
+                      {/* Metadata Badges */}
+                      <div className="flex flex-wrap items-center gap-1.5 pl-7 mt-1">
                         {task.dueDate !== 'NONE' && (
-                          <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                          <span className="flex items-center gap-1 text-blue-600 bg-blue-50/60 border border-blue-100 px-2 py-0.5 rounded-md text-[10px] font-extrabold">
                             <Calendar size={10} />
                             {dateLabels[task.dueDate] || task.dueDate}
                           </span>
                         )}
                         {task.priority !== 'P4' && (
-                          <span className={`flex items-center gap-1 ${priorityMeta[task.priority].color} ${priorityMeta[task.priority].fill} px-1.5 py-0.5 rounded`}>
+                          <span className={`flex items-center gap-1 ${priorityMeta[task.priority].color} ${priorityMeta[task.priority].fill} border ${priorityMeta[task.priority].border} px-2 py-0.5 rounded-md text-[10px] font-extrabold`}>
                             <Flag size={10} />
                             {priorityMeta[task.priority].label}
                           </span>
@@ -237,47 +255,57 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                       </div>
                     </div>
 
-                    {/* Quick Hover Action Icons */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2 self-center">
-                      <button
-                        onClick={() => startEditing(task)}
-                        title="Edit task"
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveDatePickerTaskId(activeDatePickerTaskId === task.id ? null : task.id);
-                          }}
-                          title="Change date"
-                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
-                        >
-                          <Calendar size={13} />
-                        </button>
-                        {activeDatePickerTaskId === task.id && (
-                          <MiniCalendarPicker
-                            value={task.dueDate}
-                            onChange={(newDate) => handleChangeTaskDate(task.id, newDate)}
-                            onClose={() => setActiveDatePickerTaskId(null)}
-                          />
-                        )}
-                      </div>
+                    {/* Action Footer */}
+                    <div className="flex items-center justify-between mt-2 pt-2.5 border-t border-gray-50 text-[10.5px] text-gray-400 font-semibold select-none">
+                      <span className="flex items-center gap-1 text-[10px] text-gray-450">
+                        <MessageSquare size={11} className="text-gray-300" />
+                        {task.comments && task.comments.length > 0 
+                          ? `${task.comments.length} comment${task.comments.length > 1 ? 's' : ''}` 
+                          : 'No comments'}
+                      </span>
 
-                      <button
-                        onClick={() => setActiveCommentTaskId(activeCommentTaskId === task.id ? null : task.id)}
-                        title="Comments"
-                        className={`p-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none ${
-                          activeCommentTaskId === task.id || (task.comments && task.comments.length > 0)
-                            ? 'text-purple-600 bg-purple-50/50 hover:bg-purple-50'
-                            : 'text-gray-400 hover:text-purple-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <MessageSquare size={13} />
-                      </button>
+                      {/* Quick Shortcuts */}
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => startEditing(task)}
+                          title="Edit task"
+                          className="p-1.5 text-gray-450 hover:text-blue-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDatePickerTaskId(activeDatePickerTaskId === task.id ? null : task.id);
+                            }}
+                            title="Change date"
+                            className="p-1.5 text-gray-450 hover:text-indigo-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
+                          >
+                            <Calendar size={12} />
+                          </button>
+                          {activeDatePickerTaskId === task.id && (
+                            <MiniCalendarPicker
+                              value={task.dueDate}
+                              onChange={(newDate) => handleChangeTaskDate(task.id, newDate)}
+                              onClose={() => setActiveDatePickerTaskId(null)}
+                            />
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => setActiveCommentTaskId(activeCommentTaskId === task.id ? null : task.id)}
+                          title="Comments"
+                          className={`p-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none ${
+                            activeCommentTaskId === task.id
+                              ? 'text-purple-650 bg-purple-50/60'
+                              : 'text-gray-455 hover:text-purple-650 hover:bg-purple-50/50'
+                          }`}
+                        >
+                          <MessageSquare size={12} />
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}
@@ -285,26 +313,26 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
 
               {/* Expanded Comments Panel */}
               {activeCommentTaskId === task.id && (
-                <div className="w-full mt-3 pt-3 border-t border-gray-100 space-y-2.5 animate-slide-down">
+                <div className="w-full bg-gray-50/50 px-4 py-3 border-t border-gray-100 space-y-2.5 animate-slide-down">
                   <div className="flex items-center gap-1.5">
                     <MessageSquare size={12} className="text-purple-500 animate-pulse" />
-                    <h4 className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider">Comments</h4>
+                    <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">Comments</h4>
                   </div>
                   
                   {/* Comments lists */}
                   {task.comments && task.comments.length > 0 && (
-                    <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                    <div className="space-y-1.5 max-h-24 overflow-y-auto pr-1 custom-scrollbar">
                       {task.comments.map((comm) => (
-                        <div key={comm.id} className="bg-gray-50/70 border border-gray-100 rounded-lg p-2 text-xxs text-gray-700 flex justify-between items-start">
-                          <span className="font-semibold leading-relaxed">{comm.text}</span>
-                          <span className="text-[9px] text-gray-450 font-medium ml-2 flex-shrink-0">{comm.createdAt}</span>
+                        <div key={comm.id} className="bg-white border border-gray-150 rounded-lg p-2 text-xxs text-gray-700 flex justify-between items-start">
+                          <span className="font-semibold leading-relaxed break-words flex-1 pr-2">{comm.text}</span>
+                          <span className="text-[9px] text-gray-450 font-medium flex-shrink-0 mt-0.5">{comm.createdAt}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   
                   {/* Write input comment */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <input 
                       type="text" 
                       placeholder="Add a comment..."
@@ -316,11 +344,11 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                           handleSaveComment(task.id);
                         }
                       }}
-                      className="flex-1 text-xxs font-semibold text-gray-700 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-gray-400"
+                      className="flex-1 text-xxs font-semibold text-gray-700 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-gray-400"
                     />
                     <button 
                       onClick={() => handleSaveComment(task.id)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xxs px-3 py-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none"
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xxs px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none"
                     >
                       Add
                     </button>
