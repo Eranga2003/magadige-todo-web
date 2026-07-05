@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
-import { Calendar, Plus, ChevronRight, Check, Pencil, MessageSquare } from 'lucide-react';
+import { 
+  Calendar, 
+  Plus, 
+  ChevronLeft, 
+  ChevronRight, 
+  Check, 
+  Pencil, 
+  MessageSquare, 
+  Search, 
+  X,
+  Flag,
+  Clock
+} from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { playTickSound, playChimeSound } from '../../utils/audio';
 import { MiniCalendarPicker } from '../../components/MiniCalendarPicker';
 
 export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Composer state
   const [isAdding, setIsAdding] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('TODAY');
+  const [composerDate, setComposerDate] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('P4');
@@ -79,13 +95,6 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
     setNewCommentTexts((prev) => ({ ...prev, [taskId]: '' }));
   };
 
-  const dateLabels = {
-    TODAY: '📅 Today',
-    TOMORROW: '🌅 Tomorrow',
-    UPCOMING: '🗓️ Next Week',
-    NONE: '⏳ Later',
-  };
-
   const handleComplete = (taskId) => {
     playTickSound();
     setTimeout(() => {
@@ -102,28 +111,138 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
     }, 450);
   };
 
-  const activeTasks = tasks.filter((t) => !t.completed);
-
-  const sections = [
-    { key: 'TODAY', label: '📅 Today' },
-    { key: 'TOMORROW', label: '🌅 Tomorrow' },
-    { key: 'UPCOMING', label: '🗓️ Next Week' },
-    { key: 'NONE', label: '⏳ Later / No Date' },
-  ];
-
-  const grouped = {
-    TODAY: activeTasks.filter((t) => t.dueDate === 'TODAY'),
-    TOMORROW: activeTasks.filter((t) => t.dueDate === 'TOMORROW'),
-    UPCOMING: activeTasks.filter((t) => t.dueDate === 'UPCOMING'),
-    NONE: activeTasks.filter((t) => t.dueDate === 'NONE'),
+  // Quick navigate commands
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
 
-  const handleOpenComposer = (sectionKey) => {
-    setSelectedSection(sectionKey);
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const handleGoToday = () => {
+    setCurrentMonth(new Date());
+  };
+
+  // Month navigation arrays
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  const priorityMeta = {
+    P1: { border: 'border-red-200', color: 'text-red-600', bg: 'bg-red-50/50', dot: 'bg-red-500' },
+    P2: { border: 'border-orange-200', color: 'text-orange-600', bg: 'bg-orange-50/50', dot: 'bg-orange-500' },
+    P3: { border: 'border-blue-200', color: 'text-blue-600', bg: 'bg-blue-50/50', dot: 'bg-blue-500' },
+    P4: { border: 'border-gray-200', color: 'text-gray-600', bg: 'bg-gray-50/50', dot: 'bg-gray-400' },
+  };
+
+  // Calendar Math: Sun to Sat grid
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const firstDayOfMonth = new Date(year, month, 1);
+  const startOffset = firstDayOfMonth.getDay(); 
+
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const prevMonthDate = new Date(year, month, 0);
+  const totalDaysPrev = prevMonthDate.getDate();
+
+  const cells = [];
+
+  // Previous month padding
+  for (let i = startOffset - 1; i >= 0; i--) {
+    cells.push({
+      date: new Date(year, month - 1, totalDaysPrev - i),
+      isCurrentMonth: false,
+    });
+  }
+
+  // Current month days
+  for (let i = 1; i <= totalDays; i++) {
+    cells.push({
+      date: new Date(year, month, i),
+      isCurrentMonth: true,
+    });
+  }
+
+  // Next month padding to complete 42 grids (6 weeks)
+  const remaining = 42 - cells.length;
+  for (let i = 1; i <= remaining; i++) {
+    cells.push({
+      date: new Date(year, month + 1, i),
+      isCurrentMonth: false,
+    });
+  }
+
+  // Day label formatter
+  const getDayLabel = (cell) => {
+    const d = cell.date.getDate();
+    if (d === 1) {
+      return `${months[cell.date.getMonth()]} 1`;
+    }
+    return d.toString();
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  // Format Date object to "D MMM" label string
+  const formatDateToLabel = (date) => {
+    return `${date.getDate()} ${months[date.getMonth()]}`;
+  };
+
+  // Extract tasks for a specific calendar cell
+  const getTasksForDate = (date) => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    return tasks.filter((task) => {
+      if (task.completed) return false;
+
+      // Realtime search filtering
+      if (searchQuery.trim() && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+
+      // Check Today
+      if (task.dueDate === 'TODAY') {
+        return date.getDate() === today.getDate() && 
+               date.getMonth() === today.getMonth() && 
+               date.getFullYear() === today.getFullYear();
+      }
+
+      // Check Tomorrow
+      if (task.dueDate === 'TOMORROW') {
+        return date.getDate() === tomorrow.getDate() && 
+               date.getMonth() === tomorrow.getMonth() && 
+               date.getFullYear() === tomorrow.getFullYear();
+      }
+
+      // Match custom date string label
+      const cardDateLabel = formatDateToLabel(date);
+      const cleanDueDate = task.dueDate.split(' @')[0];
+      return cleanDueDate === cardDateLabel;
+    });
+  };
+
+  // Open task composer prepopulating the cell date
+  const handleOpenComposerForCell = (date) => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    if (date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear()) {
+      setComposerDate('TODAY');
+    } else if (date.getDate() === tomorrow.getDate() && date.getMonth() === tomorrow.getMonth() && date.getFullYear() === tomorrow.getFullYear()) {
+      setComposerDate('TOMORROW');
+    } else {
+      setComposerDate(formatDateToLabel(date));
+    }
     setIsAdding(true);
-    setTitle('');
-    setDescription('');
-    setPriority('P4');
   };
 
   const handleSubmit = (e) => {
@@ -132,252 +251,232 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
 
     onAddTask({
       id: `task_${Date.now()}`,
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       priority,
-      dueDate: selectedSection,
+      dueDate: composerDate,
       completed: false,
       section: 'INBOX',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     });
 
+    // Reset Form
     setIsAdding(false);
-  };
-
-  const priorityMeta = {
-    P1: { border: 'border-red-500', color: 'text-red-500' },
-    P2: { border: 'border-orange-500', color: 'text-orange-500' },
-    P3: { border: 'border-blue-500', color: 'text-blue-500' },
-    P4: { border: 'border-gray-300', color: 'text-gray-400' },
+    setTitle('');
+    setDescription('');
+    setPriority('P4');
+    setComposerDate('');
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-100">
-        <h1 className="text-2xl font-extrabold text-black flex items-center gap-2">
-          Upcoming Schedule
-        </h1>
-        <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100">
-          {activeTasks.length} pending
-        </span>
+    <div className="w-full max-w-6xl mx-auto py-6 px-4">
+      {/* 1. Header Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        
+        {/* Left Side: Navigation group & Date display */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center border border-gray-250 rounded-xl bg-white shadow-xxs">
+            <button
+              onClick={handlePrevMonth}
+              className="p-2 hover:bg-gray-50 border-r border-gray-250 text-gray-600 cursor-pointer focus:outline-none rounded-l-xl"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              onClick={handleGoToday}
+              className="px-3.5 py-1.5 hover:bg-gray-50 text-xs font-bold text-gray-700 cursor-pointer focus:outline-none"
+            >
+              Today
+            </button>
+            <button
+              onClick={handleNextMonth}
+              className="p-2 hover:bg-gray-50 border-l border-gray-250 text-gray-600 cursor-pointer focus:outline-none rounded-r-xl"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+          <h2 className="text-base font-extrabold text-gray-800">
+            {months[month]} {year}
+          </h2>
+        </div>
+
+        {/* Center: View Switcher */}
+        <div className="flex items-center border border-gray-250 rounded-xl bg-white p-0.5 shadow-xxs self-start md:self-auto">
+          <button className="px-3 py-1 text-xxs font-bold text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">Day</button>
+          <button className="px-3 py-1 text-xxs font-bold text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">Week</button>
+          <button className="px-3 py-1 text-xxs font-bold bg-blue-600 text-white rounded-lg focus:outline-none cursor-pointer">Month</button>
+          <button className="px-3 py-1 text-xxs font-bold text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">Year</button>
+        </div>
+
+        {/* Right Side: Search & Stats */}
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-48 pl-9 pr-3 py-1.5 border border-gray-255 rounded-xl text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-gray-400 outline-none"
+            />
+          </div>
+        </div>
+
       </div>
 
-      {/* Sections List */}
-      <div className="space-y-8">
-        {sections.map((sec) => {
-          const list = grouped[sec.key];
-          return (
-            <div key={sec.key} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-                  {sec.label}
-                  <span className="text-xxs text-gray-400 font-bold bg-gray-100 px-1.5 py-0.5 rounded-full">
-                    {list.length}
+      {/* 2. Calendar Month Grid Container */}
+      <div className="bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden">
+        {/* Days Header */}
+        <div className="grid grid-cols-7 border-b border-gray-150 bg-gray-50/50">
+          {weekDays.map((wd) => (
+            <div key={wd} className="text-center py-2.5 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+              {wd}
+            </div>
+          ))}
+        </div>
+
+        {/* Day Cells Grid */}
+        <div className="grid grid-cols-7">
+          {cells.map((cell, idx) => {
+            const cellTasks = getTasksForDate(cell.date);
+            const isTdy = isToday(cell.date);
+            
+            return (
+              <div
+                key={idx}
+                className={`min-h-[105px] border-r border-b border-gray-100 p-2 flex flex-col justify-between transition-colors relative group ${
+                  cell.isCurrentMonth ? 'bg-white' : 'bg-gray-50/40 text-gray-400'
+                }`}
+              >
+                {/* Cell Header: Day Number and Add Task Button */}
+                <div className="flex items-center justify-between w-full mb-1 select-none">
+                  {/* Plus icon visible on cell hover */}
+                  <button
+                    onClick={() => handleOpenComposerForCell(cell.date)}
+                    title="Add task for this day"
+                    className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-gray-100 text-gray-400 hover:text-blue-600 rounded transition-all cursor-pointer focus:outline-none"
+                  >
+                    <Plus size={12} strokeWidth={2.5} />
+                  </button>
+
+                  <span className={`text-[10px] font-bold ${
+                    isTdy 
+                      ? 'w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold shadow-sm'
+                      : cell.isCurrentMonth ? 'text-gray-700' : 'text-gray-400'
+                  }`}>
+                    {getDayLabel(cell)}
                   </span>
-                </h3>
-                <button
-                  onClick={() => handleOpenComposer(sec.key)}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-500 flex items-center gap-0.5 transition-colors cursor-pointer"
-                >
-                  <Plus size={14} /> Add task
-                </button>
-              </div>
+                </div>
 
-              {/* Tasks under this date section */}
-              {list.length > 0 ? (
-                <div className="space-y-2 border-l-2 border-blue-50 pl-4 ml-2">
-                  {list.map((task) => (
+                {/* Tasks List inside cell */}
+                <div className="flex-1 space-y-1 overflow-y-auto max-h-[70px] pr-0.5 custom-scrollbar">
+                  {cellTasks.map((task) => (
                     <div 
-                      key={task.id} 
-                      className="p-3 bg-white border border-gray-100 rounded-xl hover:border-gray-200 transition-all group"
+                      key={task.id}
+                      className={`flex items-start gap-1 p-1 rounded border text-[9px] font-bold leading-normal transition-all cursor-pointer ${
+                        completingTasks[task.id] ? 'opacity-40' : ''
+                      } ${priorityMeta[task.priority].bg} ${priorityMeta[task.priority].border}`}
                     >
-                      <div className="flex items-start gap-3 w-full">
-                        <button 
-                          onClick={() => handleComplete(task.id)}
-                          className={`w-5 h-5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
-                            completingTasks[task.id]
-                              ? 'bg-green-500 border-green-500 text-white scale-90'
-                              : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
-                          }`}
-                        >
-                          {completingTasks[task.id] ? (
-                            <Check size={11} strokeWidth={3} className="text-white" />
-                          ) : (
-                            <Check size={11} strokeWidth={3} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          )}
-                        </button>
-                        
-                        {editingTaskId === task.id ? (
-                          /* Inline Editor */
-                          <div className="flex-1 space-y-2">
-                            <input 
-                              type="text" 
-                              value={editTitle}
-                              onChange={(e) => setEditTitle(e.target.value)}
-                              className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                              required
-                            />
-                            <textarea 
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                              className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
-                              placeholder="Add description..."
-                            />
-                            <div className="flex justify-end gap-1.5">
-                              <button 
-                                type="button" 
-                                onClick={() => setEditingTaskId(null)}
-                                className="px-2.5 py-1 text-xxs font-bold text-gray-500 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                              >
-                                Cancel
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={() => handleSaveEdit(task.id)}
-                                className="px-2.5 py-1 text-xxs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer transition-colors"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex-1 min-w-0">
-                              <h4 className={`font-semibold text-sm leading-tight transition-all duration-200 ${
-                                completingTasks[task.id] ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
-                              }`}>{task.title}</h4>
-                              {task.description && (
-                                <p className={`text-xs mt-0.5 transition-all duration-200 ${
-                                  completingTasks[task.id] ? 'text-gray-300 line-through' : 'text-gray-400'
-                                }`}>{task.description}</p>
-                              )}
-                              {/* Display priority tag / mini date only if not in current scheduled tab */}
-                              {(task.priority !== 'P4' || task.comments?.length > 0) && (
-                                <div className="flex items-center gap-2 mt-1.5 text-[10px] font-extrabold text-gray-400">
-                                  {task.priority !== 'P4' && (
-                                    <span className="text-gray-450 uppercase">Priority {task.priority.slice(1)}</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Quick Hover Action Icons */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2 self-center">
-                              <button
-                                onClick={() => startEditing(task)}
-                                title="Edit task"
-                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
-                              >
-                                <Pencil size={13} />
-                              </button>
-                              
-                              <div className="relative">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveDatePickerTaskId(activeDatePickerTaskId === task.id ? null : task.id);
-                                  }}
-                                  title="Change date"
-                                  className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
-                                >
-                                  <Calendar size={13} />
-                                </button>
-                                {activeDatePickerTaskId === task.id && (
-                                  <MiniCalendarPicker
-                                    value={task.dueDate}
-                                    onChange={(newDate) => handleChangeTaskDate(task.id, newDate)}
-                                    onClose={() => setActiveDatePickerTaskId(null)}
-                                  />
-                                )}
-                              </div>
-
-                              <button
-                                onClick={() => setActiveCommentTaskId(activeCommentTaskId === task.id ? null : task.id)}
-                                title="Comments"
-                                className={`p-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none ${
-                                  activeCommentTaskId === task.id || (task.comments && task.comments.length > 0)
-                                    ? 'text-purple-600 bg-purple-50/50 hover:bg-purple-50'
-                                    : 'text-gray-400 hover:text-purple-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                <MessageSquare size={13} />
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Expanded Comments Panel */}
-                      {activeCommentTaskId === task.id && (
-                        <div className="w-full mt-3 pt-3 border-t border-gray-100 space-y-2.5 animate-slide-down">
-                          <div className="flex items-center gap-1.5">
-                            <MessageSquare size={12} className="text-purple-500 animate-pulse" />
-                            <h4 className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider">Comments</h4>
-                          </div>
-                          
-                          {/* Comments lists */}
-                          {task.comments && task.comments.length > 0 && (
-                            <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
-                              {task.comments.map((comm) => (
-                                <div key={comm.id} className="bg-gray-50/70 border border-gray-100 rounded-lg p-2 text-xxs text-gray-700 flex justify-between items-start">
-                                  <span className="font-semibold leading-relaxed">{comm.text}</span>
-                                  <span className="text-[9px] text-gray-455 font-medium ml-2 flex-shrink-0">{comm.createdAt}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          
-                          {/* Write input comment */}
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              placeholder="Add a comment..."
-                              value={newCommentTexts[task.id] || ''}
-                              onChange={(e) => setNewCommentTexts(prev => ({ ...prev, [task.id]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleSaveComment(task.id);
-                                }
-                              }}
-                              className="flex-1 text-xxs font-semibold text-gray-700 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-gray-400"
-                            />
-                            <button 
-                              onClick={() => handleSaveComment(task.id)}
-                              className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xxs px-3 py-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      {/* Check trigger dot */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleComplete(task.id);
+                        }}
+                        className={`w-2.5 h-2.5 rounded-full mt-0.5 border flex-shrink-0 cursor-pointer ${
+                          completingTasks[task.id] ? 'bg-green-500 border-green-500' : `${priorityMeta[task.priority].dot} border-transparent`
+                        }`}
+                      />
+                      <span 
+                        onClick={() => startEditing(task)}
+                        className={`truncate flex-1 ${completingTasks[task.id] ? 'line-through text-gray-400' : priorityMeta[task.priority].color}`}
+                      >
+                        {task.title}
+                      </span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-xs text-gray-400 italic pl-4 ml-2 pb-2">No tasks scheduled for this period.</p>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Task Composer Modal */}
+      {/* 3. Inline Task Details Editor (Modal popup when clicking task in calendar cell) */}
+      {editingTaskId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="w-full max-w-sm bg-white border border-gray-100 rounded-2xl p-5 shadow-2xl space-y-4 animate-scale-up text-left">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+              <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar size={13} className="text-blue-500" />
+                Quick Edit Task
+              </h3>
+              <button 
+                onClick={() => setEditingTaskId(null)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Task Title</label>
+                <input 
+                  type="text" 
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full text-xs font-bold text-gray-800 border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Description</label>
+                <textarea 
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 h-16 resize-none bg-white"
+                  placeholder="Task details..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-1.5 pt-2">
+              <button 
+                type="button" 
+                onClick={() => setEditingTaskId(null)}
+                className="px-3.5 py-1.5 text-xxs font-bold text-gray-500 hover:bg-gray-150 rounded-lg cursor-pointer transition-colors focus:outline-none"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleSaveEdit(editingTaskId)}
+                className="px-3.5 py-1.5 text-xxs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors focus:outline-none"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Task Composer Modal (Prepopulated Date) */}
       {isAdding && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 animate-fade-in">
           <form 
             onSubmit={handleSubmit} 
-            className="w-full max-w-md bg-white border border-gray-100 rounded-2xl p-6 shadow-2xl space-y-4 animate-scale-up"
+            className="w-full max-w-sm bg-white border border-gray-100 rounded-2xl p-5 shadow-2xl space-y-4 animate-scale-up"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h3 className="font-bold text-gray-900 text-base">
-                Add task to {sections.find((s) => s.key === selectedSection)?.label.slice(2)}
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+              <h3 className="font-extrabold text-sm text-gray-800 flex items-center gap-1.5">
+                <Calendar size={15} className="text-blue-600" />
+                Add Task for {composerDate === 'TODAY' ? 'Today' : composerDate === 'TOMORROW' ? 'Tomorrow' : composerDate}
               </h3>
               <button 
                 type="button" 
                 onClick={() => setIsAdding(false)} 
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none"
               >
                 <X size={18} />
               </button>
@@ -388,7 +487,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
               placeholder="Task name"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm font-bold text-gray-900 border-b border-gray-200 py-2 focus:ring-0 focus:outline-none placeholder:text-gray-400 focus:border-blue-600"
+              className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white placeholder:text-gray-400"
               required
               autoFocus
             />
@@ -397,16 +496,16 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs text-gray-600 border border-gray-100 rounded-lg p-2.5 focus:ring-0 focus:outline-none placeholder:text-gray-400 resize-none h-20 focus:border-blue-600"
+              className="w-full text-xxs text-gray-650 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white placeholder:text-gray-400 resize-none h-16"
             />
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2 border-t border-gray-50">
               <div>
-                <label className="block text-xxs font-bold text-gray-400 uppercase mb-1">Priority</label>
+                <label className="block text-[9px] font-extrabold text-gray-400 uppercase mb-1">Priority</label>
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className={`appearance-none text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 cursor-pointer font-bold focus:outline-none ${priorityMeta[priority].color}`}
+                  className={`appearance-none text-xxs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 cursor-pointer font-bold focus:outline-none ${priorityMeta[priority].color}`}
                 >
                   <option value="P1" className="text-red-500">🚩 Priority 1</option>
                   <option value="P2" className="text-orange-500">🚩 Priority 2</option>
@@ -415,22 +514,21 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 mt-4">
-                <Button
+              <div className="flex items-center gap-1.5 mt-2">
+                <button
                   type="button"
-                  variant="secondary"
                   onClick={() => setIsAdding(false)}
-                  className="!w-auto !py-1.5 !px-4 !text-xs"
+                  className="px-3.5 py-1.5 text-xxs font-bold text-gray-500 hover:bg-gray-150 rounded-lg cursor-pointer transition-colors focus:outline-none border border-transparent"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
                   disabled={!title.trim()}
-                  className="!w-auto !py-1.5 !px-4 !text-xs"
+                  className="px-3.5 py-1.5 text-xxs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors focus:outline-none"
                 >
                   Add Task
-                </Button>
+                </button>
               </div>
             </div>
           </form>
@@ -439,10 +537,3 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
     </div>
   );
 };
-
-// SVG Cancel Icon
-const X = ({ size = 18 }) => (
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
