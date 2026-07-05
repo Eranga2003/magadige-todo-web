@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { getDb } from '../utils/firebase';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { sendInvitationEmail } from '../utils/mailer';
 
 /**
  * Create a new workspace
@@ -210,7 +211,7 @@ export async function inviteMember(req: AuthenticatedRequest, res: Response, nex
 
     await db.collection('invitations').doc(token).set(newInvitation);
 
-    // Format & log/mock send the email
+    // Format & log/send the email
     const inviteLink = `http://localhost:5173/?inviteToken=${token}`;
     console.log('\n================================================================');
     console.log(`📧 MOCK EMAIL SENT TO: ${cleanEmail}`);
@@ -219,6 +220,14 @@ export async function inviteMember(req: AuthenticatedRequest, res: Response, nex
     console.log(`✉️  MESSAGE: You have been invited to join the ${workspace.name} Workspace. Click the link below to join and access the workspace.`);
     console.log(`🔗 LINK: ${inviteLink}`);
     console.log('================================================================\n');
+
+    // Trigger nodemailer sending asynchronously in the background
+    await sendInvitationEmail({
+      toEmail: cleanEmail,
+      workspaceName: workspace.name,
+      inviterName,
+      inviteLink
+    });
 
     res.status(200).json({ 
       status: 'success', 
