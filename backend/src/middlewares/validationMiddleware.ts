@@ -13,11 +13,11 @@ export const registerSchema = z.object({
       'Password must contain at least one letter, one number, and one special character (@$!%*#?&)'
     ),
   name: z.string().min(2, 'Name must be at least 2 characters long').max(50, 'Name must be under 50 characters'),
-  usageType: z.enum(['OWN', 'TEAM'], {
-    errorMap: () => ({ message: 'Usage type must be OWN (individual) or TEAM (collaborative)' }),
+  usageType: z.enum(['OWN', 'TEAM'] as const, {
+    message: 'Usage type must be OWN (individual) or TEAM (collaborative)',
   }),
-  currentManagementMethod: z.enum(['PAPER', 'APP'], {
-    errorMap: () => ({ message: 'Current management method must be PAPER or APP' }),
+  currentManagementMethod: z.enum(['PAPER', 'APP'] as const, {
+    message: 'Current management method must be PAPER or APP',
   }),
 });
 
@@ -27,16 +27,16 @@ export const loginSchema = z.object({
 });
 
 export const socialLoginSchema = z.object({
-  provider: z.enum(['GOOGLE', 'FACEBOOK'], {
-    errorMap: () => ({ message: 'Provider must be GOOGLE or FACEBOOK' }),
+  provider: z.enum(['GOOGLE', 'FACEBOOK'] as const, {
+    message: 'Provider must be GOOGLE or FACEBOOK',
   }),
   token: z.string().min(1, 'OAuth token is required'),
   name: z.string().min(1, 'User name from social profile is required'),
   email: z.string().email('Invalid email address').optional(),
-  usageType: z.enum(['OWN', 'TEAM']).optional(),
-  currentManagementMethod: z.enum(['PAPER', 'APP']).optional(),
-  action: z.enum(['LOGIN', 'REGISTER'], {
-    errorMap: () => ({ message: 'Action must be LOGIN or REGISTER' }),
+  usageType: z.enum(['OWN', 'TEAM'] as const).optional(),
+  currentManagementMethod: z.enum(['PAPER', 'APP'] as const).optional(),
+  action: z.enum(['LOGIN', 'REGISTER'] as const, {
+    message: 'Action must be LOGIN or REGISTER',
   }),
 });
 
@@ -51,7 +51,7 @@ export const validateBody = (schema: z.ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const issues = error.errors.map((err) => ({
+        const issues = error.issues.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
         }));

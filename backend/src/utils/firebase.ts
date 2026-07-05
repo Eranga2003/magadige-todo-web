@@ -61,6 +61,11 @@ class MockDocRef {
     memoryDbStore[`${this.collectionName}/${this.id}`] = JSON.parse(JSON.stringify(data));
     return;
   }
+
+  async delete() {
+    delete memoryDbStore[`${this.collectionName}/${this.id}`];
+    return;
+  }
 }
 
 class MockCollectionRef {

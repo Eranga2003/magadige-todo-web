@@ -70,3 +70,44 @@ export const authService = {
     return fetchAPI('/auth/me');
   },
 };
+
+/**
+ * Tasks service module
+ */
+export const taskService = {
+  /**
+   * Fetch all tasks for the authenticated user
+   */
+  async getTasks() {
+    return fetchAPI('/tasks');
+  },
+
+  /**
+   * Create a new task
+   */
+  async createTask(task) {
+    return fetchAPI('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(task),
+    });
+  },
+
+  /**
+   * Update an existing task
+   */
+  async updateTask(id, task) {
+    return fetchAPI(`/tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(task),
+    });
+  },
+
+  /**
+   * Delete a task
+   */
+  async deleteTask(id) {
+    return fetchAPI(`/tasks/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/authRoutes';
+import taskRoutes from './routes/taskRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +42,7 @@ app.use('/api/auth', authLimiter);
 
 // 4. Mount Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

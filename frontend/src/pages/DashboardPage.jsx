@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   Inbox, 
@@ -28,6 +28,8 @@ import { UpcomingPage } from './dashboard/UpcomingPage';
 import { FiltersLabelsPage } from './dashboard/FiltersLabelsPage';
 import { ReportingPage } from './dashboard/ReportingPage';
 
+import { taskService } from '../services/api';
+
 export const DashboardPage = () => {
   const { user, logout } = useAuth();
   
@@ -37,34 +39,75 @@ export const DashboardPage = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   
-  // Seed task data for interactive dashboard
-  const [tasks, setTasks] = useState([
-    { id: 't1', title: 'Complete Magadige frontend colors setup', description: 'Centralize color tokens into color.jsx', priority: 'P1', dueDate: 'TODAY', completed: false, section: 'INBOX' },
-    { id: 't2', title: 'Deploy Firestore database structure', description: 'Register collections and verify indices', priority: 'P2', dueDate: 'TODAY', completed: false, section: 'INBOX' },
-    { id: 't3', title: 'Integrate Google and Facebook logins', description: 'Enable Firebase popup OAuth checks', priority: 'P1', dueDate: 'TOMORROW', completed: false, section: 'INBOX' },
-    { id: 't4', title: 'Configure server-side session cookies', description: 'Migrate from headers to secure httpOnly', priority: 'P3', dueDate: 'UPCOMING', completed: false, section: 'INBOX' },
-    { id: 't5', title: 'Setup AI wellness monitor', description: 'Add stress checking rules', priority: 'P4', dueDate: 'NONE', completed: true, section: 'INBOX' }
-  ]);
+  // Tasks list loaded from database
+  const [tasks, setTasks] = useState([]);
+
+  // Sync tasks on dashboard mount / login session
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const response = await taskService.getTasks();
+        if (response && response.data) {
+          setTasks(response.data);
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch tasks from Firestore:', err.message);
+      }
+    };
+    if (user) {
+      loadTasks();
+    }
+  }, [user]);
 
   if (!user) return null;
 
   // Add a new task
-  const handleAddTask = (newTask) => {
-    setTasks((prev) => [newTask, ...prev]);
+  const handleAddTask = async (newTask) => {
+    try {
+      const response = await taskService.createTask(newTask);
+      if (response && response.data) {
+        setTasks((prev) => [response.data, ...prev]);
+      } else {
+        setTasks((prev) => [newTask, ...prev]);
+      }
+    } catch (err) {
+      console.error('❌ Failed to save new task to Firestore:', err.message);
+      setTasks((prev) => [newTask, ...prev]);
+    }
   };
 
   // Complete a task
-  const handleCompleteTask = (taskId) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
-    );
+  const handleCompleteTask = async (taskId) => {
+    try {
+      const existingTask = tasks.find((t) => t.id === taskId);
+      if (existingTask) {
+        const updated = { ...existingTask, completed: true };
+        await taskService.updateTask(taskId, updated);
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? updated : t))
+        );
+      }
+    } catch (err) {
+      console.error('❌ Failed to complete task in Firestore:', err.message);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
+      );
+    }
   };
 
   // Update a task (edit details, change date, add comments)
-  const handleUpdateTask = (updatedTask) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-    );
+  const handleUpdateTask = async (updatedTask) => {
+    try {
+      await taskService.updateTask(updatedTask.id, updatedTask);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+      );
+    } catch (err) {
+      console.error('❌ Failed to update task details in Firestore:', err.message);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+      );
+    }
   };
 
   // Switch view tabs helper
