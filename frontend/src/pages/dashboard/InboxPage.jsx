@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Inbox, Plus, Calendar, Flag, Tag, X, ListTodo, AlertCircle, Check } from 'lucide-react';
+import { Inbox, Plus, Calendar, Flag, Tag, X, ListTodo, AlertCircle, Check, Pencil, MessageSquare } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { playTickSound, playChimeSound } from '../../utils/audio';
 
-export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
+export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -14,6 +14,78 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
   
   // Animation state for completion checkmarks
   const [completingTasks, setCompletingTasks] = useState({});
+
+  // Inline editing state
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  // Date picker state
+  const [activeDatePickerTaskId, setActiveDatePickerTaskId] = useState(null);
+
+  // Comment state
+  const [activeCommentTaskId, setActiveCommentTaskId] = useState(null);
+  const [newCommentTexts, setNewCommentTexts] = useState({});
+
+  const startEditing = (task) => {
+    setEditingTaskId(task.id);
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+  };
+
+  const handleSaveEdit = (taskId) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const updatedTask = {
+      ...task,
+      title: editTitle.trim() || task.title,
+      description: editDescription.trim(),
+    };
+    if (onUpdateTask) onUpdateTask(updatedTask);
+    setEditingTaskId(null);
+  };
+
+  const handleChangeTaskDate = (taskId, newDate) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const updatedTask = {
+      ...task,
+      dueDate: newDate,
+    };
+    if (onUpdateTask) onUpdateTask(updatedTask);
+  };
+
+  const handleSaveComment = (taskId) => {
+    const text = newCommentTexts[taskId] || '';
+    if (!text.trim()) return;
+
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const updatedTask = {
+      ...task,
+      comments: [
+        ...(task.comments || []),
+        {
+          id: `c_${Date.now()}`,
+          text: text.trim(),
+          createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ],
+    };
+
+    if (onUpdateTask) onUpdateTask(updatedTask);
+    setNewCommentTexts((prev) => ({ ...prev, [taskId]: '' }));
+  };
+
+  const dateLabels = {
+    TODAY: '📅 Today',
+    TOMORROW: '🌅 Tomorrow',
+    UPCOMING: '🗓️ Next Week',
+    NONE: '⏳ Later',
+  };
 
   const handleComplete = (taskId) => {
     playTickSound();
@@ -86,46 +158,181 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask }) => {
           {tasks.map((task) => (
             <div 
               key={task.id} 
-              className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-gray-200 hover:shadow-sm transition-all duration-200 group"
+              className="p-4 bg-white border border-gray-100 rounded-xl hover:border-gray-200 hover:shadow-sm transition-all duration-200 group"
             >
-              <button 
-                onClick={() => handleComplete(task.id)}
-                className={`w-5.5 h-5.5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
-                  completingTasks[task.id]
-                    ? 'bg-green-500 border-green-500 text-white scale-90'
-                    : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
-                }`}
-              >
-                {completingTasks[task.id] ? (
-                  <Check size={12} strokeWidth={3} className="text-white" />
+              <div className="flex items-start gap-3 w-full">
+                <button 
+                  onClick={() => handleComplete(task.id)}
+                  className={`w-5.5 h-5.5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
+                    completingTasks[task.id]
+                      ? 'bg-green-500 border-green-500 text-white scale-90'
+                      : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
+                  }`}
+                >
+                  {completingTasks[task.id] ? (
+                    <Check size={12} strokeWidth={3} className="text-white" />
+                  ) : (
+                    <Check size={12} strokeWidth={3} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </button>
+                
+                {editingTaskId === task.id ? (
+                  /* Inline Editor */
+                  <div className="flex-1 space-y-2">
+                    <input 
+                      type="text" 
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                      required
+                    />
+                    <textarea 
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
+                      placeholder="Add description..."
+                    />
+                    <div className="flex justify-end gap-1.5">
+                      <button 
+                        type="button" 
+                        onClick={() => setEditingTaskId(null)}
+                        className="px-2.5 py-1 text-xxs font-bold text-gray-500 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleSaveEdit(task.id)}
+                        className="px-2.5 py-1 text-xxs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
                 ) : (
-                  <Check size={12} strokeWidth={3} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-semibold text-sm leading-tight transition-all duration-200 ${
+                        completingTasks[task.id] ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
+                      }`}>{task.title}</h3>
+                      {task.description && (
+                        <p className={`text-xs mt-1 leading-snug transition-all duration-200 ${
+                          completingTasks[task.id] ? 'text-gray-300 line-through' : 'text-gray-500'
+                        }`}>{task.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-1.5 text-[10px] font-extrabold">
+                        {task.dueDate !== 'NONE' && (
+                          <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                            <Calendar size={10} />
+                            {dateLabels[task.dueDate] || task.dueDate}
+                          </span>
+                        )}
+                        {task.priority !== 'P4' && (
+                          <span className={`flex items-center gap-1 ${priorityMeta[task.priority].color} ${priorityMeta[task.priority].fill} px-1.5 py-0.5 rounded`}>
+                            <Flag size={10} />
+                            {priorityMeta[task.priority].label}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quick Hover Action Icons */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2 self-center">
+                      <button
+                        onClick={() => startEditing(task)}
+                        title="Edit task"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveDatePickerTaskId(activeDatePickerTaskId === task.id ? null : task.id)}
+                          title="Change date"
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
+                        >
+                          <Calendar size={13} />
+                        </button>
+                        {activeDatePickerTaskId === task.id && (
+                          <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50 animate-scale-up">
+                            {Object.entries(dateLabels).map(([key, label]) => (
+                              <button
+                                key={key}
+                                onClick={() => {
+                                  handleChangeTaskDate(task.id, key);
+                                  setActiveDatePickerTaskId(null);
+                                }}
+                                className="w-full flex items-center justify-between px-3 py-1.5 text-xxs text-gray-700 hover:bg-gray-50 font-bold transition-colors text-left cursor-pointer"
+                              >
+                                <span>{label}</span>
+                                {task.dueDate === key && <Check size={10} className="text-blue-600" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => setActiveCommentTaskId(activeCommentTaskId === task.id ? null : task.id)}
+                        title="Comments"
+                        className={`p-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none ${
+                          activeCommentTaskId === task.id || (task.comments && task.comments.length > 0)
+                            ? 'text-purple-600 bg-purple-50/50 hover:bg-purple-50'
+                            : 'text-gray-400 hover:text-purple-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <MessageSquare size={13} />
+                      </button>
+                    </div>
+                  </>
                 )}
-              </button>
-              <div className="flex-1 min-w-0">
-                <h3 className={`font-semibold text-sm leading-tight transition-all duration-200 ${
-                  completingTasks[task.id] ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
-                }`}>{task.title}</h3>
-                {task.description && (
-                  <p className={`text-xs mt-1 leading-snug transition-all duration-200 ${
-                    completingTasks[task.id] ? 'text-gray-300 line-through' : 'text-gray-500'
-                  }`}>{task.description}</p>
-                )}
-                <div className="flex items-center gap-3 mt-2 text-xxs font-bold">
-                  {task.dueDate !== 'NONE' && (
-                    <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                      <Calendar size={10} />
-                      {task.dueDate}
-                    </span>
-                  )}
-                  {task.priority !== 'P4' && (
-                    <span className={`flex items-center gap-1 ${priorityMeta[task.priority].color} ${priorityMeta[task.priority].fill} px-1.5 py-0.5 rounded`}>
-                      <Flag size={10} />
-                      {priorityMeta[task.priority].label}
-                    </span>
-                  )}
-                </div>
               </div>
+
+              {/* Expanded Comments Panel */}
+              {activeCommentTaskId === task.id && (
+                <div className="w-full mt-3 pt-3 border-t border-gray-100 space-y-2.5 animate-slide-down">
+                  <div className="flex items-center gap-1.5">
+                    <MessageSquare size={12} className="text-purple-500 animate-pulse" />
+                    <h4 className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider">Comments</h4>
+                  </div>
+                  
+                  {/* Comments lists */}
+                  {task.comments && task.comments.length > 0 && (
+                    <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                      {task.comments.map((comm) => (
+                        <div key={comm.id} className="bg-gray-50/70 border border-gray-100 rounded-lg p-2 text-xxs text-gray-700 flex justify-between items-start">
+                          <span className="font-semibold leading-relaxed">{comm.text}</span>
+                          <span className="text-[9px] text-gray-450 font-medium ml-2 flex-shrink-0">{comm.createdAt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Write input comment */}
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Add a comment..."
+                      value={newCommentTexts[task.id] || ''}
+                      onChange={(e) => setNewCommentTexts(prev => ({ ...prev, [task.id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveComment(task.id);
+                        }
+                      }}
+                      className="flex-1 text-xxs font-semibold text-gray-700 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-gray-400"
+                    />
+                    <button 
+                      onClick={() => handleSaveComment(task.id)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xxs px-3 py-1.5 rounded-lg cursor-pointer transition-colors focus:outline-none"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

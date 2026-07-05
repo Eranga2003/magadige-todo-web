@@ -60,21 +60,28 @@ export const DashboardPage = () => {
     );
   };
 
+  // Update a task (edit details, change date, add comments)
+  const handleUpdateTask = (updatedTask) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+    );
+  };
+
   // Switch view tabs helper
   const renderActiveSection = () => {
     switch (activeTab) {
       case 'INBOX':
-        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
+        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'TODAY':
-        return <TodayPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
+        return <TodayPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'UPCOMING':
-        return <UpcomingPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
+        return <UpcomingPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'FILTERS':
-        return <FiltersLabelsPage tasks={tasks} onCompleteTask={handleCompleteTask} />;
+        return <FiltersLabelsPage tasks={tasks} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'REPORTING':
         return <ReportingPage tasks={tasks} />;
       default:
-        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} />;
+        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
     }
   };
 
