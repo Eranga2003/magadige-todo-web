@@ -325,28 +325,41 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
       </div>
 
       {/* 2. Calendar Month Grid Container */}
-      <div className="bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-transparent space-y-3">
         {/* Days Header */}
-        <div className="grid grid-cols-7 border-b border-gray-150 bg-gray-50/50">
+        <div className="grid grid-cols-7 gap-2 md:gap-3 px-1 text-center">
           {weekDays.map((wd) => (
-            <div key={wd} className="text-center py-2.5 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+            <div key={wd} className="py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
               {wd}
             </div>
           ))}
         </div>
 
-        {/* Day Cells Grid */}
-        <div className="grid grid-cols-7">
+        {/* Day Cells Floating Tiles Grid */}
+        <div className="grid grid-cols-7 gap-2 md:gap-3 p-0.5">
           {cells.map((cell, idx) => {
             const cellTasks = getTasksForDate(cell.date);
             const isTdy = isToday(cell.date);
+            const dayOfWeek = cell.date.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sun, 6 = Sat
+
+            // Determine modern card style classes
+            let cardClasses = "min-h-[110px] p-2.5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 cursor-pointer relative group rounded-2xl border ";
             
+            if (isTdy) {
+              cardClasses += "bg-white border-blue-500 shadow-md shadow-blue-50/60 ring-2 ring-blue-500/20";
+            } else if (!cell.isCurrentMonth) {
+              cardClasses += "bg-gray-50/30 border-gray-100/40 opacity-40";
+            } else if (isWeekend) {
+              cardClasses += "bg-indigo-50/15 border-indigo-105/30 hover:border-blue-200 hover:shadow-md";
+            } else {
+              cardClasses += "bg-white border-gray-100 hover:border-blue-200 hover:shadow-md";
+            }
+
             return (
               <div
                 key={idx}
-                className={`min-h-[105px] border-r border-b border-gray-100 p-2 flex flex-col justify-between transition-colors relative group ${
-                  cell.isCurrentMonth ? 'bg-white' : 'bg-gray-50/40 text-gray-400'
-                }`}
+                className={cardClasses}
               >
                 {/* Cell Header: Day Number and Add Task Button */}
                 <div className="flex items-center justify-between w-full mb-1 select-none">
@@ -373,7 +386,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                   {cellTasks.map((task) => (
                     <div 
                       key={task.id}
-                      className={`flex items-start gap-1 p-1 rounded border text-[9px] font-bold leading-normal transition-all cursor-pointer ${
+                      className={`flex items-start gap-1 p-1 rounded-lg border-l-2 text-[9px] font-bold leading-normal transition-all cursor-pointer hover:bg-white/80 ${
                         completingTasks[task.id] ? 'opacity-40' : ''
                       } ${priorityMeta[task.priority].bg} ${priorityMeta[task.priority].border}`}
                     >
