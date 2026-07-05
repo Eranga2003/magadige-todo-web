@@ -249,7 +249,10 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                       
                       <div className="relative">
                         <button
-                          onClick={() => setActiveDatePickerTaskId(activeDatePickerTaskId === task.id ? null : task.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDatePickerTaskId(activeDatePickerTaskId === task.id ? null : task.id);
+                          }}
                           title="Change date"
                           className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors focus:outline-none"
                         >

@@ -85,6 +85,9 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
       setAttachedFile(null);
       setReminderTime('');
       setShowReminderDropdown(false);
+      setShowDateDropdown(false);
+      setShowPriorityDropdown(false);
+      setShowProjectDropdown(false);
       setIsGenerating(false);
       setIsRecording(false);
       setModalView('STANDARD');
@@ -356,7 +359,8 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowDateDropdown(!showDateDropdown);
                     setShowPriorityDropdown(false);
                     setShowProjectDropdown(false);

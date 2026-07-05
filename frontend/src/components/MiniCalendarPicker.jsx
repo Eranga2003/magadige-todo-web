@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, 
   Sun, 
@@ -16,6 +16,28 @@ export const MiniCalendarPicker = ({ value, onChange, onClose }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [timeVal, setTimeVal] = useState('09:00');
+  
+  const calendarRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const handleOutsideClick = (e) => {
+      if (isMounted && calendarRef.current && !calendarRef.current.contains(e.target)) {
+        if (onClose) onClose();
+      }
+    };
+    
+    // Add the listener on the next event loop tick so it doesn't close immediately on trigger click
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [onClose]);
 
   // Days of the week headers
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -150,6 +172,7 @@ export const MiniCalendarPicker = ({ value, onChange, onClose }) => {
 
   return (
     <div 
+      ref={calendarRef}
       onClick={(e) => e.stopPropagation()}
       className="absolute right-0 mt-1 w-64 bg-white border border-gray-150 rounded-2xl shadow-xl py-3 px-3.5 z-50 animate-scale-up text-left select-none space-y-2.5 font-sans"
     >
