@@ -114,7 +114,7 @@ export const DashboardPage = () => {
   const renderActiveSection = () => {
     switch (activeTab) {
       case 'INBOX':
-        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
+        return <InboxPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'TODAY':
         return <TodayPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'UPCOMING':
@@ -124,7 +124,7 @@ export const DashboardPage = () => {
       case 'REPORTING':
         return <ReportingPage tasks={tasks} />;
       default:
-        return <InboxPage tasks={tasks.filter((t) => !t.completed)} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
+        return <InboxPage tasks={tasks} onAddTask={handleAddTask} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
     }
   };
 

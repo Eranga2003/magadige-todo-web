@@ -159,12 +159,12 @@ export const FiltersLabelsPage = ({ tasks = [], onCompleteTask, onUpdateTask }) 
                 <button 
                   onClick={() => handleComplete(task.id)}
                   className={`w-5.5 h-5.5 rounded-full border-2 transition-all duration-200 flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5 ${
-                    completingTasks[task.id]
-                      ? 'bg-green-500 border-green-500 text-white scale-90'
+                    (task.completed || completingTasks[task.id])
+                      ? 'bg-green-500 border-green-500 text-white'
                       : `${priorityMeta[task.priority].border} hover:border-green-500 hover:text-green-500 hover:bg-green-50/20`
                   }`}
                 >
-                  {completingTasks[task.id] ? (
+                  {(task.completed || completingTasks[task.id]) ? (
                     <Check size={12} strokeWidth={3} className="text-white" />
                   ) : (
                     <Check size={12} strokeWidth={3} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -209,7 +209,7 @@ export const FiltersLabelsPage = ({ tasks = [], onCompleteTask, onUpdateTask }) 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h4 className={`font-semibold text-sm leading-tight transition-all duration-200 ${
-                          completingTasks[task.id] ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
+                          (task.completed || completingTasks[task.id]) ? 'line-through text-gray-400 opacity-60' : 'text-gray-900'
                         }`}>{task.title}</h4>
                         {task.dueDate && task.dueDate !== 'NONE' && (
                           <span className="text-[10px] text-gray-400 font-extrabold bg-gray-50 px-2 py-0.5 rounded-full flex-shrink-0">
@@ -219,7 +219,7 @@ export const FiltersLabelsPage = ({ tasks = [], onCompleteTask, onUpdateTask }) 
                       </div>
                       {task.description && (
                         <p className={`text-xs mt-1 leading-snug transition-all duration-200 ${
-                          completingTasks[task.id] ? 'text-gray-300 line-through' : 'text-gray-400'
+                          (task.completed || completingTasks[task.id]) ? 'text-gray-305 line-through opacity-70' : 'text-gray-400'
                         }`}>{task.description}</p>
                       )}
                     </div>

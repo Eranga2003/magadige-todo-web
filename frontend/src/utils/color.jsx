@@ -63,6 +63,32 @@ export const themeColors = {
     dot: 'bg-red-600',
     ring: 'focus:ring-red-600',
   },
+  taskColors: {
+    pink: {
+      bg: 'bg-pink-50/75 border-pink-200/80',
+      text: 'text-pink-700',
+      checkboxBorder: 'border-pink-400',
+      dot: 'bg-pink-500',
+    },
+    green: {
+      bg: 'bg-emerald-50/75 border-emerald-200/80',
+      text: 'text-emerald-700',
+      checkboxBorder: 'border-emerald-400',
+      dot: 'bg-emerald-500',
+    },
+    yellow: {
+      bg: 'bg-amber-50/75 border-amber-200/80',
+      text: 'text-amber-700',
+      checkboxBorder: 'border-amber-400',
+      dot: 'bg-amber-500',
+    },
+    blue: {
+      bg: 'bg-blue-50/75 border-blue-200/80',
+      text: 'text-blue-700',
+      checkboxBorder: 'border-blue-400',
+      dot: 'bg-blue-500',
+    }
+  }
 };
 
 /**

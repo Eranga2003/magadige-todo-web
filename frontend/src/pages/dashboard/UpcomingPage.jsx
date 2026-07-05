@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { playTickSound, playChimeSound } from '../../utils/audio';
+import { getColor } from '../../utils/color';
 
 export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
   const today = new Date();
@@ -32,27 +33,27 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
   // Dynamic Month Days Length
   const totalDays = new Date(year, month + 1, 0).getDate();
 
-  // Priority styling for colored bars
+  // Priority styling for colored bars (linked dynamically to color.jsx tokens)
   const priorityMeta = {
     P1: {
-      bg: 'bg-red-50/70 border-red-200/80',
-      text: 'text-red-750',
-      checkboxBorder: 'border-red-400',
+      bg: getColor('taskColors.pink.bg'),
+      text: getColor('taskColors.pink.text'),
+      checkboxBorder: getColor('taskColors.pink.checkboxBorder'),
     },
     P2: {
-      bg: 'bg-orange-50/70 border-orange-200/80',
-      text: 'text-orange-750',
-      checkboxBorder: 'border-orange-400',
+      bg: getColor('taskColors.yellow.bg'),
+      text: getColor('taskColors.yellow.text'),
+      checkboxBorder: getColor('taskColors.yellow.checkboxBorder'),
     },
     P3: {
-      bg: 'bg-blue-50/70 border-blue-200/80',
-      text: 'text-blue-750',
-      checkboxBorder: 'border-blue-400',
+      bg: getColor('taskColors.green.bg'),
+      text: getColor('taskColors.green.text'),
+      checkboxBorder: getColor('taskColors.green.checkboxBorder'),
     },
     P4: {
-      bg: 'bg-[#e7f0fe]/65 border-[#c9dbfb]/60',
-      text: 'text-[#1d4ed8]',
-      checkboxBorder: 'border-[#7fa8f2]',
+      bg: getColor('taskColors.blue.bg'),
+      text: getColor('taskColors.blue.text'),
+      checkboxBorder: getColor('taskColors.blue.checkboxBorder'),
     }
   };
 
