@@ -269,55 +269,55 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-6 px-4">
+    <div className="w-full min-h-full bg-slate-50/70 py-8 px-6 space-y-6">
       {/* 1. Header Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         
         {/* Left Side: Navigation group & Date display */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center border border-gray-250 rounded-xl bg-white shadow-xxs">
+          <div className="flex items-center border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
             <button
               onClick={handlePrevMonth}
-              className="p-2 hover:bg-gray-50 border-r border-gray-250 text-gray-600 cursor-pointer focus:outline-none rounded-l-xl"
+              className="p-2 hover:bg-slate-50 border-r border-slate-100 text-slate-500 hover:text-slate-700 cursor-pointer focus:outline-none transition-colors rounded-l-xl"
             >
               <ChevronLeft size={14} />
             </button>
             <button
               onClick={handleGoToday}
-              className="px-3.5 py-1.5 hover:bg-gray-50 text-xs font-bold text-gray-700 cursor-pointer focus:outline-none"
+              className="px-3.5 py-1.5 hover:bg-slate-50 text-xs font-extrabold text-slate-700 cursor-pointer focus:outline-none transition-colors"
             >
               Today
             </button>
             <button
               onClick={handleNextMonth}
-              className="p-2 hover:bg-gray-50 border-l border-gray-250 text-gray-600 cursor-pointer focus:outline-none rounded-r-xl"
+              className="p-2 hover:bg-slate-50 border-l border-slate-100 text-slate-500 hover:text-slate-700 cursor-pointer focus:outline-none transition-colors rounded-r-xl"
             >
               <ChevronRight size={14} />
             </button>
           </div>
-          <h2 className="text-base font-extrabold text-gray-800">
+          <h2 className="text-lg font-extrabold text-slate-800 tracking-tight">
             {months[month]} {year}
           </h2>
         </div>
 
         {/* Center: View Switcher */}
-        <div className="flex items-center border border-gray-250 rounded-xl bg-white p-0.5 shadow-xxs self-start md:self-auto">
-          <button className="px-3 py-1 text-xxs font-bold text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">Day</button>
-          <button className="px-3 py-1 text-xxs font-bold text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">Week</button>
-          <button className="px-3 py-1 text-xxs font-bold bg-blue-600 text-white rounded-lg focus:outline-none cursor-pointer">Month</button>
-          <button className="px-3 py-1 text-xxs font-bold text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">Year</button>
+        <div className="flex items-center bg-slate-100/80 rounded-xl p-1 shadow-inner self-start md:self-auto border border-slate-200/30">
+          <button className="px-3.5 py-1 text-xxs font-extrabold text-slate-400 hover:text-slate-650 focus:outline-none cursor-pointer rounded-lg transition-all">Day</button>
+          <button className="px-3.5 py-1 text-xxs font-extrabold text-slate-400 hover:text-slate-650 focus:outline-none cursor-pointer rounded-lg transition-all">Week</button>
+          <button className="px-3.5 py-1 text-xxs font-extrabold bg-blue-600 text-white rounded-lg focus:outline-none cursor-pointer shadow-sm transition-all">Month</button>
+          <button className="px-3.5 py-1 text-xxs font-extrabold text-slate-400 hover:text-slate-650 focus:outline-none cursor-pointer rounded-lg transition-all">Year</button>
         </div>
 
         {/* Right Side: Search & Stats */}
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+            <Search size={14} className="absolute left-3.5 top-2.5 text-slate-455" />
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-48 pl-9 pr-3 py-1.5 border border-gray-255 rounded-xl text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-gray-400 outline-none"
+              className="w-52 pl-9 pr-4 py-1.5 border border-slate-200 rounded-full text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white placeholder:text-slate-400 outline-none shadow-sm transition-all focus:shadow-md"
             />
           </div>
         </div>
@@ -325,18 +325,18 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
       </div>
 
       {/* 2. Calendar Month Grid Container */}
-      <div className="bg-transparent space-y-3">
+      <div className="bg-slate-100/40 p-3 rounded-[24px] border border-slate-200/50 shadow-inner">
         {/* Days Header */}
-        <div className="grid grid-cols-7 gap-2 md:gap-3 px-1 text-center">
+        <div className="grid grid-cols-7 gap-2 md:gap-2.5 px-1 mb-2.5 text-center">
           {weekDays.map((wd) => (
-            <div key={wd} className="py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+            <div key={wd} className="py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
               {wd}
             </div>
           ))}
         </div>
 
         {/* Day Cells Floating Tiles Grid */}
-        <div className="grid grid-cols-7 gap-2 md:gap-3 p-0.5">
+        <div className="grid grid-cols-7 gap-2 md:gap-2.5 p-0.5">
           {cells.map((cell, idx) => {
             const cellTasks = getTasksForDate(cell.date);
             const isTdy = isToday(cell.date);
@@ -344,16 +344,16 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sun, 6 = Sat
 
             // Determine modern card style classes
-            let cardClasses = "min-h-[110px] p-2.5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 cursor-pointer relative group rounded-2xl border ";
+            let cardClasses = "min-h-[110px] p-2.5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.01] hover:-translate-y-0.5 cursor-pointer relative group rounded-[18px] border ";
             
             if (isTdy) {
-              cardClasses += "bg-white border-blue-500 shadow-md shadow-blue-50/60 ring-2 ring-blue-500/20";
+              cardClasses += "bg-white border-blue-500 shadow-md shadow-blue-100/50 ring-4 ring-blue-500/10 z-10";
             } else if (!cell.isCurrentMonth) {
-              cardClasses += "bg-gray-50/30 border-gray-100/40 opacity-40";
+              cardClasses += "bg-slate-50/40 border-slate-105/10 opacity-35";
             } else if (isWeekend) {
-              cardClasses += "bg-indigo-50/15 border-indigo-105/30 hover:border-blue-200 hover:shadow-md";
+              cardClasses += "bg-slate-50/65 border-slate-200/40 hover:border-slate-300 hover:shadow-sm";
             } else {
-              cardClasses += "bg-white border-gray-100 hover:border-blue-200 hover:shadow-md";
+              cardClasses += "bg-white border-slate-100/70 hover:border-slate-350 hover:shadow-sm shadow-sm shadow-slate-100/30";
             }
 
             return (
@@ -375,7 +375,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                   <span className={`text-[10px] font-bold ${
                     isTdy 
                       ? 'w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold shadow-sm'
-                      : cell.isCurrentMonth ? 'text-gray-700' : 'text-gray-400'
+                      : cell.isCurrentMonth ? 'text-slate-700' : 'text-slate-400'
                   }`}>
                     {getDayLabel(cell)}
                   </span>
