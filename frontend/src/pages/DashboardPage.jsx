@@ -337,11 +337,15 @@ export const DashboardPage = () => {
                 onMouseEnter={playBubbleSound}
                 className="flex items-center gap-2 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
               >
+                {/* DEBUG: Remove after confirming image is visible */}
+                {console.log('🔍 user.photoUrl =', user.photoUrl)}
                 {user.photoUrl ? (
                   <img 
                     src={user.photoUrl} 
                     alt="User Profile" 
                     className="w-8 h-8 rounded-full object-cover shadow-sm border border-gray-200 flex-shrink-0"
+                    onError={(e) => { console.error('❌ Image failed to load:', e.target.src); e.target.style.display='none'; }}
+                    onLoad={() => console.log('✅ Image loaded successfully:', user.photoUrl)}
                   />
                 ) : (
                   <div className={`w-8 h-8 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0`}>
