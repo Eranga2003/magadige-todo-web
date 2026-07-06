@@ -174,7 +174,9 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
         if (member) {
           assignedTo = {
             userId: member.userId,
-            email: member.email
+            email: member.email,
+            name: member.name || null,
+            photoUrl: member.photoUrl || null,
           };
         }
       }
@@ -315,6 +317,33 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
     }
   };
 
+  // Reusable member avatar — shows photo if available, otherwise colored initial
+  const MemberAvatar = ({ member, size = 'sm', className = '' }) => {
+    const sizeMap = {
+      xs: 'w-4 h-4 text-[7px]',
+      sm: 'w-6 h-6 text-[9px]',
+      md: 'w-8 h-8 text-[11px]',
+    };
+    const cls = `${sizeMap[size] || sizeMap.sm} rounded-full flex items-center justify-center font-extrabold ring-2 ring-white overflow-hidden flex-shrink-0 ${className}`;
+    const displayName = member?.name || member?.email || '?';
+    const initial = displayName.charAt(0).toUpperCase();
+    if (member?.photoUrl) {
+      return (
+        <img
+          src={member.photoUrl}
+          alt={displayName}
+          title={member.name || member.email}
+          className={`${cls} object-cover`}
+        />
+      );
+    }
+    return (
+      <div className={`${cls} bg-slate-800 text-white shadow-xs`} title={member?.name || member?.email}>
+        {initial}
+      </div>
+    );
+  };
+
   const filteredTasks = tasks.filter(t => 
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -442,18 +471,17 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                       <div className="flex items-center gap-3">
                         {/* Assignee Avatar */}
                         {task.assignedTo ? (
-                          <div 
-                            title={`Assigned to ${task.assignedTo.email}`} 
-                            className={`w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center border border-white shadow-sm cursor-help select-none ring-1 ${assigneeRingClass}`}
-                          >
-                            {task.assignedTo.email.charAt(0).toUpperCase()}
-                          </div>
+                          <MemberAvatar 
+                            member={task.assignedTo} 
+                            size="xs" 
+                            className={`cursor-help ${assigneeRingClass}`}
+                          />
                         ) : (
                           <div 
                             title="Unassigned" 
-                            className="w-5 h-5 rounded-full bg-gray-100 text-gray-400 font-extrabold text-[8px] flex items-center justify-center border border-gray-200"
+                            className="w-4 h-4 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center border border-gray-200"
                           >
-                            <User size={10} />
+                            <User size={9} />
                           </div>
                         )}
 
@@ -570,12 +598,12 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
         {workspace.members.map((memb, idx) => (
           <div 
             key={idx} 
-            className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 border border-blue-50/40 rounded-full text-[10px] font-bold shadow-[0_3px_8px_rgba(219,234,254,0.22)] hover:bg-gray-100/50 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 border border-blue-50/40 rounded-full text-[10px] font-bold shadow-[0_3px_8px_rgba(219,234,254,0.22)] hover:bg-gray-100/50 transition-colors"
           >
-            <div className="w-4 h-4 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white">
-              {memb.email.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-gray-700 truncate max-w-[120px]" title={memb.email}>{memb.email}</span>
+            <MemberAvatar member={memb} size="xs" className="ring-1" />
+            <span className="text-gray-700 truncate max-w-[110px]" title={memb.email}>
+              {memb.name || memb.email}
+            </span>
             <span className="text-[7.5px] font-extrabold bg-blue-50 text-blue-750 border border-blue-100 px-1.5 py-0.2 rounded-full uppercase">
               {memb.role}
             </span>
@@ -617,16 +645,10 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
           {/* Members Avatars stack */}
           <div className="flex -space-x-1.5 overflow-hidden">
             {workspace.members.slice(0, 4).map((memb, idx) => (
-              <div 
-                key={idx}
-                title={memb.email}
-                className="inline-block h-6 w-6 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center ring-2 ring-white select-none shadow-xxs"
-              >
-                {memb.email.charAt(0).toUpperCase()}
-              </div>
+              <MemberAvatar key={idx} member={memb} size="sm" />
             ))}
             {workspace.members.length > 4 && (
-              <div className="inline-block h-6 w-6 rounded-full bg-gray-200 text-gray-550 font-bold text-[9px] flex items-center justify-center ring-2 ring-white select-none">
+              <div className="inline-flex h-6 w-6 rounded-full bg-gray-200 text-gray-550 font-bold text-[9px] items-center justify-center ring-2 ring-white select-none">
                 +{workspace.members.length - 4}
               </div>
             )}
@@ -749,11 +771,15 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                       <div className="flex items-center gap-3 justify-end">
                         {/* Assignee initials badge */}
                         {task.assignedTo ? (
-                          <div 
-                            title={`Assigned to ${task.assignedTo.email}`}
-                            className={`w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ${assigneeRing}`}
-                          >
-                            {task.assignedTo.email.charAt(0).toUpperCase()}
+                          <div className="flex items-center gap-1.5">
+                            <MemberAvatar 
+                              member={task.assignedTo} 
+                              size="xs" 
+                              className={assigneeRing}
+                            />
+                            <span className="text-[9px] font-bold text-gray-600 truncate max-w-[60px]">
+                              {task.assignedTo.name || task.assignedTo.email?.split('@')[0]}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-[9px] opacity-75 italic">Unassigned</span>
@@ -821,12 +847,15 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               <div className="bg-[#f0f9ff]/80 border border-blue-200/50 shadow-[0_25px_50px_-12px_rgba(37,99,235,0.65),0_0_25px_rgba(37,99,235,0.3)] rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
                 {workspace.members.map((memb, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2.5 bg-white/80 border border-blue-50/50 shadow-xxs rounded-xl select-none">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-6 h-6 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white">
-                        {memb.email.charAt(0).toUpperCase()}
-                      </div>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <MemberAvatar member={memb} size="sm" className="ring-1" />
                       <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-gray-800 truncate">{memb.email}</p>
+                        <p className="text-[10px] font-bold text-gray-800 truncate">
+                          {memb.name || memb.email}
+                        </p>
+                        {memb.name && (
+                          <p className="text-[8px] text-gray-400 truncate">{memb.email}</p>
+                        )}
                         <span className="text-[7.5px] font-extrabold text-gray-455 uppercase">{memb.role}</span>
                       </div>
                     </div>
@@ -968,12 +997,11 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                                 {task.name}
                               </span>
                               {task.assignedTo && (
-                                <div 
-                                  title={`Assigned to ${task.assignedTo.email}`}
-                                  className="w-4 h-4 rounded-full bg-slate-900 text-white font-extrabold text-[7px] flex items-center justify-center ring-1 ring-white min-w-[16px] max-w-[16px] h-[16px]"
-                                >
-                                  {task.assignedTo.email.charAt(0).toUpperCase()}
-                                </div>
+                                <MemberAvatar 
+                                  member={task.assignedTo}
+                                  size="xs"
+                                  className="ring-1 min-w-[16px]"
+                                />
                               )}
                             </div>
                             
@@ -1055,18 +1083,40 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               {/* Assignee Selection */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-700">Assign Member</label>
-                <select
-                  value={taskAssigneeId}
-                  onChange={(e) => setTaskAssigneeId(e.target.value)}
-                  className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                >
-                  <option value="">Unassigned (None)</option>
+<div className="flex flex-wrap gap-2 pt-1">
+                  {/* Unassigned option */}
+                  <button
+                    type="button"
+                    onClick={() => setTaskAssigneeId('')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer focus:outline-none ${
+                      !taskAssigneeId
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User size={9} className="text-gray-400" />
+                    </div>
+                    None
+                  </button>
                   {workspace.members.map((memb) => (
-                    <option key={memb.userId || memb.email} value={memb.userId}>
-                      {memb.email} ({memb.role})
-                    </option>
+                    <button
+                      key={memb.userId || memb.email}
+                      type="button"
+                      onClick={() => setTaskAssigneeId(memb.userId)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer focus:outline-none ${
+                        taskAssigneeId === memb.userId
+                          ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <MemberAvatar member={memb} size="xs" className="ring-0" />
+                      <span className="truncate max-w-[80px]">
+                        {memb.name || memb.email.split('@')[0]}
+                      </span>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
               {/* Priority Flag Selector (Status is auto-selected to ASSIGNED/Todo) */}
