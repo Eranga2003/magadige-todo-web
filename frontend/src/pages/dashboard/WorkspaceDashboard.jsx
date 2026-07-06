@@ -308,9 +308,9 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'P1': return 'text-red-500';
-      case 'P2': return 'text-amber-500';
-      case 'P3': return 'text-emerald-600';
-      case 'P4': return 'text-blue-600';
+      case 'P2': return 'text-orange-500';
+      case 'P3': return 'text-yellow-500';
+      case 'P4': return 'text-blue-500';
       default: return 'text-gray-400';
     }
   };
@@ -736,6 +736,12 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                             <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded uppercase ${statusBadge}`}>
                               {task.status === 'COMPLETED' ? 'COMPLETE' : task.status === 'IN_PROGRESS' ? 'IN PROGRESS' : 'TO DO'}
                             </span>
+                            <span className={`inline-flex items-center gap-1 text-[9px] font-bold ${getPriorityColor(task.priority)}`} title={`${task.priority} Priority`}>
+                              <Flag size={10} fill="currentColor" />
+                              <span className="text-[8px] font-black uppercase">
+                                {task.priority === 'P1' ? 'Urgent' : task.priority === 'P2' ? 'High' : task.priority === 'P3' ? 'Normal' : 'Low'}
+                              </span>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -972,14 +978,17 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                             </div>
                             
                             <div className="flex items-center justify-between text-[8px] font-extrabold select-none">
-                              {task.dueTime ? (
-                                <span className={`flex items-center gap-0.5 ${textMuted}`}>
-                                  <Clock size={8} />
-                                  {task.dueTime}
+                              <span className="flex items-center gap-1.5">
+                                <span className={getPriorityColor(task.priority)}>
+                                  <Flag size={8} fill="currentColor" />
                                 </span>
-                              ) : (
-                                <span />
-                              )}
+                                {task.dueTime && (
+                                  <span className={`flex items-center gap-0.5 ${textMuted}`}>
+                                    <Clock size={8} />
+                                    {task.dueTime}
+                                  </span>
+                                )}
+                              </span>
                               <span className="uppercase opacity-90">{task.status === 'COMPLETED' ? 'DONE' : task.status === 'IN_PROGRESS' ? 'DOING' : 'TO DO'}</span>
                             </div>
                           </div>
@@ -1060,34 +1069,30 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Priority Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Priority</label>
-                  <select
-                    value={taskPriority}
-                    onChange={(e) => setTaskPriority(e.target.value)}
-                    className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="P1">Pink (P1 - Urgent)</option>
-                    <option value="P2">Yellow (P2 - High)</option>
-                    <option value="P3">Green (P3 - Normal)</option>
-                    <option value="P4">Blue (P4 - Low)</option>
-                  </select>
-                </div>
-
-                {/* Status Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Initial Status</label>
-                  <select
-                    value={taskStatus}
-                    onChange={(e) => setTaskStatus(e.target.value)}
-                    className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="ASSIGNED">TO DO</option>
-                    <option value="IN_PROGRESS">IN PROGRESS</option>
-                    <option value="COMPLETED">COMPLETE</option>
-                  </select>
+              {/* Priority Flag Selector (Status is auto-selected to ASSIGNED/Todo) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Priority Level</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { id: 'P1', name: 'Urgent', color: 'text-red-650 bg-red-50 border-red-200 hover:bg-red-100', iconColor: '#ef4444' },
+                    { id: 'P2', name: 'High', color: 'text-orange-650 bg-orange-50 border-orange-200 hover:bg-orange-100', iconColor: '#ea580c' },
+                    { id: 'P3', name: 'Normal', color: 'text-yellow-650 bg-yellow-50 border-yellow-250 hover:bg-yellow-100', iconColor: '#ca8a04' },
+                    { id: 'P4', name: 'Low', color: 'text-blue-650 bg-blue-50 border-blue-200 hover:bg-blue-100', iconColor: '#3b82f6' }
+                  ].map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setTaskPriority(p.id)}
+                      className={`flex items-center justify-center gap-1.5 py-2 px-1.5 rounded-xl border text-[10px] font-black transition-all cursor-pointer focus:outline-none ${
+                        taskPriority === p.id 
+                          ? `${p.color} ring-2 ring-current border-transparent` 
+                          : 'bg-white border-gray-250 text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Flag size={10} fill={taskPriority === p.id ? 'currentColor' : 'none'} style={{ color: p.iconColor }} />
+                      {p.name}
+                    </button>
+                  ))}
                 </div>
               </div>
 
