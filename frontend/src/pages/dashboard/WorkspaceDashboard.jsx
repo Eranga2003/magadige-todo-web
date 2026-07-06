@@ -968,29 +968,59 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                   {/* Tasks List */}
                   <div className="space-y-2.5 z-10 overflow-y-auto max-h-[120px] pr-0.5 custom-scrollbar flex-1">
                     {dayTasks.length > 0 ? (
-                      dayTasks.map(task => {
-                        let cardBg = "";
-                        let textMuted = "";
-                        let checkColor = "";
+                      dayTasks.map((task, taskIdx) => {
+                        // --- Multi-colour palette by priority (matches Upcoming Calendar) ---
+                        const priorityPalette = {
+                          P1: {
+                            card: 'bg-gradient-to-br from-pink-500 to-rose-600 border-rose-600 text-white shadow-md shadow-rose-200/40',
+                            muted: 'text-rose-100',
+                            badge: 'bg-white/20 text-white',
+                            status: 'bg-white/25 text-white',
+                          },
+                          P2: {
+                            card: 'bg-gradient-to-br from-amber-400 to-orange-500 border-orange-500 text-white shadow-md shadow-amber-200/40',
+                            muted: 'text-amber-100',
+                            badge: 'bg-white/20 text-white',
+                            status: 'bg-white/25 text-white',
+                          },
+                          P3: {
+                            card: 'bg-gradient-to-br from-emerald-500 to-teal-600 border-teal-600 text-white shadow-md shadow-emerald-200/40',
+                            muted: 'text-emerald-100',
+                            badge: 'bg-white/20 text-white',
+                            status: 'bg-white/25 text-white',
+                          },
+                          P4: {
+                            card: 'bg-gradient-to-br from-blue-500 to-indigo-600 border-indigo-600 text-white shadow-md shadow-blue-200/40',
+                            muted: 'text-blue-100',
+                            badge: 'bg-white/20 text-white',
+                            status: 'bg-white/25 text-white',
+                          },
+                        };
 
-                        if (task.status === 'ASSIGNED') {
-                          cardBg = "bg-[#bae6fd] border border-[#7dd3fc] text-sky-950 shadow-xs";
-                          textMuted = "text-sky-800";
-                          checkColor = "border-sky-400";
-                        } else if (task.status === 'IN_PROGRESS') {
-                          cardBg = "bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-sm";
-                          textMuted = "text-blue-150";
-                          checkColor = "border-blue-400";
-                        } else if (task.status === 'COMPLETED') {
-                          cardBg = "bg-gradient-to-br from-[#10b981] to-[#047857] text-white border border-[#065f46] shadow-sm line-through opacity-85";
-                          textMuted = "text-emerald-150";
-                          checkColor = "border-emerald-400";
-                        }
+                        // Fallback rotation palette used when priority is unknown
+                        const rotationPalette = [
+                          'bg-gradient-to-br from-violet-500 to-purple-600 border-purple-600 text-white shadow-md shadow-violet-200/40',
+                          'bg-gradient-to-br from-cyan-500 to-sky-600 border-sky-600 text-white shadow-md shadow-cyan-200/40',
+                          'bg-gradient-to-br from-fuchsia-500 to-pink-600 border-pink-600 text-white shadow-md shadow-fuchsia-200/40',
+                          'bg-gradient-to-br from-lime-500 to-green-600 border-green-600 text-white shadow-md shadow-lime-200/40',
+                        ];
+
+                        const palette = priorityPalette[task.priority] || {
+                          card: rotationPalette[taskIdx % rotationPalette.length],
+                          muted: 'text-white/80',
+                          badge: 'bg-white/20 text-white',
+                          status: 'bg-white/25 text-white',
+                        };
+
+                        // Status badge label
+                        const statusLabel =
+                          task.status === 'COMPLETED' ? 'DONE' :
+                          task.status === 'IN_PROGRESS' ? 'IN PROG' : 'TO DO';
 
                         return (
-                          <div 
+                          <div
                             key={task.id}
-                            className={`p-2 rounded-xl border flex flex-col gap-1.5 transition-all hover:scale-[1.01] hover:shadow-md cursor-pointer ${cardBg}`}
+                            className={`p-2 rounded-xl border flex flex-col gap-1.5 transition-all hover:scale-[1.015] hover:shadow-lg cursor-pointer ${palette.card}`}
                           >
                             <div className="flex items-start justify-between gap-1.5 min-w-0">
                               <span className="text-[11px] font-black leading-tight break-all">
@@ -1007,17 +1037,18 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                             
                             <div className="flex items-center justify-between text-[8px] font-extrabold select-none">
                               <span className="flex items-center gap-1.5">
-                                <span className={getPriorityColor(task.priority)}>
-                                  <Flag size={8} fill="currentColor" />
-                                </span>
+                                {/* Priority flag — always white on coloured cards */}
+                                <Flag size={8} fill="currentColor" className="opacity-90" />
                                 {task.dueTime && (
-                                  <span className={`flex items-center gap-0.5 ${textMuted}`}>
+                                  <span className={`flex items-center gap-0.5 ${palette.muted}`}>
                                     <Clock size={8} />
                                     {task.dueTime}
                                   </span>
                                 )}
                               </span>
-                              <span className="uppercase opacity-90">{task.status === 'COMPLETED' ? 'DONE' : task.status === 'IN_PROGRESS' ? 'DOING' : 'TO DO'}</span>
+                              <span className={`px-1.5 py-0.5 rounded-full text-[7px] font-extrabold uppercase tracking-wide ${palette.status}`}>
+                                {statusLabel}
+                              </span>
                             </div>
                           </div>
                         );
