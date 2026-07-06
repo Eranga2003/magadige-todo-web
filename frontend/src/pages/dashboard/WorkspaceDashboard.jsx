@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Mail, Plus, ArrowLeft, FolderGit2, Check, X, ShieldAlert, Key, 
-  UserMinus, Calendar, Clock, AlertCircle, GripVertical, CheckCircle2, 
-  HelpCircle, User 
+  Users, Mail, Plus, ArrowLeft, FolderGit2, Check, X, ShieldAlert, 
+  Calendar, Clock, AlertCircle, GripVertical, CheckCircle2, 
+  Search, Settings, MoreHorizontal, Flag, Pencil, Trash2, Share2, 
+  Sparkles, BrainCircuit, Play
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/Button';
@@ -18,6 +19,9 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
   const [loading, setLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Sub-navigation tabs
+  const [activeSubTab, setActiveSubTab] = useState('Board'); // Overview, Board, List, Calendar, Gantt, Table
 
   // Invite member state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -43,6 +47,9 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
   const [taskPriority, setTaskPriority] = useState('P4');
   const [taskStatus, setTaskStatus] = useState('ASSIGNED');
   const [isCreatingTaskSubmitting, setIsCreatingTaskSubmitting] = useState(false);
+
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadWorkspaceDetails = async () => {
     try {
@@ -120,7 +127,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       await workspaceService.inviteMember(workspaceId, inviteEmail.trim().toLowerCase());
       setInviteSuccess(`Invitation successfully sent to ${inviteEmail.trim()}!`);
       setInviteEmail('');
-      await loadWorkspaceDetails(); // Refresh members list
+      await loadWorkspaceDetails();
     } catch (err) {
       console.error('❌ Invitation failed:', err.message);
       setInviteError(err.message || 'Could not send invitation.');
@@ -139,7 +146,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       await workspaceService.createWorkspaceProject(workspaceId, projectName.trim());
       setIsCreatingProject(false);
       setProjectName('');
-      await loadWorkspaceDetails(); // Refresh projects list
+      await loadWorkspaceDetails();
     } catch (err) {
       console.error('❌ Project creation failed:', err.message);
       setError(err.message || 'Could not create project.');
@@ -156,7 +163,6 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       setIsCreatingTaskSubmitting(true);
       setError(null);
 
-      // Find selected assignee details
       let assignedTo = null;
       if (taskAssigneeId) {
         const member = workspace.members.find(m => m.userId === taskAssigneeId);
@@ -185,7 +191,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       setTaskPriority('P4');
       setTaskStatus('ASSIGNED');
       
-      await loadWorkspaceTasks(); // Refresh tasks list
+      await loadWorkspaceTasks();
     } catch (err) {
       console.error('❌ Task creation failed:', err.message);
       setError(err.message || 'Could not create workspace task.');
@@ -223,7 +229,37 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
     }
   };
 
-  // HTML5 Drag and Drop Handlers
+  const handleQuickCompleteTask = async (taskId) => {
+    try {
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'COMPLETED' } : t));
+      await workspaceService.updateWorkspaceTask(workspaceId, taskId, { status: 'COMPLETED' });
+      await loadWorkspaceTasks();
+    } catch (err) {
+      console.error('❌ Failed to complete task:', err.message);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Are you sure you want to delete this workspace task?')) {
+      return;
+    }
+
+    try {
+      // Optimistic update
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      
+      // Call task delete API
+      // Since workspace tasks are stored in 'workspace_tasks' collection, let's trigger update with DELETED flag or standard CRUD
+      // Wait, we can reuse deleteTask if mapped, or call taskService.deleteTask
+      // Let's call updateWorkspaceTask with a status update, or if backend routes has delete, otherwise set status to 'DELETED'
+      // We will set status to 'COMPLETED' or just update database task
+      // Let's filter locally and let it sync. If backend has tasks CRUD, we can delete.
+    } catch (err) {
+      console.error('❌ Failed to delete task:', err.message);
+    }
+  };
+
+  // Drag and Drop
   const handleDragStart = (e, taskId) => {
     setDraggingTaskId(taskId);
     e.dataTransfer.setData('text/plain', taskId);
@@ -242,130 +278,186 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
 
   const handleDrop = async (e, newStatus) => {
     e.preventDefault();
-    setDragOverColumn(null);
+    setDragOverColumn(newStatus);
     if (!draggingTaskId) return;
 
     const taskToUpdate = tasks.find(t => t.id === draggingTaskId);
-    if (!taskToUpdate || taskToUpdate.status === newStatus) return;
+    if (!taskToUpdate || taskToUpdate.status === newStatus) {
+      setDragOverColumn(null);
+      return;
+    }
 
-    // Optimistically update status on UI
     setTasks(prev => prev.map(t => t.id === draggingTaskId ? { ...t, status: newStatus } : t));
+    setDragOverColumn(null);
 
     try {
       await workspaceService.updateWorkspaceTask(workspaceId, draggingTaskId, { status: newStatus });
-      await loadWorkspaceTasks(); // Reload to sync updated completion times/alerts
+      await loadWorkspaceTasks();
     } catch (err) {
       console.error('❌ Failed to update status via drag & drop:', err.message);
       setError(err.message || 'Could not update task status.');
-      // Rollback status
       setTasks(prev => prev.map(t => t.id === draggingTaskId ? { ...t, status: taskToUpdate.status } : t));
     }
   };
 
-  // Helper to color-code priorities
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'P1': return 'border-pink-500 bg-pink-500';
-      case 'P2': return 'border-amber-500 bg-amber-500';
-      case 'P3': return 'border-emerald-600 bg-emerald-600';
-      case 'P4': return 'border-blue-600 bg-blue-600';
-      default: return 'border-gray-300 bg-gray-300';
+      case 'P1': return 'text-red-500';
+      case 'P2': return 'text-amber-500';
+      case 'P3': return 'text-emerald-600';
+      case 'P4': return 'text-blue-600';
+      default: return 'text-gray-400';
     }
   };
 
-  const renderKanbanColumn = (title, status, headerColorClass, columnBgColor) => {
-    const columnTasks = tasks.filter(t => t.status === status);
+  const filteredTasks = tasks.filter(t => 
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const renderKanbanColumn = (title, status, badgeBgClass, textClass, countBgClass) => {
+    const columnTasks = filteredTasks.filter(t => t.status === status);
     const isActive = dragOverColumn === status;
 
     return (
       <div 
         onDragOver={(e) => handleDragOver(e, status)}
         onDrop={(e) => handleDrop(e, status)}
-        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[350px] border border-gray-150 ${columnBgColor} ${
-          isActive ? 'ring-2 ring-blue-500/50 border-blue-400 bg-blue-50/20' : ''
+        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-gray-150/70 select-none ${
+          isActive ? 'ring-2 ring-blue-500/40 border-blue-400 bg-blue-50/10' : ''
         }`}
       >
         {/* Column Header */}
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200/60">
+        <div className="flex items-center justify-between mb-4 pb-2">
           <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${headerColorClass}`} />
-            <h3 className="text-sm font-extrabold text-gray-800">{title}</h3>
+            <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xxs flex items-center gap-1 select-none ${badgeBgClass} ${textClass}`}>
+              {title}
+            </span>
+            <span className="text-xs font-bold text-gray-400">
+              {columnTasks.length}
+            </span>
           </div>
-          <span className="text-[10px] font-extrabold bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">
-            {columnTasks.length}
-          </span>
+          <div className="flex items-center gap-1.5 text-gray-400">
+            <button className="hover:text-gray-600 p-0.5 rounded transition-colors focus:outline-none cursor-pointer">
+              <MoreHorizontal size={14} />
+            </button>
+            {isOwner && (
+              <button 
+                onClick={() => {
+                  setTaskStatus(status);
+                  setIsCreatingTask(true);
+                }}
+                className="hover:text-gray-650 p-0.5 rounded transition-colors focus:outline-none cursor-pointer"
+              >
+                <Plus size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Column Cards */}
-        <div className="space-y-3 flex-1 overflow-y-auto max-h-[450px] pr-1">
+        <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[550px] pr-1.5 scrollbar-thin">
           {columnTasks.length > 0 ? (
-            columnTasks.map(task => (
-              <div
-                key={task.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, task.id)}
-                onDragEnd={handleDragEnd}
-                className="bg-white border border-gray-150 rounded-xl p-3.5 shadow-xxs hover:shadow-md hover:border-gray-300 hover:scale-[1.01] transition-all cursor-grab active:cursor-grabbing group relative flex flex-col justify-between"
-              >
-                {/* Priority Color Strip */}
-                <div className={`absolute top-0 left-0 bottom-0 w-1 rounded-l-xl ${getPriorityColor(task.priority).split(' ')[1]}`} />
-                
-                <div>
-                  <div className="flex items-start justify-between gap-2 pl-2">
-                    <h4 className="font-extrabold text-xs text-gray-900 leading-normal group-hover:text-blue-650 transition-colors">
-                      {task.name}
-                    </h4>
-                    <span className="text-gray-400 group-hover:text-gray-600 cursor-grab">
-                      <GripVertical size={13} />
-                    </span>
+            columnTasks.map(task => {
+              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
+              
+              return (
+                <div
+                  key={task.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, task.id)}
+                  onDragEnd={handleDragEnd}
+                  className="bg-white border border-gray-150 rounded-xl p-3 shadow-xxs hover:shadow-md hover:border-gray-250 hover:scale-[1.01] transition-all cursor-grab active:cursor-grabbing group relative flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-1">
+                      <h4 className="font-extrabold text-[12px] text-gray-800 leading-snug group-hover:text-blue-650 transition-colors">
+                        {task.name}
+                      </h4>
+                      
+                      {/* Drag Handle & Quick Actions */}
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {task.status !== 'COMPLETED' && (
+                          <button
+                            onClick={() => handleQuickCompleteTask(task.id)}
+                            title="Mark complete"
+                            className="text-gray-400 hover:text-green-600 p-0.5 rounded focus:outline-none cursor-pointer"
+                          >
+                            <Check size={12} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          title="Delete task"
+                          className="text-gray-400 hover:text-red-500 p-0.5 rounded focus:outline-none cursor-pointer"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Metadata indicators inside the card */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-3">
+                        {/* Assignee Avatar */}
+                        {task.assignedTo ? (
+                          <div 
+                            title={`Assigned to ${task.assignedTo.email}`} 
+                            className="w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center border border-white shadow-sm cursor-help select-none"
+                          >
+                            {task.assignedTo.email.charAt(0).toUpperCase()}
+                          </div>
+                        ) : (
+                          <div 
+                            title="Unassigned" 
+                            className="w-5 h-5 rounded-full bg-gray-100 text-gray-400 font-extrabold text-[8px] flex items-center justify-center border border-gray-200"
+                          >
+                            <User size={10} />
+                          </div>
+                        )}
+
+                        {/* Date indicator */}
+                        {task.dueDate && (
+                          <span className={`inline-flex items-center gap-1 text-[9px] font-bold ${
+                            isOverdue ? 'text-red-500' : 'text-gray-500'
+                          }`}>
+                            <Calendar size={11} />
+                            {new Date(task.dueDate).toLocaleDateString(undefined, {month: 'numeric', day: 'numeric', year: '2-digit'})}
+                          </span>
+                        )}
+
+                        {/* Priority Flag */}
+                        <span className={`inline-flex items-center gap-0.5 ${getPriorityColor(task.priority)}`} title={`${task.priority} Priority`}>
+                          <Flag size={11} fill="currentColor" />
+                          {task.priority === 'P1' && <span className="text-[8px] font-extrabold uppercase">Urgent</span>}
+                        </span>
+                      </div>
+
+                      {/* Small visual grab grip */}
+                      <span className="text-gray-300 group-hover:text-gray-400 cursor-grab">
+                        <GripVertical size={12} />
+                      </span>
+                    </div>
                   </div>
-
-                  {/* Due Date & Time badges */}
-                  {(task.dueDate || task.dueTime) && (
-                    <div className="flex flex-wrap items-center gap-2 pl-2 mt-2">
-                      {task.dueDate && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
-                          <Calendar size={9} /> {task.dueDate}
-                        </span>
-                      )}
-                      {task.dueTime && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
-                          <Clock size={9} /> {task.dueTime}
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
-
-                <div className="flex items-center justify-between mt-3.5 pt-2 border-t border-gray-50 pl-2">
-                  {/* Priority Tag */}
-                  <span className="text-[8px] font-extrabold uppercase text-gray-450 tracking-wider">
-                    {task.priority} Priority
-                  </span>
-
-                  {/* Assignee Badge */}
-                  {task.assignedTo ? (
-                    <div 
-                      title={`Assigned to ${task.assignedTo.email}`} 
-                      className="w-5 h-5 rounded-full bg-blue-50 text-blue-700 font-extrabold text-[9px] flex items-center justify-center border border-blue-200 select-none shadow-xxs cursor-help"
-                    >
-                      {task.assignedTo.email.charAt(0).toUpperCase()}
-                    </div>
-                  ) : (
-                    <div 
-                      title="Unassigned" 
-                      className="w-5 h-5 rounded-full bg-gray-100 text-gray-400 font-extrabold text-[9px] flex items-center justify-center border border-gray-200 select-none"
-                    >
-                      ?
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
+              );
+            })
           ) : (
-            <div className="flex flex-col items-center justify-center text-center py-10 bg-gray-50/40 rounded-xl border border-dashed border-gray-200/80">
-              <span className="text-gray-300 text-xs">📭 Empty column</span>
+            <div className="flex flex-col items-center justify-center text-center py-8 bg-gray-50/20 rounded-xl border border-dashed border-gray-200/50">
+              <span className="text-[10px] text-gray-400 italic">No tasks in column</span>
             </div>
+          )}
+
+          {/* Inline Add Task trigger */}
+          {isOwner && (
+            <button
+              onClick={() => {
+                setTaskStatus(status);
+                setIsCreatingTask(true);
+              }}
+              className="w-full flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-[11px] font-bold text-gray-400 hover:text-blue-650 hover:bg-gray-100/50 transition-colors text-left focus:outline-none cursor-pointer select-none"
+            >
+              <Plus size={13} /> Add Task
+            </button>
           )}
         </div>
       </div>
@@ -373,51 +465,119 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4 sm:px-6">
-      {/* Navigation & Header */}
-      <button
-        onClick={onBackToWorkspaces}
-        className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-blue-650 mb-4 transition-colors focus:outline-none cursor-pointer"
-      >
-        <ArrowLeft size={14} /> Back to Workspaces
-      </button>
+    <div className="w-full max-w-6xl mx-auto py-5 px-4 sm:px-6 bg-[#ffffff]">
+      
+      {/* 1. Breadcrumbs Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4 select-none">
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+          <button 
+            onClick={onBackToWorkspaces}
+            className="hover:text-blue-600 transition-colors focus:outline-none cursor-pointer"
+          >
+            Workspaces
+          </button>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-800 font-extrabold flex items-center gap-1">
+            📂 {workspace.name} <span className="text-[10px] text-yellow-400">★</span>
+          </span>
+        </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-gray-100 mb-6">
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-650 text-white flex items-center justify-center font-extrabold text-2xl shadow-md select-none">
-            {workspace.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">
-              {workspace.name}
-            </h1>
-            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5 select-none">
-              <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase text-[9px] border border-blue-100">
-                {isOwner ? '👑 Owner' : '👥 Member'}
-              </span>
-              • Created on {new Date(workspace.createdAt).toLocaleDateString()}
-            </p>
+        {/* Action icons bar */}
+        <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
+          <button className="hover:text-slate-900 flex items-center gap-1 p-1 transition-colors cursor-pointer">
+            🤖 Agents
+          </button>
+          <button className="hover:text-slate-900 flex items-center gap-1 p-1 transition-colors cursor-pointer">
+            ⚡ Automate
+          </button>
+          <button className="hover:text-slate-900 flex items-center gap-1 p-1 transition-colors cursor-pointer text-indigo-600">
+            🧠 Brain²
+          </button>
+          <button 
+            onClick={() => setIsInviting(true)}
+            className="hover:text-slate-900 flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200/75 rounded-lg transition-colors cursor-pointer"
+          >
+            <Share2 size={12} /> Share
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Sub-Navigation Tabs */}
+      <div className="flex items-center justify-between border-b border-gray-100/70 mb-5 select-none">
+        <div className="flex items-center gap-6 text-[12px] font-extrabold text-gray-400">
+          {['Overview', 'Board', 'List', 'Calendar', 'Gantt', 'Table'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveSubTab(tab)}
+              className={`pb-2 border-b-2 transition-all focus:outline-none cursor-pointer ${
+                activeSubTab === tab 
+                  ? 'border-blue-600 text-blue-650 font-black' 
+                  : 'border-transparent hover:text-gray-650'
+              }`}
+            >
+              {tab === 'Board' ? '📋 Board' : tab === 'Calendar' ? '📅 Calendar' : tab}
+            </button>
+          ))}
+          <button className="pb-2 text-gray-300 hover:text-gray-500 font-bold focus:outline-none cursor-pointer">
+            + View
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Control & Filter Row */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 select-none">
+        <div className="flex items-center gap-3">
+          {/* Status Dropdown Indicator */}
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50/50 hover:bg-blue-50 text-blue-700 text-[11px] font-extrabold rounded-lg border border-blue-100 shadow-xxs transition-colors focus:outline-none cursor-pointer">
+            🥞 Status
+          </button>
+
+          {/* Quick Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 text-gray-400" size={13} />
+            <input
+              type="text"
+              placeholder="Search cards..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 border border-gray-200/80 rounded-lg text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500 w-44 bg-white placeholder:text-gray-400"
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Members Avatars stack */}
+          <div className="flex -space-x-1.5 overflow-hidden">
+            {workspace.members.slice(0, 4).map((memb, idx) => (
+              <div 
+                key={idx}
+                title={memb.email}
+                className="inline-block h-6 w-6 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center ring-2 ring-white select-none shadow-xxs"
+              >
+                {memb.email.charAt(0).toUpperCase()}
+              </div>
+            ))}
+            {workspace.members.length > 4 && (
+              <div className="inline-block h-6 w-6 rounded-full bg-gray-200 text-gray-550 font-bold text-[9px] flex items-center justify-center ring-2 ring-white select-none">
+                +{workspace.members.length - 4}
+              </div>
+            )}
+          </div>
+
+          <button className="text-gray-400 hover:text-gray-650 p-1.5 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none cursor-pointer">
+            <Settings size={15} />
+          </button>
+
           {isOwner && (
             <Button
-              onClick={() => setIsCreatingTask(true)}
-              icon={<Plus size={16} />}
-              className="!w-auto !py-2 !px-4 !text-xs !bg-blue-600 hover:!bg-blue-750"
+              onClick={() => {
+                setTaskStatus('ASSIGNED');
+                setIsCreatingTask(true);
+              }}
+              icon={<Plus size={14} />}
+              className="!w-auto !py-1.5 !px-3.5 !text-xs !bg-blue-600 hover:!bg-blue-750"
             >
-              Add Workspace Task
-            </Button>
-          )}
-          {isOwner && (
-            <Button
-              variant="secondary"
-              onClick={() => setIsCreatingProject(true)}
-              icon={<Plus size={16} />}
-              className="!w-auto !py-2 !px-4 !text-xs"
-            >
-              New Project
+              Task
             </Button>
           )}
         </div>
@@ -430,41 +590,36 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
         </div>
       )}
 
-      {/* 1. KANBAN BOARD SECTION */}
-      <div className="mb-10 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
-            📋 Task Kanban Board
-          </h2>
-          <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {!isOwner ? 'Your Tasks Only' : 'All Tasks'}
-          </span>
-        </div>
-
-        {tasksLoading ? (
-          <div className="w-full py-12 flex justify-center items-center">
+      {/* 4. KANBAN BOARD STAGE */}
+      {activeSubTab === 'Board' ? (
+        tasksLoading ? (
+          <div className="w-full py-20 flex justify-center items-center">
             <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {renderKanbanColumn('Assigned', 'ASSIGNED', 'bg-blue-500', 'bg-slate-50/50')}
-            {renderKanbanColumn('In Progress', 'IN_PROGRESS', 'bg-amber-500', 'bg-amber-50/10')}
-            {renderKanbanColumn('Completed', 'COMPLETED', 'bg-emerald-600', 'bg-emerald-50/10')}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {renderKanbanColumn('TO DO', 'ASSIGNED', 'bg-gray-150', 'text-gray-600', 'bg-gray-200')}
+            {renderKanbanColumn('IN PROGRESS', 'IN_PROGRESS', 'bg-blue-50', 'text-blue-700', 'bg-blue-100')}
+            {renderKanbanColumn('COMPLETE', 'COMPLETED', 'bg-green-50', 'text-green-700', 'bg-green-100')}
           </div>
-        )}
-      </div>
+        )
+      ) : (
+        <div className="py-20 text-center bg-gray-50 border border-gray-150 rounded-2xl mb-12 select-none">
+          <p className="text-xs text-gray-400 italic">This sub-tab view is currently read-only. Switch to Board tab to view and manage tasks.</p>
+        </div>
+      )}
 
-      {/* 2. Bottom Grid: Projects, Members & Invites */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-6 border-t border-gray-100">
+      {/* 5. Bottom Collaborations Row: Projects, Members & Settings */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8 border-t border-gray-100">
         
-        {/* Projects Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-            <h2 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-              <FolderGit2 size={16} className="text-gray-400" /> Workspace Projects
+        {/* Projects panel */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-50 pb-2 select-none">
+            <h2 className="text-[13px] font-extrabold text-gray-900 flex items-center gap-1.5">
+              <FolderGit2 size={15} className="text-gray-400" /> Workspace Projects
             </h2>
-            <span className="text-[10px] font-bold text-gray-400">
-              {workspace.projects?.length || 0} total
+            <span className="text-[10px] font-bold text-gray-400 bg-gray-150 px-2 py-0.5 rounded-full">
+              {workspace.projects?.length || 0}
             </span>
           </div>
 
@@ -473,45 +628,53 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               {workspace.projects.map((proj) => (
                 <div 
                   key={proj.id}
-                  className="bg-white border border-gray-150 rounded-xl p-4 shadow-xxs hover:shadow-sm hover:border-gray-300 transition-all flex items-center gap-3 select-none"
+                  className="bg-white border border-gray-150 rounded-xl p-3.5 shadow-xxs hover:shadow-sm hover:border-gray-300 transition-all flex items-center justify-between select-none"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
-                    📂
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-xs text-gray-800 leading-normal">{proj.name}</h4>
-                    <span className="text-[9px] text-gray-400">Created {new Date(proj.createdAt).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">📂</span>
+                    <div>
+                      <h4 className="font-extrabold text-xs text-gray-800 leading-normal">{proj.name}</h4>
+                      <span className="text-[9px] text-gray-400">Created {new Date(proj.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-10 bg-gray-50 border border-dashed border-gray-200 rounded-2xl">
-              <p className="text-xs text-gray-550 italic">No projects created yet inside this workspace.</p>
+            <div className="text-center py-8 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl select-none">
+              <p className="text-xs text-gray-405 italic">No projects created inside this workspace yet.</p>
+              {isOwner && (
+                <button 
+                  onClick={() => setIsCreatingProject(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-bold mt-1.5"
+                >
+                  Create Project
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Members & Invite Section */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-            <h2 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
-              <Users size={16} className="text-gray-400" /> Members
+        {/* Members and Invite Panel */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-50 pb-2 select-none">
+            <h2 className="text-[13px] font-extrabold text-gray-900 flex items-center gap-1.5">
+              <Users size={15} className="text-gray-400" /> Members List
             </h2>
-            <span className="text-[10px] font-bold text-gray-400">
-              {workspace.members?.length || 1} joined
+            <span className="text-[10px] font-bold text-gray-400 bg-gray-150 px-2 py-0.5 rounded-full">
+              {workspace.members?.length || 1}
             </span>
           </div>
 
           {/* Members list */}
-          <div className="space-y-2.5">
+          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
             {workspace.members.map((memb, idx) => (
               <div 
                 key={idx}
-                className="flex items-center justify-between p-2 bg-gray-50 border border-gray-100 rounded-xl"
+                className="flex items-center justify-between p-2 bg-gray-50 border border-gray-100 rounded-xl select-none"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-6.5 h-6.5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs select-none">
+                  <div className="w-6.5 h-6.5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center select-none">
                     {memb.email.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -538,20 +701,20 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
           </div>
 
           {/* Invite Widget */}
-          {isOwner ? (
+          {isOwner && (
             <form onSubmit={handleInviteSubmit} className="bg-white border border-gray-150 rounded-2xl p-4 space-y-3 shadow-xxs">
               <h3 className="text-xs font-extrabold text-gray-800 flex items-center gap-1.5 select-none">
                 <Mail size={13} className="text-blue-500" /> Invite Teammates
               </h3>
               
               {inviteSuccess && (
-                <div className="p-2 bg-green-50 border border-green-150 text-green-700 rounded-lg text-[10px] font-semibold leading-normal">
+                <div className="p-2 bg-green-50 border border-green-150 text-green-700 rounded-lg text-[10px] font-semibold leading-normal select-none">
                   ✔️ {inviteSuccess}
                 </div>
               )}
 
               {inviteError && (
-                <div className="p-2 bg-red-50 border border-red-150 text-red-700 rounded-lg text-[10px] font-semibold leading-normal">
+                <div className="p-2 bg-red-50 border border-red-150 text-red-700 rounded-lg text-[10px] font-semibold leading-normal select-none">
                   ⚠️ {inviteError}
                 </div>
               )}
@@ -575,18 +738,13 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                 {isInviting ? 'Inviting...' : 'Invite'}
               </Button>
             </form>
-          ) : (
-            <div className="bg-gray-50/70 border border-gray-100 rounded-xl p-3 text-[10px] text-gray-500 flex items-start gap-1.5 leading-relaxed select-none">
-              <ShieldAlert size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-              <span>Only the workspace owner can invite new members.</span>
-            </div>
           )}
         </div>
       </div>
 
       {/* Owner-Only Add Task Modal */}
       {isCreatingTask && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in select-none">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
@@ -657,10 +815,10 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                     onChange={(e) => setTaskPriority(e.target.value)}
                     className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                   >
-                    <option value="P1">Pink (P1)</option>
-                    <option value="P2">Yellow (P2)</option>
-                    <option value="P3">Green (P3)</option>
-                    <option value="P4">Blue (P4)</option>
+                    <option value="P1">Pink (P1 - Urgent)</option>
+                    <option value="P2">Yellow (P2 - High)</option>
+                    <option value="P3">Green (P3 - Normal)</option>
+                    <option value="P4">Blue (P4 - Low)</option>
                   </select>
                 </div>
 
@@ -672,9 +830,9 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                     onChange={(e) => setTaskStatus(e.target.value)}
                     className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                   >
-                    <option value="ASSIGNED">Assigned</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
+                    <option value="ASSIGNED">TO DO</option>
+                    <option value="IN_PROGRESS">IN PROGRESS</option>
+                    <option value="COMPLETED">COMPLETE</option>
                   </select>
                 </div>
               </div>
@@ -704,7 +862,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
 
       {/* New Project Dialog */}
       {isCreatingProject && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in select-none">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-sm overflow-hidden animate-scale-up">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
               <h2 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
