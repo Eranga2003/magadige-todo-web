@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { getDb } from '../utils/firebase';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
-import { sendInvitationEmail } from '../utils/mailer';
+import { sendInvitationEmail, sendTaskAssignmentEmail, sendTaskCompletionEmail } from '../utils/mailer';
 
 /**
  * Create a new workspace
@@ -433,6 +433,224 @@ export async function createWorkspaceProject(req: AuthenticatedRequest, res: Res
     });
 
     res.status(201).json({ status: 'success', data: newProject });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Create a new task within a workspace (Owner only)
+ */
+export async function createWorkspaceTask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.userId;
+    const workspaceId = req.params.id;
+    const { name, dueDate, dueTime, assignedTo, priority, status } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ status: 'error', message: 'Not authorized.' });
+      return;
+    }
+
+    if (!name || !name.trim()) {
+      res.status(400).json({ status: 'error', message: 'Task name is required.' });
+      return;
+    }
+
+    const db = getDb();
+    
+    // Fetch workspace
+    const workspaceDoc = await db.collection('workspaces').doc(workspaceId).get();
+    if (!workspaceDoc.exists) {
+      res.status(404).json({ status: 'error', message: 'Workspace not found.' });
+      return;
+    }
+    const workspace = workspaceDoc.data();
+
+    // Verify requesting user is owner
+    if (workspace.ownerId !== userId) {
+      res.status(403).json({ status: 'error', message: 'Only the workspace owner can add tasks.' });
+      return;
+    }
+
+    const taskDocRef = db.collection('workspace_tasks').doc();
+    const newTask = {
+      id: taskDocRef.id,
+      workspaceId,
+      name: name.trim(),
+      dueDate: dueDate || '',
+      dueTime: dueTime || '',
+      assignedTo: assignedTo || null, // { userId, email }
+      priority: priority || 'P4',
+      status: status || 'ASSIGNED', // ASSIGNED, IN_PROGRESS, COMPLETED
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await taskDocRef.set(newTask);
+
+    // Send task assignment email if assigned to a member
+    if (newTask.assignedTo && newTask.assignedTo.email) {
+      const inviterDoc = await db.collection('users').doc(userId).get();
+      const inviterName = inviterDoc.exists ? inviterDoc.data().name : 'Workspace Owner';
+      
+      sendTaskAssignmentEmail({
+        toEmail: newTask.assignedTo.email,
+        workspaceName: workspace.name,
+        taskName: newTask.name,
+        dueDate: newTask.dueDate,
+        dueTime: newTask.dueTime,
+        priority: newTask.priority,
+        inviterName
+      }).catch((err: any) => console.error('❌ Failed to send assignment email:', err.message));
+    }
+
+    res.status(201).json({ status: 'success', data: newTask });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Retrieve tasks for a workspace (Role-based: Owner sees all, member sees assigned only)
+ */
+export async function getWorkspaceTasks(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.userId;
+    const workspaceId = req.params.id;
+
+    if (!userId) {
+      res.status(401).json({ status: 'error', message: 'Not authorized.' });
+      return;
+    }
+
+    const db = getDb();
+    
+    // Fetch workspace to verify membership
+    const workspaceDoc = await db.collection('workspaces').doc(workspaceId).get();
+    if (!workspaceDoc.exists) {
+      res.status(404).json({ status: 'error', message: 'Workspace not found.' });
+      return;
+    }
+    const workspace = workspaceDoc.data();
+
+    // Verify membership
+    const isMember = workspace.memberIds.includes(userId);
+    if (!isMember) {
+      // Check by email in case they haven't synced ID yet
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userEmail = userDoc.exists ? userDoc.data().email : '';
+      if (!workspace.memberEmails.includes(userEmail)) {
+        res.status(403).json({ status: 'error', message: 'Forbidden. You are not a member of this workspace.' });
+        return;
+      }
+    }
+
+    const tasksSnapshot = await db.collection('workspace_tasks').where('workspaceId', '==', workspaceId).get();
+    let tasks = tasksSnapshot.docs.map((doc: any) => doc.data());
+
+    // Role Filtering: Owner sees everything, Members see ONLY tasks assigned directly to them
+    const isOwner = workspace.ownerId === userId;
+    if (!isOwner) {
+      tasks = tasks.filter((t: any) => t.assignedTo?.userId === userId);
+    }
+
+    res.status(200).json({ status: 'success', data: tasks });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update a task inside a workspace (Owner can update details, member can ONLY update status of their tasks)
+ */
+export async function updateWorkspaceTask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.userId;
+    const workspaceId = req.params.id;
+    const taskId = req.params.taskId;
+    const { status, name, dueDate, dueTime, priority, assignedTo } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ status: 'error', message: 'Not authorized.' });
+      return;
+    }
+
+    const db = getDb();
+    
+    // Fetch task
+    const taskDocRef = db.collection('workspace_tasks').doc(taskId);
+    const taskDoc = await taskDocRef.get();
+    if (!taskDoc.exists) {
+      res.status(404).json({ status: 'error', message: 'Task not found.' });
+      return;
+    }
+    const task = taskDoc.data();
+
+    // Fetch workspace
+    const workspaceDoc = await db.collection('workspaces').doc(workspaceId).get();
+    if (!workspaceDoc.exists) {
+      res.status(404).json({ status: 'error', message: 'Workspace not found.' });
+      return;
+    }
+    const workspace = workspaceDoc.data();
+
+    const isOwner = workspace.ownerId === userId;
+    const isAssignee = task.assignedTo?.userId === userId;
+
+    // Enforce permissions:
+    // If not owner, user can ONLY update the task status of tasks assigned to themselves
+    if (!isOwner) {
+      if (!isAssignee) {
+        res.status(403).json({ status: 'error', message: 'You are not authorized to edit this task.' });
+        return;
+      }
+      
+      // Member tries to edit fields other than 'status'
+      const requestedKeys = Object.keys(req.body);
+      const isEditingOtherFields = requestedKeys.some(key => key !== 'status');
+      if (isEditingOtherFields) {
+        res.status(403).json({ status: 'error', message: 'Members can only drag and update status, not edit task details.' });
+        return;
+      }
+    }
+
+    const oldStatus = task.status;
+    const updatedTask = {
+      ...task,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (isOwner) {
+      if (name !== undefined) updatedTask.name = name.trim();
+      if (dueDate !== undefined) updatedTask.dueDate = dueDate;
+      if (dueTime !== undefined) updatedTask.dueTime = dueTime;
+      if (priority !== undefined) updatedTask.priority = priority;
+      if (assignedTo !== undefined) updatedTask.assignedTo = assignedTo;
+    }
+
+    if (status !== undefined) {
+      updatedTask.status = status;
+    }
+
+    await taskDocRef.set(updatedTask);
+
+    // If marked as COMPLETED and old status was not completed, send completion email to Owner
+    if (status === 'COMPLETED' && oldStatus !== 'COMPLETED') {
+      const userDoc = await db.collection('users').doc(userId).get();
+      const ownerDoc = await db.collection('users').doc(workspace.ownerId).get();
+      
+      if (ownerDoc.exists) {
+        sendTaskCompletionEmail({
+          ownerEmail: ownerDoc.data().email,
+          workspaceName: workspace.name,
+          taskName: task.name,
+          assigneeEmail: userDoc.exists ? userDoc.data().email : (task.assignedTo?.email || 'A member')
+        }).catch((err: any) => console.error('❌ Failed to send completion email:', err.message));
+      }
+    }
+
+    res.status(200).json({ status: 'success', data: updatedTask });
   } catch (error) {
     next(error);
   }

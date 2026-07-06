@@ -155,4 +155,22 @@ export const workspaceService = {
       body: JSON.stringify({ name }),
     });
   },
+
+  async getWorkspaceTasks(workspaceId) {
+    return fetchAPI(`/workspaces/${workspaceId}/tasks`);
+  },
+
+  async createWorkspaceTask(workspaceId, task) {
+    return fetchAPI(`/workspaces/${workspaceId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(task),
+    });
+  },
+
+  async updateWorkspaceTask(workspaceId, taskId, task) {
+    return fetchAPI(`/workspaces/${workspaceId}/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(task),
+    });
+  },
 };
