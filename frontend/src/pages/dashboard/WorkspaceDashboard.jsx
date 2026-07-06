@@ -668,7 +668,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
         /* OVERVIEW TAB: List all tasks with line cut for completed ones + analytics + members */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 select-none">
           {/* Tasks List Card Wrapper (2/3 width) */}
-          <div className="lg:col-span-2 bg-[#f8fafc]/55 border border-blue-50/20 shadow-[0_12px_30px_rgba(219,234,254,0.35)] rounded-3xl p-6 space-y-4">
+          <div className="lg:col-span-2 bg-[#f8fafc]/55 border border-blue-100/30 shadow-2xl shadow-blue-100/60 rounded-3xl p-6 space-y-4">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
               📝 Space Task List
             </h3>
@@ -765,7 +765,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
                 📊 Workspace Analytics
               </h3>
-              <div className="bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-[0_12px_30px_rgba(37,99,235,0.35)] rounded-3xl p-5 space-y-4">
+              <div className="bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-2xl shadow-blue-250/50 rounded-3xl p-5 space-y-4">
                 <div>
                   <span className="text-[10px] font-bold text-blue-100 uppercase tracking-wide">Completion Rate</span>
                   <div className="flex items-center gap-3 mt-1">
@@ -807,7 +807,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
                 👥 Space Members ({workspace.members.length})
               </h3>
-              <div className="bg-[#f0f9ff]/80 border border-blue-100/50 shadow-[0_12px_30px_rgba(219,234,254,0.45)] rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
+              <div className="bg-[#f0f9ff]/80 border border-blue-200/40 shadow-2xl shadow-blue-100/60 rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
                 {workspace.members.map((memb, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2.5 bg-white/80 border border-blue-50/50 shadow-xxs rounded-xl select-none">
                     <div className="flex items-center gap-2 min-w-0">
