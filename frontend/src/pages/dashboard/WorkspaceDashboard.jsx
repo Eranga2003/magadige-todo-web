@@ -360,13 +360,22 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             columnTasks.map(task => {
               const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
               
+              let cardStyleClass = "bg-white border-transparent shadow-[0_3px_10px_rgba(219,234,254,0.35)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.12)]";
+              if (task.status === 'ASSIGNED') {
+                cardStyleClass = "bg-blue-50/40 border border-blue-100/30 shadow-[0_4px_12px_rgba(37,99,235,0.06)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.12)] hover:bg-blue-50/70";
+              } else if (task.status === 'IN_PROGRESS') {
+                cardStyleClass = "bg-indigo-50/50 border border-indigo-100/30 shadow-[0_4px_12px_rgba(79,70,229,0.06)] hover:shadow-[0_8px_20px_rgba(79,70,229,0.12)] hover:bg-indigo-50/70";
+              } else if (task.status === 'COMPLETED') {
+                cardStyleClass = "bg-emerald-50/50 border border-emerald-100/30 shadow-[0_4px_12px_rgba(16,185,129,0.06)] hover:shadow-[0_8px_20px_rgba(16,185,129,0.12)] hover:bg-emerald-50/70";
+              }
+
               return (
                 <div
                   key={task.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, task.id)}
                   onDragEnd={handleDragEnd}
-                  className="bg-white border border-transparent shadow-[0_3px_10px_rgba(219,234,254,0.35)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.12)] hover:scale-[1.01] transition-all cursor-grab active:cursor-grabbing group relative flex flex-col justify-between"
+                  className={`${cardStyleClass} rounded-xl p-3 hover:scale-[1.01] transition-all cursor-grab active:cursor-grabbing group relative flex flex-col justify-between`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-1">
