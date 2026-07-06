@@ -754,7 +754,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               </div>
             ) : (
               <div className="py-12 text-center bg-gray-50/40 rounded-2xl border border-dashed border-gray-200">
-                <p className="text-xs text-gray-450 italic">No tasks created yet in this workspace.</p>
+                <p className="text-xs text-gray-405 italic">No tasks created yet in this workspace.</p>
               </div>
             )}
           </div>
@@ -765,13 +765,13 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
                 📊 Workspace Analytics
               </h3>
-              <div className="bg-white border border-transparent shadow-[0_12px_30px_rgba(219,234,254,0.4)] rounded-3xl p-5 space-y-4">
+              <div className="bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-[0_12px_30px_rgba(37,99,235,0.35)] rounded-3xl p-5 space-y-4">
                 <div>
-                  <span className="text-[10px] font-bold text-gray-450 uppercase tracking-wide">Completion Rate</span>
+                  <span className="text-[10px] font-bold text-blue-100 uppercase tracking-wide">Completion Rate</span>
                   <div className="flex items-center gap-3 mt-1">
-                    <div className="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div className="flex-1 bg-blue-950/65 h-2 rounded-full overflow-hidden">
                       <div 
-                        className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                        className="bg-emerald-450 h-full rounded-full transition-all duration-300"
                         style={{ 
                           width: `${filteredTasks.length > 0 
                             ? (filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100 
@@ -779,7 +779,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                         }}
                       />
                     </div>
-                    <span className="text-xs font-black text-slate-800">
+                    <span className="text-xs font-black text-white">
                       {filteredTasks.length > 0 
                         ? Math.round((filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100) 
                         : 0}%
@@ -788,13 +788,13 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
-                  <div className="bg-slate-50/50 p-3 rounded-xl">
-                    <span className="text-[9px] font-extrabold text-gray-400 uppercase">Total Tasks</span>
-                    <p className="text-lg font-black text-slate-850 mt-0.5">{filteredTasks.length}</p>
+                  <div className="bg-blue-500/25 border border-blue-400/20 p-3 rounded-xl">
+                    <span className="text-[9px] font-extrabold text-blue-100 uppercase">Total Tasks</span>
+                    <p className="text-lg font-black text-white mt-0.5">{filteredTasks.length}</p>
                   </div>
-                  <div className="bg-emerald-50/30 p-3 rounded-xl">
-                    <span className="text-[9px] font-extrabold text-emerald-600 uppercase">Completed</span>
-                    <p className="text-lg font-black text-emerald-650 mt-0.5">
+                  <div className="bg-emerald-500/25 border border-emerald-450/20 p-3 rounded-xl">
+                    <span className="text-[9px] font-extrabold text-emerald-350 uppercase">Completed</span>
+                    <p className="text-lg font-black text-white mt-0.5">
                       {filteredTasks.filter(t => t.status === 'COMPLETED').length}
                     </p>
                   </div>
@@ -807,16 +807,16 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
                 👥 Space Members ({workspace.members.length})
               </h3>
-              <div className="bg-white border border-transparent shadow-[0_12px_30px_rgba(219,234,254,0.4)] rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
+              <div className="bg-[#f0f9ff]/80 border border-blue-100/50 shadow-[0_12px_30px_rgba(219,234,254,0.45)] rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
                 {workspace.members.map((memb, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2.5 bg-gray-50/60 rounded-xl select-none">
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-white/80 border border-blue-50/50 shadow-xxs rounded-xl select-none">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-6 h-6 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white">
                         {memb.email.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold text-gray-800 truncate">{memb.email}</p>
-                        <span className="text-[7.5px] font-extrabold text-gray-450 uppercase">{memb.role}</span>
+                        <span className="text-[7.5px] font-extrabold text-gray-455 uppercase">{memb.role}</span>
                       </div>
                     </div>
                   </div>
