@@ -340,7 +340,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             <button className="hover:text-gray-600 p-0.5 rounded transition-colors focus:outline-none cursor-pointer">
               <MoreHorizontal size={14} />
             </button>
-            {isOwner && (
+            {isOwner && status === 'ASSIGNED' && (
               <button 
                 onClick={() => {
                   setTaskStatus(status);
@@ -483,7 +483,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
           )}
 
           {/* Inline Add Task trigger */}
-          {isOwner && (
+          {isOwner && status === 'ASSIGNED' && (
             <button
               onClick={() => {
                 setTaskStatus(status);
