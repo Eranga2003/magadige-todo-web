@@ -538,7 +538,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       </div>
 
       {/* 2. Sub-Navigation Tabs */}
-      <div className="flex items-center justify-between border-b border-gray-100/70 mb-5 select-none">
+      <div className="flex items-center justify-between border-b border-gray-100/70 mb-4 select-none">
         <div className="flex items-center gap-6 text-[12px] font-extrabold text-gray-400">
           {['Overview', 'Board', 'List', 'Calendar', 'Gantt', 'Table'].map(tab => (
             <button
@@ -557,6 +557,34 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             + View
           </button>
         </div>
+      </div>
+
+      {/* 2.5 Upper Members List Row */}
+      <div className="flex flex-wrap items-center gap-2 mb-6 px-1 select-none">
+        <span className="text-[10px] font-black text-gray-450 uppercase tracking-wider">👥 Space Members:</span>
+        {workspace.members.map((memb, idx) => (
+          <div 
+            key={idx} 
+            className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 border border-blue-50/40 rounded-full text-[10px] font-bold shadow-[0_3px_8px_rgba(219,234,254,0.22)] hover:bg-gray-100/50 transition-colors"
+          >
+            <div className="w-4 h-4 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white">
+              {memb.email.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-gray-700 truncate max-w-[120px]" title={memb.email}>{memb.email}</span>
+            <span className="text-[7.5px] font-extrabold bg-blue-50 text-blue-750 border border-blue-100 px-1.5 py-0.2 rounded-full uppercase">
+              {memb.role}
+            </span>
+            {isOwner && memb.role !== 'OWNER' && (
+              <button 
+                onClick={() => handleRemoveMember(memb.email)} 
+                className="text-gray-300 hover:text-red-500 transition-colors p-0.5 ml-0.5 focus:outline-none cursor-pointer"
+                title="Remove member"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* 3. Control & Filter Row */}
@@ -625,156 +653,177 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
         </div>
       )}
 
-      {/* 4. KANBAN BOARD STAGE */}
-      {activeSubTab === 'Board' ? (
-        tasksLoading ? (
-          <div className="w-full py-20 flex justify-center items-center">
-            <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+      {/* 4. CONTENT STAGE BASED ON SUB-TABS */}
+      {tasksLoading ? (
+        <div className="w-full py-20 flex justify-center items-center">
+          <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      ) : activeSubTab === 'Board' ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {renderKanbanColumn('TO DO', 'ASSIGNED', 'bg-gray-150', 'text-gray-600', 'bg-gray-200')}
+          {renderKanbanColumn('IN PROGRESS', 'IN_PROGRESS', 'bg-blue-50', 'text-blue-700', 'bg-blue-100')}
+          {renderKanbanColumn('COMPLETE', 'COMPLETED', 'bg-green-50', 'text-green-700', 'bg-green-100')}
+        </div>
+      ) : activeSubTab === 'Overview' ? (
+        /* OVERVIEW TAB: List all tasks with line cut for completed ones + analytics */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 select-none">
+          {/* Tasks List (2/3 width) */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+              📝 Space Task List
+            </h3>
+            {filteredTasks.length > 0 ? (
+              <div className="space-y-2.5">
+                {filteredTasks.map(task => {
+                  const isCompleted = task.status === 'COMPLETED';
+                  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+                  return (
+                    <div 
+                      key={task.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-transparent shadow-[0_3px_8px_rgba(219,234,254,0.3)] rounded-xl gap-2 hover:shadow-[0_6px_15px_rgba(219,234,254,0.45)] transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        {isCompleted ? (
+                          <CheckCircle2 size={16} className="text-emerald-500" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border border-gray-300" />
+                        )}
+                        <div>
+                          <h4 className={`text-xs font-bold text-gray-800 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                            {task.name}
+                          </h4>
+                          
+                          {/* Task Badges: Dates, Status, Priorities */}
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {task.dueDate && (
+                              <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold ${isOverdue ? 'text-red-500 bg-red-50 px-1 py-0.2 rounded' : 'text-gray-400'}`}>
+                                <Calendar size={10} />
+                                {task.dueDate} {task.dueTime && `@ ${task.dueTime}`}
+                              </span>
+                            )}
+                            <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded uppercase ${
+                              task.status === 'COMPLETED' ? 'bg-green-55 text-green-700' :
+                              task.status === 'IN_PROGRESS' ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-750'
+                            }`}>
+                              {task.status === 'COMPLETED' ? 'COMPLETE' : task.status === 'IN_PROGRESS' ? 'IN PROGRESS' : 'TO DO'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 justify-end">
+                        {/* Assignee initials badge */}
+                        {task.assignedTo ? (
+                          <div 
+                            title={`Assigned to ${task.assignedTo.email}`}
+                            className="w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white"
+                          >
+                            {task.assignedTo.email.charAt(0).toUpperCase()}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-gray-400 italic">Unassigned</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center bg-gray-50/40 rounded-2xl border border-dashed border-gray-200">
+                <p className="text-xs text-gray-450 italic">No tasks created yet in this workspace.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {renderKanbanColumn('TO DO', 'ASSIGNED', 'bg-gray-150', 'text-gray-600', 'bg-gray-200')}
-            {renderKanbanColumn('IN PROGRESS', 'IN_PROGRESS', 'bg-blue-50', 'text-blue-700', 'bg-blue-100')}
-            {renderKanbanColumn('COMPLETE', 'COMPLETED', 'bg-green-50', 'text-green-700', 'bg-green-100')}
+
+          {/* Analytics Right side Panel (1/3 width) */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+              📊 Workspace Analytics
+            </h3>
+            <div className="bg-white border border-transparent shadow-[0_8px_24px_rgba(219,234,254,0.45)] rounded-2xl p-5 space-y-4">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Completion Rate</span>
+                <div className="flex items-center gap-3 mt-1">
+                  <div className="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${filteredTasks.length > 0 
+                          ? (filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100 
+                          : 0}%` 
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs font-black text-slate-800">
+                    {filteredTasks.length > 0 
+                      ? Math.round((filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100) 
+                      : 0}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="bg-slate-50/50 p-3 rounded-xl">
+                  <span className="text-[9px] font-extrabold text-gray-400 uppercase">Total Tasks</span>
+                  <p className="text-lg font-black text-slate-850 mt-0.5">{filteredTasks.length}</p>
+                </div>
+                <div className="bg-emerald-50/30 p-3 rounded-xl">
+                  <span className="text-[9px] font-extrabold text-emerald-600 uppercase">Completed</span>
+                  <p className="text-lg font-black text-emerald-650 mt-0.5">
+                    {filteredTasks.filter(t => t.status === 'COMPLETED').length}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        )
+        </div>
       ) : (
         <div className="py-20 text-center bg-gray-50/50 border border-transparent shadow-[0_4px_20px_rgba(219,234,254,0.3)] rounded-2xl mb-12 select-none">
           <p className="text-xs text-gray-400 italic">This sub-tab view is currently read-only. Switch to Board tab to view and manage tasks.</p>
         </div>
       )}
 
-      {/* 5. Bottom Collaborations Row: Projects, Members & Settings */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8 border-t border-gray-100">
-        
-        {/* Projects panel */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-50 pb-2 select-none">
-            <h2 className="text-[13px] font-extrabold text-gray-900 flex items-center gap-1.5">
-              <FolderGit2 size={15} className="text-gray-400" /> Workspace Projects
-            </h2>
-            <span className="text-[10px] font-bold text-gray-400 bg-gray-150 px-2 py-0.5 rounded-full">
-              {workspace.projects?.length || 0}
-            </span>
-          </div>
-
-          {workspace.projects && workspace.projects.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {workspace.projects.map((proj) => (
-                <div 
-                  key={proj.id}
-                  className="bg-white border border-transparent shadow-[0_4px_15px_rgba(219,234,254,0.45)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.08)] transition-all flex items-center justify-between select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">📂</span>
-                    <div>
-                      <h4 className="font-extrabold text-xs text-gray-800 leading-normal">{proj.name}</h4>
-                      <span className="text-[9px] text-gray-400">Created {new Date(proj.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl select-none">
-              <p className="text-xs text-gray-405 italic">No projects created inside this workspace yet.</p>
-              {isOwner && (
-                <button 
-                  onClick={() => setIsCreatingProject(true)}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-bold mt-1.5"
-                >
-                  Create Project
-                </button>
-              )}
-            </div>
-          )}
+      {/* 5. Bottom Collaborations Row: Projects */}
+      <div className="pt-8 border-t border-gray-100">
+        <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-4 select-none">
+          <h2 className="text-[13px] font-extrabold text-gray-900 flex items-center gap-1.5">
+            <FolderGit2 size={15} className="text-gray-400" /> Workspace Projects
+          </h2>
+          <span className="text-[10px] font-bold text-gray-400 bg-gray-150 px-2 py-0.5 rounded-full">
+            {workspace.projects?.length || 0}
+          </span>
         </div>
 
-        {/* Members and Invite Panel */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-50 pb-2 select-none">
-            <h2 className="text-[13px] font-extrabold text-gray-900 flex items-center gap-1.5">
-              <Users size={15} className="text-gray-400" /> Members List
-            </h2>
-            <span className="text-[10px] font-bold text-gray-400 bg-gray-150 px-2 py-0.5 rounded-full">
-              {workspace.members?.length || 1}
-            </span>
-          </div>
-
-          {/* Members list */}
-          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-            {workspace.members.map((memb, idx) => (
+        {workspace.projects && workspace.projects.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {workspace.projects.map((proj) => (
               <div 
-                key={idx}
-                className="flex items-center justify-between p-2 bg-gray-50/55 border border-transparent shadow-[0_3px_8px_rgba(219,234,254,0.3)] rounded-xl select-none"
+                key={proj.id}
+                className="bg-white border border-transparent shadow-[0_4px_15px_rgba(219,234,254,0.45)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.08)] transition-all p-3.5 rounded-xl flex items-center justify-between select-none"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-6.5 h-6.5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center select-none">
-                    {memb.email.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-gray-900 truncate">
-                      {memb.email}
-                    </p>
-                    <span className="text-[8px] font-extrabold text-gray-450 uppercase tracking-wide">
-                      {memb.role}
-                    </span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">📂</span>
+                  <div>
+                    <h4 className="font-extrabold text-xs text-gray-800 leading-normal">{proj.name}</h4>
+                    <span className="text-[9px] text-gray-400">Created {new Date(proj.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
-
-                {isOwner && memb.role !== 'OWNER' && (
-                  <button
-                    onClick={() => handleRemoveMember(memb.email)}
-                    title="Remove member"
-                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg transition-colors focus:outline-none cursor-pointer"
-                  >
-                    <UserMinus size={12} />
-                  </button>
-                )}
               </div>
             ))}
           </div>
-
-          {/* Invite Widget */}
-          {isOwner && (
-            <form onSubmit={handleInviteSubmit} className="bg-white border border-transparent shadow-[0_6px_20px_rgba(219,234,254,0.45)] p-4 space-y-3">
-              <h3 className="text-xs font-extrabold text-gray-800 flex items-center gap-1.5 select-none">
-                <Mail size={13} className="text-blue-500" /> Invite Teammates
-              </h3>
-              
-              {inviteSuccess && (
-                <div className="p-2 bg-green-50 border border-green-150 text-green-700 rounded-lg text-[10px] font-semibold leading-normal select-none">
-                  ✔️ {inviteSuccess}
-                </div>
-              )}
-
-              {inviteError && (
-                <div className="p-2 bg-red-50 border border-red-150 text-red-700 rounded-lg text-[10px] font-semibold leading-normal select-none">
-                  ⚠️ {inviteError}
-                </div>
-              )}
-
-              <Input
-                label="Member Email"
-                type="email"
-                placeholder="colleague@company.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                required
-                disabled={isInviting}
-                className="!text-xxs !py-1.5"
-              />
-
-              <Button
-                type="submit"
-                disabled={!inviteEmail.trim() || isInviting}
-                className="!py-1.5 !text-xxs"
+        ) : (
+          <div className="text-center py-8 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl select-none">
+            <p className="text-xs text-gray-405 italic">No projects created inside this workspace yet.</p>
+            {isOwner && (
+              <button 
+                onClick={() => setIsCreatingProject(true)}
+                className="text-xs text-blue-600 hover:text-blue-800 font-bold mt-1.5"
               >
-                {isInviting ? 'Inviting...' : 'Invite'}
-              </Button>
-            </form>
-          )}
-        </div>
+                Create Project
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Owner-Only Add Task Modal */}
@@ -937,6 +986,75 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                   className="!w-auto !py-1.5 !px-3.5 !text-xs"
                 >
                   {isCreatingProjSubmitting ? 'Creating...' : 'Create'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Owner-Only Invite Modal */}
+      {isInviting && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <div className="bg-white rounded-3xl border border-transparent shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-gray-100">
+              <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <Mail size={16} className="text-blue-500" /> Invite Teammates
+              </h2>
+              <button
+                onClick={() => {
+                  setIsInviting(false);
+                  setInviteSuccess(null);
+                  setInviteError(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleInviteSubmit} className="p-6 space-y-5">
+              {inviteSuccess && (
+                <div className="p-2 bg-green-50 border border-green-150 text-green-700 rounded-lg text-[10px] font-semibold leading-normal select-none">
+                  ✔️ {inviteSuccess}
+                </div>
+              )}
+
+              {inviteError && (
+                <div className="p-2 bg-red-50 border border-red-150 text-red-700 rounded-lg text-[10px] font-semibold leading-normal select-none">
+                  ⚠️ {inviteError}
+                </div>
+              )}
+
+              <Input
+                label="Member Email"
+                type="email"
+                placeholder="colleague@company.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                required
+                disabled={isInviting}
+              />
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 mt-6">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsInviting(false);
+                    setInviteSuccess(null);
+                    setInviteError(null);
+                  }}
+                  className="!w-auto !py-2 !px-4 !text-xs"
+                >
+                  Close
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!inviteEmail.trim() || isInviting}
+                  className="!w-auto !py-2 !px-4 !text-xs !bg-blue-650 hover:!bg-blue-750"
+                >
+                  {isInviting ? 'Inviting...' : 'Invite'}
                 </Button>
               </div>
             </form>
