@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, LayoutGrid, FolderGit2, X, Briefcase, FileText, ChevronRight } from 'lucide-react';
+import { Users, Plus, LayoutGrid, FolderGit2, X, Briefcase, FileText, ChevronRight, HelpCircle, Star } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { getColor } from '../../utils/color';
@@ -50,7 +50,6 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
         setIsCreating(false);
         setName('');
         setDescription('');
-        // Reload list and auto-open new workspace
         loadWorkspaces();
         if (onSelectWorkspace) {
           onSelectWorkspace(res.data.id);
@@ -66,9 +65,9 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
 
   if (loading) {
     return (
-      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center">
+      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center select-none bg-white">
         <div className="relative flex items-center justify-center">
-          <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-blue-50 border-t-blue-600 rounded-full animate-spin"></div>
         </div>
         <p className="mt-4 text-xs font-semibold text-gray-400">Loading workspaces...</p>
       </div>
@@ -76,22 +75,27 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4 sm:px-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-extrabold text-black">Workspaces</h1>
-          {workspaces.length > 0 && (
-            <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-              {workspaces.length} total
-            </span>
-          )}
+    <div className="w-full max-w-5xl mx-auto py-10 px-4 sm:px-6 bg-white min-h-[85vh]">
+      
+      {/* Header section with modern design */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-100 select-none">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Workspaces</h1>
+            {workspaces.length > 0 && (
+              <span className="text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                {workspaces.length} ACTIVE
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Manage, collaborate, and automate tasks inside team rooms.</p>
         </div>
+        
         {workspaces.length > 0 && (
           <Button
             onClick={() => setIsCreating(true)}
-            icon={<Plus size={16} />}
-            className="!w-auto !py-2 !px-4 !text-xs"
+            icon={<Plus size={15} />}
+            className="!w-auto !py-2 !px-4 !text-xs !bg-blue-600 hover:!bg-blue-750 shadow-sm"
           >
             Create Workspace
           </Button>
@@ -99,126 +103,158 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold p-3 rounded-xl flex items-center justify-between">
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold p-3.5 rounded-xl flex items-center justify-between shadow-xxs">
           <span>⚠️ {error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">✕</button>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 focus:outline-none">✕</button>
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Main Grid View */}
       {workspaces.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {workspaces.map((ws) => (
             <div
               key={ws.id}
               onClick={() => onSelectWorkspace(ws.id)}
-              className="bg-white border border-gray-150 rounded-2xl p-5 hover:shadow-md hover:border-blue-400/50 hover:scale-[1.01] transition-all duration-300 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+              className="bg-white border border-gray-150/80 rounded-2xl p-5 hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group relative overflow-hidden h-[180px] shadow-xxs"
             >
-              {/* Subtle top decoration */}
-              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-sky-400`} />
+              {/* Saturated horizontal top border decoration */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-400" />
               
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-lg shadow-sm">
-                    {ws.name.charAt(0).toUpperCase()}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-base shadow-sm group-hover:scale-105 transition-transform select-none">
+                      {ws.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-xs text-slate-800 group-hover:text-blue-650 transition-colors leading-tight">
+                        {ws.name}
+                      </h3>
+                      <span className="text-[9px] font-bold text-gray-400">
+                        Created Room
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-extrabold text-base text-gray-900 group-hover:text-blue-650 transition-colors leading-tight">
-                      {ws.name}
-                    </h3>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      {ws.members?.length || 1} member{(ws.members?.length || 1) > 1 ? 's' : ''}
-                    </span>
-                  </div>
+                  
+                  <span className="text-gray-300 hover:text-yellow-400 transition-colors">
+                    <Star size={13} />
+                  </span>
                 </div>
 
                 {ws.description ? (
-                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 pt-1">
+                  <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 pt-1">
                     {ws.description}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400 italic pt-1">No description provided.</p>
+                  <p className="text-[11px] text-gray-400 italic pt-1">No description provided for this room.</p>
                 )}
               </div>
 
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50 text-xs font-semibold text-blue-600 group-hover:text-blue-700">
-                <span className="flex items-center gap-1.5">
-                  <FolderGit2 size={13} className="text-gray-400" />
-                  {ws.projects?.length || 0} project{ws.projects?.length !== 1 ? 's' : ''}
-                </span>
-                <span className="flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                  Enter Workspace <ChevronRight size={13} />
+              {/* Card Footer panel */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50 text-[11px] font-bold select-none text-gray-400">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <FolderGit2 size={12} className="text-gray-450" />
+                    {ws.projects?.length || 0}
+                  </span>
+                  
+                  {/* Joined Members Avatar stack inside card */}
+                  {ws.members && ws.members.length > 0 && (
+                    <div className="flex -space-x-1 overflow-hidden">
+                      {ws.members.slice(0, 3).map((memb, idx) => (
+                        <div 
+                          key={idx} 
+                          className="w-4.5 h-4.5 rounded-full bg-slate-900 text-white font-extrabold text-[7.5px] flex items-center justify-center ring-2 ring-white select-none"
+                          title={memb.email}
+                        >
+                          {memb.email.charAt(0).toUpperCase()}
+                        </div>
+                      ))}
+                      {ws.members.length > 3 && (
+                        <div className="w-4.5 h-4.5 rounded-full bg-gray-200 text-gray-600 font-bold text-[7px] flex items-center justify-center ring-2 ring-white">
+                          +{ws.members.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <span className="flex items-center gap-0.5 text-blue-600 group-hover:text-blue-700 group-hover:translate-x-0.5 transition-all">
+                  Open Board <ChevronRight size={12} />
                 </span>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        /* Empty State */
+        /* Empty State with SaaS glow */
         !isCreating && (
-          <div className="flex flex-col items-center justify-center text-center py-20 px-4">
+          <div className="flex flex-col items-center justify-center text-center py-20 px-4 bg-slate-50/40 rounded-3xl border border-gray-150/70 relative overflow-hidden select-none">
+            {/* Soft decorative background circles */}
+            <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-blue-50/30 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full bg-sky-50/30 blur-2xl pointer-events-none" />
+
             <div className="relative mb-6">
-              <div className="w-32 h-32 rounded-full bg-blue-50/50 flex items-center justify-center animate-pulse-slow">
-                <div className="w-20 h-20 bg-white border border-gray-150 rounded-2xl flex items-center justify-center shadow-md">
-                  <Users size={36} className="text-blue-500" />
-                </div>
+              <div className="w-24 h-24 rounded-2xl bg-white border border-gray-150 flex items-center justify-center shadow-md relative z-10 hover:rotate-2 transition-transform">
+                <Users size={32} className="text-blue-600" />
               </div>
-              <span className="absolute top-2 right-2 text-yellow-400 animate-bounce">✦</span>
-              <span className="absolute bottom-4 left-2 text-sky-400 animate-pulse">✨</span>
+              <span className="absolute -top-1.5 -right-1.5 text-yellow-400 animate-bounce text-sm">✦</span>
+              <span className="absolute -bottom-1 -left-1 text-sky-400 animate-pulse text-sm">✨</span>
             </div>
 
-            <h2 className="text-lg font-bold text-gray-900 mb-1">No workspaces found</h2>
-            <p className="text-sm text-gray-550 max-w-sm mb-6 leading-relaxed">
-              Create your first workspace to start collaborating, organizing projects, and inviting teammates.
+            <h2 className="text-base font-extrabold text-slate-800 mb-1">Create your first Workspace</h2>
+            <p className="text-xs text-gray-500 max-w-xs mb-6 leading-relaxed">
+              Organize projects, assign tasks on Kanban boards, and collaborate with your teammates in real time.
             </p>
             <Button
               onClick={() => setIsCreating(true)}
-              icon={<Plus size={18} />}
-              className="!w-auto !px-6"
+              icon={<Plus size={16} />}
+              className="!w-auto !px-6 !py-2.5 !bg-blue-650 hover:!bg-blue-750 shadow-sm"
             >
-              Create Workspace
+              Get Started
             </Button>
           </div>
         )
       )}
 
-      {/* Creation Modal */}
+      {/* Creation Modal with clean backdrop blur */}
       {isCreating && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
-                <Briefcase size={18} className="text-blue-500" /> Create Workspace
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-gray-100">
+              <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <Briefcase size={16} className="text-blue-500" /> New Workspace
               </h2>
               <button
                 onClick={() => setIsCreating(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCreateSubmit} className="p-6 space-y-5">
               <Input
                 label="Workspace Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Marketing Team, Dev Squad..."
+                placeholder="Product Design, Marketing Campaign..."
                 required
                 autoFocus
               />
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Workspace Description (Optional)</label>
+                <label className="text-[11px] font-extrabold text-gray-700 uppercase tracking-wide">Workspace Description (Optional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the purpose of this workspace..."
-                  className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-blue-500 h-24 resize-none bg-white placeholder:text-gray-400"
+                  placeholder="Describe the purpose of this team room..."
+                  className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-3 h-24 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder:text-gray-450 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-6">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 mt-6">
                 <Button
                   type="button"
                   variant="secondary"
@@ -231,9 +267,9 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
                 <Button
                   type="submit"
                   disabled={!name.trim() || isSubmitting}
-                  className="!w-auto !py-2 !px-4 !text-xs"
+                  className="!w-auto !py-2 !px-4 !text-xs !bg-blue-650 hover:!bg-blue-750"
                 >
-                  {isSubmitting ? 'Creating...' : 'Create'}
+                  {isSubmitting ? 'Creating...' : 'Create Room'}
                 </Button>
               </div>
             </form>
