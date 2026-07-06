@@ -14,12 +14,16 @@ import {
   Bell, 
   HelpCircle, 
   Users, 
-  FolderGit2 
+  FolderGit2,
+  Camera,
+  Smile,
+  X
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
 import { playBubbleSound, playChimeSound, playTickSound } from '../utils/audio';
 import { AddTaskModal } from '../components/AddTaskModal';
+import { supabase } from '../utils/supabase';
 
 // Import subpages
 import { InboxPage } from './dashboard/InboxPage';
@@ -30,7 +34,7 @@ import { ReportingPage } from './dashboard/ReportingPage';
 import { WorkspacePage } from './dashboard/WorkspacePage';
 import { WorkspaceDashboard } from './dashboard/WorkspaceDashboard';
 
-import { taskService, workspaceService } from '../services/api';
+import { taskService, workspaceService, authService } from '../services/api';
 
 export const DashboardPage = () => {
   const { user, logout } = useAuth();
@@ -44,6 +48,105 @@ export const DashboardPage = () => {
   
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
+
+  // Workspaces list
+  const [myWorkspaces, setMyWorkspaces] = useState([]);
+
+  // Profile modal states
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileUsername, setProfileUsername] = useState('');
+  const [profileBio, setProfileBio] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+  const [profileAvatarFile, setProfileAvatarFile] = useState(null);
+  const [profileAvatarPreview, setProfileAvatarPreview] = useState(null);
+  const [isProfileUploading, setIsProfileUploading] = useState(false);
+  const [isProfileUpdating, setIsProfileUpdating] = useState(false);
+  const [profileSuccessMsg, setProfileSuccessMsg] = useState(null);
+  const [profileErrorMsg, setProfileErrorMsg] = useState(null);
+
+  const loadMyWorkspaces = async () => {
+    try {
+      const res = await workspaceService.getWorkspaces();
+      if (res && res.data) {
+        setMyWorkspaces(res.data);
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch user workspaces:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadMyWorkspaces();
+      setProfileName(user.name || '');
+      setProfileUsername(user.username || '');
+      setProfileBio(user.bio || '');
+      setProfilePhotoUrl(user.photoUrl || '');
+    }
+  }, [user]);
+
+  const handleUpdateProfileSubmit = async (e) => {
+    e.preventDefault();
+    setProfileSuccessMsg(null);
+    setProfileErrorMsg(null);
+    setIsProfileUpdating(true);
+
+    let finalPhotoUrl = profilePhotoUrl;
+
+    if (profileAvatarFile) {
+      setIsProfileUploading(true);
+      try {
+        const fileExt = profileAvatarFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('Profile Images')
+          .upload(filePath, profileAvatarFile, { cacheControl: '3600', upsert: true });
+
+        if (uploadError) {
+          throw new Error(`Upload error: ${uploadError.message}`);
+        }
+
+        const { data } = supabase.storage
+          .from('Profile Images')
+          .getPublicUrl(filePath);
+
+        finalPhotoUrl = data.publicUrl;
+        setProfilePhotoUrl(finalPhotoUrl);
+      } catch (err) {
+        console.error(err);
+        setProfileErrorMsg(err.message || 'Failed to upload photo to storage.');
+        setIsProfileUpdating(false);
+        setIsProfileUploading(false);
+        return;
+      } finally {
+        setIsProfileUploading(false);
+      }
+    }
+
+    try {
+      const res = await authService.updateProfile({
+        name: profileName.trim(),
+        username: profileUsername.trim(),
+        bio: profileBio.trim(),
+        photoUrl: finalPhotoUrl
+      });
+
+      if (res && res.data && res.data.user) {
+        setProfileSuccessMsg('Profile updated successfully! Reloading...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1250);
+      }
+    } catch (err) {
+      console.error(err);
+      setProfileErrorMsg(err.message || 'Failed to update profile.');
+    } finally {
+      setIsProfileUpdating(false);
+    }
+  };
 
   // Auto-accept invitation OR auto-open active workspace on mount
   useEffect(() => {
@@ -221,9 +324,17 @@ export const DashboardPage = () => {
                 onMouseEnter={playBubbleSound}
                 className="flex items-center gap-2 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
               >
-                <div className={`w-7.5 h-7.5 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center font-bold text-sm shadow-sm`}>
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
+                {user.photoUrl ? (
+                  <img 
+                    src={user.photoUrl} 
+                    alt="User Profile" 
+                    className="w-7.5 h-7.5 rounded-full object-cover shadow-sm border border-gray-200"
+                  />
+                ) : (
+                  <div className={`w-7.5 h-7.5 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center font-bold text-sm shadow-sm`}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]">
                   {user.name}
                 </span>
@@ -254,8 +365,18 @@ export const DashboardPage = () => {
                   {user.email || 'Google Social Account'}
                 </div>
                 <button 
+                  onClick={() => {
+                    setIsProfileModalOpen(true);
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors text-left cursor-pointer focus:outline-none"
+                >
+                  <User size={14} className="text-gray-400" />
+                  Profile Settings
+                </button>
+                <button 
                   onClick={logout}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer focus:outline-none"
                 >
                   <LogOut size={14} />
                   Sign Out
@@ -434,6 +555,184 @@ export const DashboardPage = () => {
         onClose={() => setIsAddTaskModalOpen(false)}
         onAddTask={handleAddTask}
       />
+
+      {/* 4. PROFILE SETTINGS MODAL */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row max-h-[90vh]">
+            
+            {/* Left Sidebar: Profile Details & Workspace Listing */}
+            <div className="md:w-1/2 bg-gray-50 border-r border-gray-150 p-6 flex flex-col justify-between overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-3">
+                    👥 Workspaces ({myWorkspaces.length})
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4 leading-normal">
+                    List of all Spaces you are currently working in.
+                  </p>
+                  
+                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {myWorkspaces.length > 0 ? (
+                      myWorkspaces.map((ws) => (
+                        <div 
+                          key={ws.id} 
+                          className="flex items-center justify-between p-3 bg-white border border-gray-100 shadow-xs rounded-xl"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-lg">📁</span>
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-black text-slate-800 truncate">{ws.name}</h4>
+                              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                                {ws.ownerId === user.id ? 'Owner' : 'Member'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">No spaces joined yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-200 mt-6 text-[10px] text-gray-455 font-bold tracking-wide uppercase">
+                Magadige ToDo • Profile Control Panel
+              </div>
+            </div>
+
+            {/* Right Form: Editing Details */}
+            <form onSubmit={handleUpdateProfileSubmit} className="md:w-1/2 p-6 flex flex-col justify-between overflow-y-auto">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-50 pb-3 mb-2">
+                  <h2 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                    ⚙️ Profile Settings
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      setProfileAvatarFile(null);
+                      setProfileAvatarPreview(null);
+                      setProfileSuccessMsg(null);
+                      setProfileErrorMsg(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-650 cursor-pointer focus:outline-none"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Avatar upload */}
+                <div className="flex flex-col items-center justify-center space-y-2 select-none">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 border border-gray-255 overflow-hidden flex items-center justify-center shadow-inner relative">
+                      {profileAvatarPreview ? (
+                        <img src={profileAvatarPreview} alt="New Preview" className="w-full h-full object-cover" />
+                      ) : profilePhotoUrl ? (
+                        <img src={profilePhotoUrl} alt="Current Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center font-bold text-xl">
+                          {profileName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-750 text-white flex items-center justify-center shadow-md cursor-pointer border border-white">
+                      <Camera size={12} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setProfileAvatarFile(file);
+                            setProfileAvatarPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">Change Profile Photo</span>
+                </div>
+
+                {/* Inputs */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full text-xs text-gray-600 border border-gray-200 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Username</label>
+                  <input
+                    type="text"
+                    value={profileUsername}
+                    onChange={(e) => setProfileUsername(e.target.value.replace(/\s+/g, '').toLowerCase())}
+                    placeholder="eranga_2026"
+                    className="w-full text-xs text-gray-600 border border-gray-205 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Bio</label>
+                  <textarea
+                    value={profileBio}
+                    onChange={(e) => setProfileBio(e.target.value)}
+                    placeholder="Tell us about yourself..."
+                    rows={3}
+                    className="w-full text-xs text-gray-600 border border-gray-205 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-semibold"
+                  />
+                </div>
+
+                {/* Feedback notifications */}
+                {profileSuccessMsg && (
+                  <div className="p-2.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-xl text-center">
+                    {profileSuccessMsg}
+                  </div>
+                )}
+                {profileErrorMsg && (
+                  <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl text-center">
+                    {profileErrorMsg}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-6">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsProfileModalOpen(false);
+                    setProfileAvatarFile(null);
+                    setProfileAvatarPreview(null);
+                    setProfileSuccessMsg(null);
+                    setProfileErrorMsg(null);
+                  }}
+                  disabled={isProfileUpdating}
+                  className="!w-auto !py-2 !px-4 !text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isProfileUpdating}
+                  loading={isProfileUpdating || isProfileUploading}
+                  className="!w-auto !py-2 !px-4 !text-xs !bg-blue-650 hover:!bg-blue-750"
+                >
+                  {isProfileUploading ? 'Uploading...' : isProfileUpdating ? 'Saving...' : 'Save Settings'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
