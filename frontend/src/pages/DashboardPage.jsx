@@ -145,6 +145,23 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleWorkspaceClick = async () => {
+    setShowProfileMenu(false);
+    try {
+      const res = await workspaceService.getWorkspaces();
+      if (res && res.data && res.data.length > 0) {
+        setSelectedWorkspaceId(res.data[0].id);
+        setActiveTab('WORKSPACE_DASHBOARD');
+      } else {
+        setSelectedWorkspaceId(null);
+        setActiveTab('WORKSPACE');
+      }
+    } catch (err) {
+      console.error('❌ Failed to load workspaces for routing:', err.message);
+      setActiveTab('WORKSPACE');
+    }
+  };
+
   // Switch view tabs helper
   const renderActiveSection = () => {
     switch (activeTab) {
@@ -358,7 +375,7 @@ export const DashboardPage = () => {
 
             {/* Workspace */}
             <button 
-              onClick={() => { setActiveTab('WORKSPACE'); setShowProfileMenu(false); }}
+              onClick={handleWorkspaceClick}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD'
