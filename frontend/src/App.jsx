@@ -57,28 +57,6 @@ const AppContent = () => {
     }
   }, [loading]);
 
-  // 2. Auto-accept invitation if logged in/registration finishes
-  useEffect(() => {
-    if (isAuthenticated) {
-      const cachedToken = localStorage.getItem('magadige_invite_token');
-      if (cachedToken) {
-        workspaceService.acceptInvitation(cachedToken)
-          .then((res) => {
-            console.log('✅ Invitation accepted post-auth:', res.message);
-            if (res.data && res.data.workspaceId) {
-              localStorage.setItem('magadige_active_workspace_id', res.data.workspaceId);
-            }
-          })
-          .catch((err) => {
-            console.error('❌ Failed to accept invitation post-auth:', err.message);
-          })
-          .finally(() => {
-            localStorage.removeItem('magadige_invite_token');
-          });
-      }
-    }
-  }, [isAuthenticated]);
-
   if (loading || isVerifyingInvite) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">

@@ -30,7 +30,7 @@ import { ReportingPage } from './dashboard/ReportingPage';
 import { WorkspacePage } from './dashboard/WorkspacePage';
 import { WorkspaceDashboard } from './dashboard/WorkspaceDashboard';
 
-import { taskService } from '../services/api';
+import { taskService, workspaceService } from '../services/api';
 
 export const DashboardPage = () => {
   const { user, logout } = useAuth();
@@ -45,13 +45,35 @@ export const DashboardPage = () => {
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
 
-  // Auto-open workspace dashboard if redirected from invitation acceptance
+  // Auto-accept invitation OR auto-open active workspace on mount
   useEffect(() => {
-    const redirectWsId = localStorage.getItem('magadige_active_workspace_id');
-    if (redirectWsId) {
-      localStorage.removeItem('magadige_active_workspace_id');
-      setSelectedWorkspaceId(redirectWsId);
-      setActiveTab('WORKSPACE_DASHBOARD');
+    const cachedToken = localStorage.getItem('magadige_invite_token');
+    if (cachedToken) {
+      localStorage.removeItem('magadige_invite_token'); // clear immediately to prevent loops
+      workspaceService.acceptInvitation(cachedToken)
+        .then((res) => {
+          console.log('✅ Invitation accepted inside dashboard:', res.message);
+          if (res.data && res.data.workspaceId) {
+            setSelectedWorkspaceId(res.data.workspaceId);
+            setActiveTab('WORKSPACE_DASHBOARD');
+          }
+        })
+        .catch((err) => {
+          console.error('❌ Failed to accept invitation inside dashboard:', err.message);
+          const redirectWsId = localStorage.getItem('magadige_active_workspace_id');
+          if (redirectWsId) {
+            localStorage.removeItem('magadige_active_workspace_id');
+            setSelectedWorkspaceId(redirectWsId);
+            setActiveTab('WORKSPACE_DASHBOARD');
+          }
+        });
+    } else {
+      const redirectWsId = localStorage.getItem('magadige_active_workspace_id');
+      if (redirectWsId) {
+        localStorage.removeItem('magadige_active_workspace_id');
+        setSelectedWorkspaceId(redirectWsId);
+        setActiveTab('WORKSPACE_DASHBOARD');
+      }
     }
   }, []);
 
