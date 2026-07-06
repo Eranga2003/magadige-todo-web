@@ -322,7 +322,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       <div 
         onDragOver={(e) => handleDragOver(e, status)}
         onDrop={(e) => handleDrop(e, status)}
-        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-50/40 shadow-xl shadow-blue-100/50 select-none ${
+        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-50/30 shadow-[0_20px_50px_rgba(8,112,184,0.18)] select-none ${
           isActive ? 'ring-2 ring-blue-500/40 border-blue-400 bg-blue-50/10' : ''
         }`}
       >
@@ -360,13 +360,41 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             columnTasks.map(task => {
               const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
               
-              let cardStyleClass = "bg-white border-transparent shadow-md shadow-blue-100";
+              let cardStyleClass = "";
+              let titleColorClass = "";
+              let dateColorClass = "";
+              let grabGripClass = "";
+              let flagColorClass = "";
+              let hoverBtnClass = "";
+              let assigneeRingClass = "ring-white";
+
               if (task.status === 'ASSIGNED') {
-                cardStyleClass = "bg-blue-50/40 border border-blue-100/30 shadow-md shadow-blue-100/60 hover:shadow-lg hover:shadow-blue-200/80 hover:bg-blue-50/70";
+                // Light Blue Glance Card BG
+                cardStyleClass = "bg-[#f0f9ff] border border-blue-200/50 shadow-[0_5px_15px_rgba(14,165,233,0.12)] hover:shadow-[0_8px_20px_rgba(14,165,233,0.22)] hover:bg-[#e0f2fe]";
+                titleColorClass = "text-sky-950 font-black";
+                dateColorClass = isOverdue ? "text-red-600 font-extrabold bg-red-100/50" : "text-sky-850 bg-sky-200/40";
+                grabGripClass = "text-sky-400 group-hover:text-sky-650";
+                flagColorClass = getPriorityColor(task.priority);
+                hoverBtnClass = "text-sky-450 hover:text-sky-800";
+                assigneeRingClass = "ring-sky-200";
               } else if (task.status === 'IN_PROGRESS') {
-                cardStyleClass = "bg-indigo-50/50 border border-indigo-100/30 shadow-md shadow-indigo-100/60 hover:shadow-lg hover:shadow-indigo-200/80 hover:bg-indigo-50/70";
+                // Dark Blue Glance Card BG (Indigo-600 Gradient)
+                cardStyleClass = "bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-[0_6px_20px_rgba(37,99,235,0.3)] hover:shadow-[0_12px_30px_rgba(37,99,235,0.45)]";
+                titleColorClass = "text-white font-black";
+                dateColorClass = isOverdue ? "text-red-200 font-extrabold bg-red-800/60" : "text-blue-100 bg-blue-500/50";
+                grabGripClass = "text-blue-200 group-hover:text-white";
+                flagColorClass = "text-white";
+                hoverBtnClass = "text-blue-100 hover:text-white";
+                assigneeRingClass = "ring-blue-400";
               } else if (task.status === 'COMPLETED') {
-                cardStyleClass = "bg-emerald-50/50 border border-emerald-100/30 shadow-md shadow-emerald-100/60 hover:shadow-lg hover:shadow-emerald-250/80 hover:bg-emerald-50/70";
+                // Green Glance Card BG (Emerald-500 Gradient)
+                cardStyleClass = "bg-gradient-to-br from-[#10b981] to-[#047857] text-white border border-[#065f46] shadow-[0_6px_20px_rgba(16,185,129,0.25)] hover:shadow-[0_12px_30px_rgba(16,185,129,0.4)]";
+                titleColorClass = "text-white line-through opacity-85 font-black";
+                dateColorClass = "text-emerald-100 bg-emerald-600/40";
+                grabGripClass = "text-emerald-250 group-hover:text-white";
+                flagColorClass = "text-white";
+                hoverBtnClass = "text-emerald-200 hover:text-white";
+                assigneeRingClass = "ring-emerald-400";
               }
 
               return (
@@ -379,7 +407,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-1">
-                      <h4 className="font-extrabold text-[12px] text-gray-800 leading-snug group-hover:text-blue-650 transition-colors">
+                      <h4 className={`font-extrabold text-[12px] leading-snug transition-colors ${titleColorClass}`}>
                         {task.name}
                       </h4>
                       
@@ -389,7 +417,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                           <button
                             onClick={() => handleQuickCompleteTask(task.id)}
                             title="Mark complete"
-                            className="text-gray-400 hover:text-green-600 p-0.5 rounded focus:outline-none cursor-pointer"
+                            className={`${hoverBtnClass} p-0.5 rounded focus:outline-none cursor-pointer`}
                           >
                             <Check size={12} />
                           </button>
@@ -397,7 +425,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                         <button
                           onClick={() => handleDeleteTask(task.id)}
                           title="Delete task"
-                          className="text-gray-400 hover:text-red-500 p-0.5 rounded focus:outline-none cursor-pointer"
+                          className={`${hoverBtnClass} p-0.5 rounded focus:outline-none cursor-pointer`}
                         >
                           <Trash2 size={12} />
                         </button>
@@ -411,7 +439,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                         {task.assignedTo ? (
                           <div 
                             title={`Assigned to ${task.assignedTo.email}`} 
-                            className="w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center border border-white shadow-sm cursor-help select-none"
+                            className={`w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center border border-white shadow-sm cursor-help select-none ring-1 ${assigneeRingClass}`}
                           >
                             {task.assignedTo.email.charAt(0).toUpperCase()}
                           </div>
@@ -426,23 +454,21 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
 
                         {/* Date indicator */}
                         {task.dueDate && (
-                          <span className={`inline-flex items-center gap-1 text-[9px] font-bold ${
-                            isOverdue ? 'text-red-500' : 'text-gray-500'
-                          }`}>
+                          <span className={`inline-flex items-center gap-1 text-[9px] font-bold ${dateColorClass}`}>
                             <Calendar size={11} />
                             {new Date(task.dueDate).toLocaleDateString(undefined, {month: 'numeric', day: 'numeric', year: '2-digit'})}
                           </span>
                         )}
 
                         {/* Priority Flag */}
-                        <span className={`inline-flex items-center gap-0.5 ${getPriorityColor(task.priority)}`} title={`${task.priority} Priority`}>
+                        <span className={`inline-flex items-center gap-0.5 ${flagColorClass}`} title={`${task.priority} Priority`}>
                           <Flag size={11} fill="currentColor" />
                           {task.priority === 'P1' && <span className="text-[8px] font-extrabold uppercase">Urgent</span>}
                         </span>
                       </div>
 
                       {/* Small visual grab grip */}
-                      <span className="text-gray-300 group-hover:text-gray-400 cursor-grab">
+                      <span className={`${grabGripClass} transition-colors cursor-grab`}>
                         <GripVertical size={12} />
                       </span>
                     </div>
