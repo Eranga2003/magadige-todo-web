@@ -665,10 +665,10 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
           {renderKanbanColumn('COMPLETE', 'COMPLETED', 'bg-green-50', 'text-green-700', 'bg-green-100')}
         </div>
       ) : activeSubTab === 'Overview' ? (
-        /* OVERVIEW TAB: List all tasks with line cut for completed ones + analytics */
+        /* OVERVIEW TAB: List all tasks with line cut for completed ones + analytics + members */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 select-none">
-          {/* Tasks List (2/3 width) */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* Tasks List Card Wrapper (2/3 width) */}
+          <div className="lg:col-span-2 bg-[#f8fafc]/55 border border-blue-50/20 shadow-[0_12px_30px_rgba(219,234,254,0.35)] rounded-3xl p-6 space-y-4">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
               📝 Space Task List
             </h3>
@@ -677,34 +677,58 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                 {filteredTasks.map(task => {
                   const isCompleted = task.status === 'COMPLETED';
                   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+                  
+                  let cardBg = "";
+                  let titleColor = "";
+                  let dateColor = "";
+                  let statusBadge = "";
+                  let assigneeRing = "ring-white";
+
+                  if (task.status === 'ASSIGNED') {
+                    cardBg = "bg-[#bae6fd] border border-[#7dd3fc] text-sky-950 shadow-sm shadow-blue-100/60";
+                    titleColor = "text-sky-950 font-black";
+                    dateColor = isOverdue ? "text-red-650 font-extrabold bg-red-100/60" : "text-sky-900 bg-sky-200/50";
+                    statusBadge = "bg-sky-100 text-sky-850 border border-sky-200";
+                    assigneeRing = "ring-sky-200";
+                  } else if (task.status === 'IN_PROGRESS') {
+                    cardBg = "bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-md shadow-blue-500/20";
+                    titleColor = "text-white font-black";
+                    dateColor = isOverdue ? "text-red-200 font-extrabold bg-red-800/60" : "text-blue-100 bg-blue-500/40";
+                    statusBadge = "bg-blue-600 text-white border border-blue-700";
+                    assigneeRing = "ring-blue-400";
+                  } else if (task.status === 'COMPLETED') {
+                    cardBg = "bg-gradient-to-br from-[#10b981] to-[#047857] text-white border border-[#065f46] shadow-md shadow-emerald-500/15";
+                    titleColor = "text-white line-through opacity-85 font-black";
+                    dateColor = "text-emerald-100 bg-emerald-600/40";
+                    statusBadge = "bg-emerald-600 text-white border border-emerald-700";
+                    assigneeRing = "ring-emerald-400";
+                  }
+
                   return (
                     <div 
                       key={task.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-transparent shadow-[0_3px_8px_rgba(219,234,254,0.3)] rounded-xl gap-2 hover:shadow-[0_6px_15px_rgba(219,234,254,0.45)] transition-all"
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl gap-2 hover:scale-[1.005] hover:shadow-lg transition-all ${cardBg}`}
                     >
                       <div className="flex items-center gap-3">
                         {isCompleted ? (
-                          <CheckCircle2 size={16} className="text-emerald-500" />
+                          <CheckCircle2 size={16} className="text-white" />
                         ) : (
-                          <div className="w-4 h-4 rounded-full border border-gray-300" />
+                          <div className={`w-4 h-4 rounded-full border ${task.status === 'ASSIGNED' ? 'border-sky-300' : 'border-white/50'}`} />
                         )}
                         <div>
-                          <h4 className={`text-xs font-bold text-gray-800 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                          <h4 className={`text-xs ${titleColor}`}>
                             {task.name}
                           </h4>
                           
                           {/* Task Badges: Dates, Status, Priorities */}
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             {task.dueDate && (
-                              <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold ${isOverdue ? 'text-red-500 bg-red-50 px-1 py-0.2 rounded' : 'text-gray-400'}`}>
+                              <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold ${dateColor}`}>
                                 <Calendar size={10} />
                                 {task.dueDate} {task.dueTime && `@ ${task.dueTime}`}
                               </span>
                             )}
-                            <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded uppercase ${
-                              task.status === 'COMPLETED' ? 'bg-green-55 text-green-700' :
-                              task.status === 'IN_PROGRESS' ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-750'
-                            }`}>
+                            <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded uppercase ${statusBadge}`}>
                               {task.status === 'COMPLETED' ? 'COMPLETE' : task.status === 'IN_PROGRESS' ? 'IN PROGRESS' : 'TO DO'}
                             </span>
                           </div>
@@ -716,12 +740,12 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                         {task.assignedTo ? (
                           <div 
                             title={`Assigned to ${task.assignedTo.email}`}
-                            className="w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white"
+                            className={`w-5 h-5 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ${assigneeRing}`}
                           >
                             {task.assignedTo.email.charAt(0).toUpperCase()}
                           </div>
                         ) : (
-                          <span className="text-[9px] text-gray-400 italic">Unassigned</span>
+                          <span className="text-[9px] opacity-75 italic">Unassigned</span>
                         )}
                       </div>
                     </div>
@@ -735,44 +759,68 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             )}
           </div>
 
-          {/* Analytics Right side Panel (1/3 width) */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              📊 Workspace Analytics
-            </h3>
-            <div className="bg-white border border-transparent shadow-[0_8px_24px_rgba(219,234,254,0.45)] rounded-2xl p-5 space-y-4">
-              <div>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Completion Rate</span>
-                <div className="flex items-center gap-3 mt-1">
-                  <div className="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${filteredTasks.length > 0 
-                          ? (filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100 
-                          : 0}%` 
-                      }}
-                    />
+          {/* Analytics & Members Sidebar Right Panel (1/3 width) */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
+                📊 Workspace Analytics
+              </h3>
+              <div className="bg-white border border-transparent shadow-[0_12px_30px_rgba(219,234,254,0.4)] rounded-3xl p-5 space-y-4">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-450 uppercase tracking-wide">Completion Rate</span>
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${filteredTasks.length > 0 
+                            ? (filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100 
+                            : 0}%` 
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-black text-slate-800">
+                      {filteredTasks.length > 0 
+                        ? Math.round((filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100) 
+                        : 0}%
+                    </span>
                   </div>
-                  <span className="text-xs font-black text-slate-800">
-                    {filteredTasks.length > 0 
-                      ? Math.round((filteredTasks.filter(t => t.status === 'COMPLETED').length / filteredTasks.length) * 100) 
-                      : 0}%
-                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="bg-slate-50/50 p-3 rounded-xl">
+                    <span className="text-[9px] font-extrabold text-gray-400 uppercase">Total Tasks</span>
+                    <p className="text-lg font-black text-slate-850 mt-0.5">{filteredTasks.length}</p>
+                  </div>
+                  <div className="bg-emerald-50/30 p-3 rounded-xl">
+                    <span className="text-[9px] font-extrabold text-emerald-600 uppercase">Completed</span>
+                    <p className="text-lg font-black text-emerald-650 mt-0.5">
+                      {filteredTasks.filter(t => t.status === 'COMPLETED').length}
+                    </p>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="bg-slate-50/50 p-3 rounded-xl">
-                  <span className="text-[9px] font-extrabold text-gray-400 uppercase">Total Tasks</span>
-                  <p className="text-lg font-black text-slate-850 mt-0.5">{filteredTasks.length}</p>
-                </div>
-                <div className="bg-emerald-50/30 p-3 rounded-xl">
-                  <span className="text-[9px] font-extrabold text-emerald-600 uppercase">Completed</span>
-                  <p className="text-lg font-black text-emerald-650 mt-0.5">
-                    {filteredTasks.filter(t => t.status === 'COMPLETED').length}
-                  </p>
-                </div>
+            {/* Space Members Card */}
+            <div>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
+                👥 Space Members ({workspace.members.length})
+              </h3>
+              <div className="bg-white border border-transparent shadow-[0_12px_30px_rgba(219,234,254,0.4)] rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                {workspace.members.map((memb, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-gray-50/60 rounded-xl select-none">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-slate-900 text-white font-extrabold text-[8px] flex items-center justify-center ring-1 ring-white">
+                        {memb.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-gray-800 truncate">{memb.email}</p>
+                        <span className="text-[7.5px] font-extrabold text-gray-450 uppercase">{memb.role}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
