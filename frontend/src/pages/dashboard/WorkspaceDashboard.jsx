@@ -369,14 +369,14 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               let assigneeRingClass = "ring-white";
 
               if (task.status === 'ASSIGNED') {
-                // Highly visible Light Blue Glance Card BG
-                cardStyleClass = "bg-[#e0f2fe] border border-[#bae6fd] shadow-[0_5px_15px_rgba(14,165,233,0.18)] hover:shadow-[0_8px_20px_rgba(14,165,233,0.28)] hover:bg-[#bae6fd]";
+                // Highly saturated light-to-mid blue Card BG
+                cardStyleClass = "bg-[#bae6fd] border border-[#7dd3fc] shadow-[0_5px_15px_rgba(14,165,233,0.22)] hover:shadow-[0_8px_20px_rgba(14,165,233,0.32)] hover:bg-[#7dd3fc]";
                 titleColorClass = "text-sky-950 font-black";
-                dateColorClass = isOverdue ? "text-red-600 font-extrabold bg-red-100/50" : "text-sky-850 bg-sky-200/50";
-                grabGripClass = "text-sky-500 group-hover:text-sky-700";
+                dateColorClass = isOverdue ? "text-red-650 font-extrabold bg-red-100/60" : "text-sky-900 bg-sky-200/60";
+                grabGripClass = "text-sky-600 group-hover:text-sky-850";
                 flagColorClass = getPriorityColor(task.priority);
-                hoverBtnClass = "text-sky-500 hover:text-sky-850";
-                assigneeRingClass = "ring-sky-200";
+                hoverBtnClass = "text-sky-600 hover:text-sky-900";
+                assigneeRingClass = "ring-sky-300";
               } else if (task.status === 'IN_PROGRESS') {
                 // Dark Blue Glance Card BG (Indigo-600 Gradient)
                 cardStyleClass = "bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-[0_6px_20px_rgba(37,99,235,0.3)] hover:shadow-[0_12px_30px_rgba(37,99,235,0.45)]";
