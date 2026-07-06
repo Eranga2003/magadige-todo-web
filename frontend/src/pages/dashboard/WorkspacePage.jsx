@@ -121,7 +121,7 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
                   <div
                     key={ws.id}
                     onClick={() => onSelectWorkspace(ws.id)}
-                    className="bg-white border border-transparent shadow-[0_6px_20px_rgba(219,234,254,0.5)] hover:shadow-[0_12px_30px_rgba(37,99,235,0.12)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden h-[165px]"
+                    className="bg-white border border-transparent shadow-md shadow-blue-100/50 hover:shadow-xl hover:shadow-blue-200/70 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden h-[165px]"
                   >
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-400" />
                     
@@ -193,7 +193,7 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
 
             {/* Right column: Quick Guide & Activity onboarding (1/3 width) */}
             <div className="space-y-4 select-none">
-              <div className="bg-white border border-transparent shadow-[0_8px_24px_rgba(219,234,254,0.45)] rounded-2xl p-5 space-y-4">
+              <div className="bg-white border border-transparent shadow-lg shadow-blue-100/50 rounded-2xl p-5 space-y-4">
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                   <Compass size={14} className="text-blue-500" /> Getting Started Guide
                 </h3>

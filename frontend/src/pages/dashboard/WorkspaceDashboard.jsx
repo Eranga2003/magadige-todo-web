@@ -322,7 +322,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       <div 
         onDragOver={(e) => handleDragOver(e, status)}
         onDrop={(e) => handleDrop(e, status)}
-        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-50/20 shadow-[0_8px_24px_rgba(219,234,254,0.45)] select-none ${
+        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-50/40 shadow-xl shadow-blue-100/50 select-none ${
           isActive ? 'ring-2 ring-blue-500/40 border-blue-400 bg-blue-50/10' : ''
         }`}
       >
@@ -360,13 +360,13 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             columnTasks.map(task => {
               const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
               
-              let cardStyleClass = "bg-white border-transparent shadow-[0_3px_10px_rgba(219,234,254,0.35)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.12)]";
+              let cardStyleClass = "bg-white border-transparent shadow-md shadow-blue-100";
               if (task.status === 'ASSIGNED') {
-                cardStyleClass = "bg-blue-50/40 border border-blue-100/30 shadow-[0_4px_12px_rgba(37,99,235,0.06)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.12)] hover:bg-blue-50/70";
+                cardStyleClass = "bg-blue-50/40 border border-blue-100/30 shadow-md shadow-blue-100/60 hover:shadow-lg hover:shadow-blue-200/80 hover:bg-blue-50/70";
               } else if (task.status === 'IN_PROGRESS') {
-                cardStyleClass = "bg-indigo-50/50 border border-indigo-100/30 shadow-[0_4px_12px_rgba(79,70,229,0.06)] hover:shadow-[0_8px_20px_rgba(79,70,229,0.12)] hover:bg-indigo-50/70";
+                cardStyleClass = "bg-indigo-50/50 border border-indigo-100/30 shadow-md shadow-indigo-100/60 hover:shadow-lg hover:shadow-indigo-200/80 hover:bg-indigo-50/70";
               } else if (task.status === 'COMPLETED') {
-                cardStyleClass = "bg-emerald-50/50 border border-emerald-100/30 shadow-[0_4px_12px_rgba(16,185,129,0.06)] hover:shadow-[0_8px_20px_rgba(16,185,129,0.12)] hover:bg-emerald-50/70";
+                cardStyleClass = "bg-emerald-50/50 border border-emerald-100/30 shadow-md shadow-emerald-100/60 hover:shadow-lg hover:shadow-emerald-250/80 hover:bg-emerald-50/70";
               }
 
               return (
