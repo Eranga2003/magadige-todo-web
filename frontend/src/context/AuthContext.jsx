@@ -78,6 +78,11 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   };
 
+  // Allows components to patch the in-memory user without a full reload
+  const updateUser = (patch) => {
+    setUser((prev) => prev ? { ...prev, ...patch } : prev);
+  };
+
   const clearError = () => setError(null);
 
   return (
@@ -91,6 +96,7 @@ export const AuthProvider = ({ children }) => {
         register,
         socialLogin,
         logout,
+        updateUser,
         clearError,
       }}
     >

@@ -37,7 +37,7 @@ import { WorkspaceDashboard } from './dashboard/WorkspaceDashboard';
 import { taskService, workspaceService, authService } from '../services/api';
 
 export const DashboardPage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   
   // Navigation & Layout states
   const [activeTab, setActiveTab] = useState('INBOX'); // INBOX, TODAY, UPCOMING, FILTERS, REPORTING, WORKSPACE, WORKSPACE_DASHBOARD
@@ -135,10 +135,23 @@ export const DashboardPage = () => {
       });
 
       if (res && res.data && res.data.user) {
-        setProfileSuccessMsg('Profile updated successfully! Reloading...');
+        const updated = res.data.user;
+        // Instantly update the in-memory user so avatar shows without a reload
+        updateUser({
+          name: updated.name,
+          username: updated.username,
+          bio: updated.bio,
+          photoUrl: updated.photoUrl,
+        });
+        setProfilePhotoUrl(updated.photoUrl || '');
+        setProfileSuccessMsg('Profile saved successfully! ✓');
+        // Auto-close modal after 1.5s
         setTimeout(() => {
-          window.location.reload();
-        }, 1250);
+          setIsProfileModalOpen(false);
+          setProfileAvatarFile(null);
+          setProfileAvatarPreview(null);
+          setProfileSuccessMsg(null);
+        }, 1500);
       }
     } catch (err) {
       console.error(err);
@@ -328,10 +341,10 @@ export const DashboardPage = () => {
                   <img 
                     src={user.photoUrl} 
                     alt="User Profile" 
-                    className="w-7.5 h-7.5 rounded-full object-cover shadow-sm border border-gray-200"
+                    className="w-8 h-8 rounded-full object-cover shadow-sm border border-gray-200 flex-shrink-0"
                   />
                 ) : (
-                  <div className={`w-7.5 h-7.5 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center font-bold text-sm shadow-sm`}>
+                  <div className={`w-8 h-8 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0`}>
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
