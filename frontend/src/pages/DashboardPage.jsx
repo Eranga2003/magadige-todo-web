@@ -369,25 +369,7 @@ export const DashboardPage = () => {
               <Users size={16} className={activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD' ? getColor('primary.text') : 'text-gray-400'} /> Workspace
             </button>
           </nav>
-
-          {/* Section: Projects list */}
-          <div className="space-y-2 pt-4 border-t border-gray-200">
-            <h4 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider px-3">My Projects</h4>
-            <div className="space-y-0.5">
-              <button 
-                onMouseEnter={playBubbleSound}
-                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
-              >
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> # Work
-              </button>
-              <button 
-                onMouseEnter={playBubbleSound}
-                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-gray-500 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
-              >
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> # Personal
-              </button>
-            </div>
-          </div>
+          {/* Removed projects section */}
         </div>
 
         {/* Sidebar Footer */}
