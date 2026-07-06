@@ -21,7 +21,12 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
   const [error, setError] = useState(null);
 
   // Sub-navigation tabs
-  const [activeSubTab, setActiveSubTab] = useState('Board'); // Overview, Board, List, Calendar, Gantt, Table
+  const [activeSubTab, setActiveSubTab] = useState('Board'); // Overview, Board, Calendar
+
+  // Calendar view Month/Year navigation states
+  const calendarToday = new Date();
+  const [calendarMonth, setCalendarMonth] = useState(calendarToday.getMonth());
+  const [calendarYear, setCalendarYear] = useState(calendarToday.getFullYear());
 
   // Invite member state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -540,7 +545,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       {/* 2. Sub-Navigation Tabs */}
       <div className="flex items-center justify-between border-b border-gray-100/70 mb-4 select-none">
         <div className="flex items-center gap-6 text-[12px] font-extrabold text-gray-400">
-          {['Overview', 'Board', 'List', 'Calendar', 'Gantt', 'Table'].map(tab => (
+          {['Overview', 'Board', 'Calendar'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveSubTab(tab)}
@@ -826,53 +831,170 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
           </div>
         </div>
       ) : (
-        <div className="py-20 text-center bg-gray-50/50 border border-transparent shadow-[0_4px_20px_rgba(219,234,254,0.3)] rounded-2xl mb-12 select-none">
-          <p className="text-xs text-gray-400 italic">This sub-tab view is currently read-only. Switch to Board tab to view and manage tasks.</p>
-        </div>
-      )}
-
-      {/* 5. Bottom Collaborations Row: Projects */}
-      <div className="pt-8 border-t border-gray-100">
-        <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-4 select-none">
-          <h2 className="text-[13px] font-extrabold text-gray-900 flex items-center gap-1.5">
-            <FolderGit2 size={15} className="text-gray-400" /> Workspace Projects
-          </h2>
-          <span className="text-[10px] font-bold text-gray-400 bg-gray-150 px-2 py-0.5 rounded-full">
-            {workspace.projects?.length || 0}
-          </span>
-        </div>
-
-        {workspace.projects && workspace.projects.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {workspace.projects.map((proj) => (
-              <div 
-                key={proj.id}
-                className="bg-white border border-transparent shadow-[0_4px_15px_rgba(219,234,254,0.45)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.08)] transition-all p-3.5 rounded-xl flex items-center justify-between select-none"
+        /* CALENDAR SUB-TAB: Beautiful Sprint Calendar displaying tasks by due date */
+        <div>
+          {/* Calendar Month Header */}
+          <div className="flex items-center justify-between mb-6 select-none bg-white p-4 rounded-3xl border border-gray-100 shadow-[0_8px_24px_rgba(219,234,254,0.3)]">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  if (calendarMonth === 0) {
+                    setCalendarMonth(11);
+                    setCalendarYear(y => y - 1);
+                  } else {
+                    setCalendarMonth(m => m - 1);
+                  }
+                }}
+                className="w-8 h-8 rounded-xl border border-blue-100/60 bg-blue-50/50 text-blue-700 flex items-center justify-center font-bold hover:bg-blue-100 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base">📂</span>
-                  <div>
-                    <h4 className="font-extrabold text-xs text-gray-800 leading-normal">{proj.name}</h4>
-                    <span className="text-[9px] text-gray-400">Created {new Date(proj.createdAt).toLocaleDateString()}</span>
+                &larr;
+              </button>
+              <h2 className="text-sm font-black text-slate-800 tracking-tight">
+                {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][calendarMonth]} {calendarYear}
+              </h2>
+              <button
+                onClick={() => {
+                  if (calendarMonth === 11) {
+                    setCalendarMonth(0);
+                    setCalendarYear(y => y + 1);
+                  } else {
+                    setCalendarMonth(m => m + 1);
+                  }
+                }}
+                className="w-8 h-8 rounded-xl border border-blue-100/60 bg-blue-50/50 text-blue-700 flex items-center justify-center font-bold hover:bg-blue-100 transition-all cursor-pointer"
+              >
+                &rarr;
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-[10px] font-black border border-blue-100 flex items-center gap-1.5 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]"></span>
+                <span>{filteredTasks.filter(t => t.dueDate).length} Scheduled</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid of Day Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+            {Array.from({ length: new Date(calendarYear, calendarMonth + 1, 0).getDate() }, (_, i) => i + 1).map((dayNum) => {
+              const targetDateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+              const dayTasks = filteredTasks.filter(task => task.dueDate === targetDateStr);
+              
+              const isToday = calendarToday.getDate() === dayNum && 
+                              calendarToday.getMonth() === calendarMonth && 
+                              calendarToday.getFullYear() === calendarYear;
+                              
+              const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+              const weekday = weekdays[new Date(calendarYear, calendarMonth, dayNum).getDay()];
+
+              return (
+                <div 
+                  key={dayNum} 
+                  className={`relative bg-[#f8fafc]/55 border ${isToday ? 'border-blue-500 ring-1 ring-blue-500' : 'border-blue-100/30'} shadow-[0_25px_50px_-12px_rgba(37,99,235,0.65),0_0_25px_rgba(37,99,235,0.3)] rounded-3xl p-5 min-h-[220px] flex flex-col overflow-hidden hover:scale-[1.01] hover:shadow-[0_30px_60px_-10px_rgba(37,99,235,0.7),0_0_30px_rgba(37,99,235,0.4)] transition-all duration-300`}
+                >
+                  {/* Large Watermark day number */}
+                  <div className="absolute top-[-18px] right-[-6px] font-bold text-[88px] text-blue-600 opacity-6 select-none pointer-events-none leading-none font-sans">
+                    {String(dayNum).padStart(2, '0')}
+                  </div>
+
+                  {/* Day Header */}
+                  <div className="flex justify-between items-start mb-3.5 z-10 select-none">
+                    <div className="flex flex-col">
+                      <span className="font-mono text-[9px] font-black tracking-widest text-slate-450 uppercase">
+                        {weekday}
+                      </span>
+                      <span className="text-xl font-black text-slate-800 leading-tight">
+                        {dayNum}
+                      </span>
+                      {isToday && (
+                        <span className="text-[8px] font-black tracking-wider uppercase bg-blue-600 text-white px-2 py-0.5 rounded-full mt-1 w-fit">
+                          Today
+                        </span>
+                      )}
+                    </div>
+
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTaskDueDate(targetDateStr);
+                          setTaskStatus('ASSIGNED');
+                          setIsCreatingTask(true);
+                        }}
+                        title="Add Workspace Task for this day"
+                        className="w-6 h-6 rounded-lg border border-blue-200 bg-blue-50/70 text-blue-700 font-extrabold text-sm flex items-center justify-center cursor-pointer hover:bg-blue-100 hover:text-blue-800 active:scale-90 transition-all focus:outline-none"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tasks List */}
+                  <div className="space-y-2.5 z-10 overflow-y-auto max-h-[120px] pr-0.5 custom-scrollbar flex-1">
+                    {dayTasks.length > 0 ? (
+                      dayTasks.map(task => {
+                        let cardBg = "";
+                        let textMuted = "";
+                        let checkColor = "";
+
+                        if (task.status === 'ASSIGNED') {
+                          cardBg = "bg-[#bae6fd] border border-[#7dd3fc] text-sky-950 shadow-xs";
+                          textMuted = "text-sky-800";
+                          checkColor = "border-sky-400";
+                        } else if (task.status === 'IN_PROGRESS') {
+                          cardBg = "bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white border border-[#1e40af] shadow-sm";
+                          textMuted = "text-blue-150";
+                          checkColor = "border-blue-400";
+                        } else if (task.status === 'COMPLETED') {
+                          cardBg = "bg-gradient-to-br from-[#10b981] to-[#047857] text-white border border-[#065f46] shadow-sm line-through opacity-85";
+                          textMuted = "text-emerald-150";
+                          checkColor = "border-emerald-400";
+                        }
+
+                        return (
+                          <div 
+                            key={task.id}
+                            className={`p-2 rounded-xl border flex flex-col gap-1.5 transition-all hover:scale-[1.01] hover:shadow-md cursor-pointer ${cardBg}`}
+                          >
+                            <div className="flex items-start justify-between gap-1.5 min-w-0">
+                              <span className="text-[11px] font-black leading-tight break-all">
+                                {task.name}
+                              </span>
+                              {task.assignedTo && (
+                                <div 
+                                  title={`Assigned to ${task.assignedTo.email}`}
+                                  className="w-4 h-4 rounded-full bg-slate-900 text-white font-extrabold text-[7px] flex items-center justify-center ring-1 ring-white min-w-[16px] max-w-[16px] h-[16px]"
+                                >
+                                  {task.assignedTo.email.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-[8px] font-extrabold select-none">
+                              {task.dueTime ? (
+                                <span className={`flex items-center gap-0.5 ${textMuted}`}>
+                                  <Clock size={8} />
+                                  {task.dueTime}
+                                </span>
+                              ) : (
+                                <span />
+                              )}
+                              <span className="uppercase opacity-90">{task.status === 'COMPLETED' ? 'DONE' : task.status === 'IN_PROGRESS' ? 'DOING' : 'TO DO'}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[10px] text-slate-400/80 italic select-none">No tasks scheduled</span>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl select-none">
-            <p className="text-xs text-gray-405 italic">No projects created inside this workspace yet.</p>
-            {isOwner && (
-              <button 
-                onClick={() => setIsCreatingProject(true)}
-                className="text-xs text-blue-600 hover:text-blue-800 font-bold mt-1.5"
-              >
-                Create Project
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Owner-Only Add Task Modal */}
       {isCreatingTask && (
