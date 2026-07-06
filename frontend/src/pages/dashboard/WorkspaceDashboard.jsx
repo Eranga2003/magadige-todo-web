@@ -3,7 +3,7 @@ import {
   Users, Mail, Plus, ArrowLeft, FolderGit2, Check, X, ShieldAlert, 
   Calendar, Clock, AlertCircle, GripVertical, CheckCircle2, 
   Search, Settings, MoreHorizontal, Flag, Pencil, Trash2, Share2, 
-  Sparkles, BrainCircuit, Play
+  Sparkles, BrainCircuit, Play, User, UserMinus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/Button';
