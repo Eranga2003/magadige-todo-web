@@ -70,3 +70,107 @@ export const authService = {
     return fetchAPI('/auth/me');
   },
 };
+
+/**
+ * Tasks service module
+ */
+export const taskService = {
+  /**
+   * Fetch all tasks for the authenticated user
+   */
+  async getTasks() {
+    return fetchAPI('/tasks');
+  },
+
+  /**
+   * Create a new task
+   */
+  async createTask(task) {
+    return fetchAPI('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(task),
+    });
+  },
+
+  /**
+   * Update an existing task
+   */
+  async updateTask(id, task) {
+    return fetchAPI(`/tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(task),
+    });
+  },
+
+  /**
+   * Delete a task
+   */
+  async deleteTask(id) {
+    return fetchAPI(`/tasks/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+/**
+ * Workspace service module
+ */
+export const workspaceService = {
+  async createWorkspace(data) {
+    return fetchAPI('/workspaces', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getWorkspaces() {
+    return fetchAPI('/workspaces');
+  },
+
+  async getWorkspace(id) {
+    return fetchAPI(`/workspaces/${id}`);
+  },
+
+  async inviteMember(workspaceId, email) {
+    return fetchAPI(`/workspaces/${workspaceId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async validateToken(token) {
+    return fetchAPI(`/invitations/validate/${token}`);
+  },
+
+  async acceptInvitation(token) {
+    return fetchAPI('/invitations/accept', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  async createWorkspaceProject(workspaceId, name) {
+    return fetchAPI(`/workspaces/${workspaceId}/projects`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  async getWorkspaceTasks(workspaceId) {
+    return fetchAPI(`/workspaces/${workspaceId}/tasks`);
+  },
+
+  async createWorkspaceTask(workspaceId, task) {
+    return fetchAPI(`/workspaces/${workspaceId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(task),
+    });
+  },
+
+  async updateWorkspaceTask(workspaceId, taskId, task) {
+    return fetchAPI(`/workspaces/${workspaceId}/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(task),
+    });
+  },
+};

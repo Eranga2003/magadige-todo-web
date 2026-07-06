@@ -16,3 +16,43 @@ body {
   background-color: #f9fafb;
   color: #000000;
 }
+
+@property --a {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes spin-border {
+  to { --a: 360deg; }
+}
+
+.focus-calendar-card {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid #dbe6fb;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, border-color .22s ease;
+}
+
+.focus-calendar-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 38px -18px rgba(15,42,92,.4);
+  border-color: transparent;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    conic-gradient(from var(--a), #c9dbfb, #2563eb 25%, #7fa8f2 50%, #2563eb 75%, #c9dbfb) border-box;
+  animation: spin-border 2.4s linear infinite;
+}
+
+.focus-calendar-card.today {
+  border-color: #2563eb;
+  background: linear-gradient(180deg, #f3f8ff, #ffffff 40%);
+}
+
+.focus-calendar-card.today:hover {
+  background:
+    linear-gradient(180deg, #f3f8ff, #ffffff 40%) padding-box,
+    conic-gradient(from var(--a), #c9dbfb, #2563eb 25%, #7fa8f2 50%, #2563eb 75%, #c9dbfb) border-box;
+}

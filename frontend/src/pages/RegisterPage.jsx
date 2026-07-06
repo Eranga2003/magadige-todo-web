@@ -17,7 +17,7 @@ import {
   UserSquare2 
 } from 'lucide-react';
 
-export const RegisterPage = ({ onNavigateToLogin }) => {
+export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }) => {
   const { register, socialLogin, error: authError, clearError } = useAuth();
   
   // Onboarding wizard steps: 1 = System Purpose, 2 = Current Method, 3 = Account Credentials
@@ -29,7 +29,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
   
   // Form fields
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(prefilledEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -351,6 +351,14 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
           {step === 3 && (
             <form onSubmit={handleSubmit} className="space-y-5">
+              {inviteWsName && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700 font-semibold mb-2 leading-normal flex items-start gap-2 select-none">
+                  <span className="text-sm mt-0.5">✉️</span>
+                  <div>
+                    You have been invited to join the <span className="font-extrabold text-blue-800">{inviteWsName}</span> workspace. Complete registration to automatically join.
+                  </div>
+                </div>
+              )}
               <div className="text-center mb-2">
                 <h3 className="text-xl font-bold text-black">Set up your credentials</h3>
                 <p className="text-sm text-gray-500 mt-1">Secure your workspace and you are ready to go.</p>
@@ -372,6 +380,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
                 required
+                disabled={!!prefilledEmail}
                 icon={<Mail size={20} />}
               />
 

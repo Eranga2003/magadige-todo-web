@@ -13,7 +13,7 @@ export const Button = ({
   const baseStyles = 'w-full flex items-center justify-center gap-2 py-3.5 px-6 font-bold rounded-xl transition-all duration-300 transform select-none cursor-pointer text-base shadow-sm border-2';
   
   const variants = {
-    primary: `${getColor('primary.base')} ${getColor('primary.border')} text-white ${getColor('primary.hover')} ${getColor('primary.borderHover')} hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 ${getColor('primary.disabledBg')} ${getColor('primary.disabledBorder')} disabled:cursor-not-allowed`,
+    primary: `${getColor('primary.gradient')} ${getColor('primary.border')} text-white ${getColor('primary.hoverGradient')} ${getColor('primary.borderHover')} hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 ${getColor('primary.disabledBg')} ${getColor('primary.disabledBorder')} disabled:cursor-not-allowed`,
     secondary: `${getColor('secondary.base')} ${getColor('secondary.border')} ${getColor('secondary.text')} ${getColor('secondary.hover')} hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 ${getColor('secondary.disabledBg')} ${getColor('secondary.disabledBorder')} ${getColor('secondary.disabledText')}`,
     outline: `bg-transparent ${getColor('primary.border')} ${getColor('primary.text')} ${getColor('primary.bgLight')} hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 disabled:opacity-50`,
     social: `${getColor('secondary.base')} ${getColor('secondary.borderLight')} ${getColor('secondary.text')} ${getColor('primary.hoverBorder')} hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 disabled:opacity-50`,
