@@ -322,7 +322,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       <div 
         onDragOver={(e) => handleDragOver(e, status)}
         onDrop={(e) => handleDrop(e, status)}
-        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-100/40 shadow-[0_25px_50px_-12px_rgba(37,99,235,0.4)] select-none ${
+        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-200/50 shadow-[0_25px_50px_-12px_rgba(37,99,235,0.65),0_0_25px_rgba(37,99,235,0.3)] select-none ${
           isActive ? 'ring-2 ring-blue-500/40 border-blue-400 bg-blue-50/10' : ''
         }`}
       >
