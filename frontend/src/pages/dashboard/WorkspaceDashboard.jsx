@@ -322,7 +322,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
       <div 
         onDragOver={(e) => handleDragOver(e, status)}
         onDrop={(e) => handleDrop(e, status)}
-        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-gray-150/70 select-none ${
+        className={`flex flex-col flex-1 rounded-2xl p-4 transition-all min-h-[480px] bg-gray-50/45 border border-blue-50/20 shadow-[0_8px_24px_rgba(219,234,254,0.45)] select-none ${
           isActive ? 'ring-2 ring-blue-500/40 border-blue-400 bg-blue-50/10' : ''
         }`}
       >
@@ -366,7 +366,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                   draggable
                   onDragStart={(e) => handleDragStart(e, task.id)}
                   onDragEnd={handleDragEnd}
-                  className="bg-white border border-gray-150 rounded-xl p-3 shadow-xxs hover:shadow-md hover:border-gray-250 hover:scale-[1.01] transition-all cursor-grab active:cursor-grabbing group relative flex flex-col justify-between"
+                  className="bg-white border border-transparent shadow-[0_3px_10px_rgba(219,234,254,0.35)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.12)] hover:scale-[1.01] transition-all cursor-grab active:cursor-grabbing group relative flex flex-col justify-between"
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-1">
@@ -604,7 +604,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
           </div>
         )
       ) : (
-        <div className="py-20 text-center bg-gray-50 border border-gray-150 rounded-2xl mb-12 select-none">
+        <div className="py-20 text-center bg-gray-50/50 border border-transparent shadow-[0_4px_20px_rgba(219,234,254,0.3)] rounded-2xl mb-12 select-none">
           <p className="text-xs text-gray-400 italic">This sub-tab view is currently read-only. Switch to Board tab to view and manage tasks.</p>
         </div>
       )}
@@ -628,7 +628,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               {workspace.projects.map((proj) => (
                 <div 
                   key={proj.id}
-                  className="bg-white border border-gray-150 rounded-xl p-3.5 shadow-xxs hover:shadow-sm hover:border-gray-300 transition-all flex items-center justify-between select-none"
+                  className="bg-white border border-transparent shadow-[0_4px_15px_rgba(219,234,254,0.45)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.08)] transition-all flex items-center justify-between select-none"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-base">📂</span>
@@ -671,7 +671,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
             {workspace.members.map((memb, idx) => (
               <div 
                 key={idx}
-                className="flex items-center justify-between p-2 bg-gray-50 border border-gray-100 rounded-xl select-none"
+                className="flex items-center justify-between p-2 bg-gray-50/55 border border-transparent shadow-[0_3px_8px_rgba(219,234,254,0.3)] rounded-xl select-none"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-6.5 h-6.5 rounded-full bg-slate-900 text-white font-extrabold text-[9px] flex items-center justify-center select-none">
@@ -702,7 +702,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
 
           {/* Invite Widget */}
           {isOwner && (
-            <form onSubmit={handleInviteSubmit} className="bg-white border border-gray-150 rounded-2xl p-4 space-y-3 shadow-xxs">
+            <form onSubmit={handleInviteSubmit} className="bg-white border border-transparent shadow-[0_6px_20px_rgba(219,234,254,0.45)] p-4 space-y-3">
               <h3 className="text-xs font-extrabold text-gray-800 flex items-center gap-1.5 select-none">
                 <Mail size={13} className="text-blue-500" /> Invite Teammates
               </h3>
