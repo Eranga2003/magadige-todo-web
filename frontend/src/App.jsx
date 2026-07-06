@@ -7,7 +7,7 @@ import { getColor } from './utils/color';
 import { workspaceService } from './services/api';
 
 const AppContent = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, logout, loading } = useAuth();
   const [view, setView] = useState('login');
   const [prefilledEmail, setPrefilledEmail] = useState('');
   const [inviteToken, setInviteToken] = useState('');
@@ -15,8 +15,10 @@ const AppContent = () => {
   const [isVerifyingInvite, setIsVerifyingInvite] = useState(false);
   const [inviteError, setInviteError] = useState(null);
 
-  // 1. Detect invite token on load & validate it
+  // 1. Detect invite token on load & validate it (runs after session restoration is complete)
   useEffect(() => {
+    if (loading) return;
+
     const params = new URLSearchParams(window.location.search);
     const token = params.get('inviteToken');
     if (token) {
@@ -29,9 +31,18 @@ const AppContent = () => {
       workspaceService.validateToken(token)
         .then((res) => {
           if (res.status === 'success') {
-            setPrefilledEmail(res.data.email);
+            const invitedEmail = res.data.email;
+            setPrefilledEmail(invitedEmail);
             setInviteWsName(res.data.workspaceName);
+            
+            // Check if currently logged in user does not match the invited email
+            if (user && user.email !== invitedEmail) {
+              console.log('🔄 Logging out current user because it does not match invited email:', invitedEmail);
+              logout();
+            }
+            
             setView('register'); // Send to registration
+            
             // Cache token locally to accept it post-auth
             localStorage.setItem('magadige_invite_token', token);
           }
@@ -44,7 +55,7 @@ const AppContent = () => {
           setIsVerifyingInvite(false);
         });
     }
-  }, []);
+  }, [loading]);
 
   // 2. Auto-accept invitation if logged in/registration finishes
   useEffect(() => {
