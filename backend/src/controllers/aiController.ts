@@ -70,7 +70,12 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
         subtasks,
       },
     });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    console.error('❌ breakDownTask failed with error:', error.message || error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal Server Error',
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+    });
   }
 }
