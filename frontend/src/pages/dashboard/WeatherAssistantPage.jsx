@@ -111,7 +111,25 @@ export const WeatherAssistantPage = ({ tasks }) => {
       default:
         return 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white';
     }
-  };  // Helper to style small day-cards based on forecast condition
+  };  // Helper to resolve a weather-adaptive shadow class
+  const getTodayCardShadowClass = (status) => {
+    switch (status) {
+      case 'SUNNY':
+        return 'shadow-[0_20px_50px_rgba(245,158,11,0.22)]';
+      case 'RAINY':
+        return 'shadow-[0_20px_50px_rgba(37,99,235,0.28)]';
+      case 'WINDY':
+        return 'shadow-[0_20px_50px_rgba(20,184,166,0.22)]';
+      case 'CLOUDY':
+        return 'shadow-[0_20px_50px_rgba(100,116,139,0.22)]';
+      case 'STORMY':
+        return 'shadow-[0_20px_50px_rgba(99,102,241,0.3)]';
+      default:
+        return 'shadow-[0_20px_50px_rgba(37,99,235,0.22)]';
+    }
+  };
+
+  // Helper to style small day-cards based on forecast condition
   const getDayCardStyles = (status) => {
     switch (status) {
       case 'SUNNY':
@@ -233,7 +251,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Today Main Weather Card */}
-            <div className={`lg:col-span-1 border border-slate-200/40 rounded-[32px] p-6 flex flex-col justify-between shadow-lg shadow-slate-100/40 min-h-[250px] relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300 ${getWeatherGradientClass(todayWeatherStatus)} ${getWeatherAnimationClass(todayWeatherStatus)}`}>
+            <div className={`lg:col-span-1 border border-slate-200/40 rounded-[32px] p-6 flex flex-col justify-between min-h-[250px] relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300 ${getTodayCardShadowClass(todayWeatherStatus)} ${getWeatherGradientClass(todayWeatherStatus)} ${getWeatherAnimationClass(todayWeatherStatus)}`}>
               <div className="z-10 flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-1.5 text-white/90">
@@ -278,7 +296,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
             </div>
 
             {/* Hour-by-Hour Forecast */}
-            <div className="lg:col-span-2 bg-white/80 backdrop-blur-md border border-slate-100 rounded-[32px] p-6 flex flex-col justify-between shadow-lg shadow-slate-150/10 min-h-[250px]">
+            <div className="lg:col-span-2 bg-white/80 backdrop-blur-md border border-slate-100 rounded-[32px] p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(37,99,235,0.06),0_8px_20px_rgba(37,99,235,0.03)] min-h-[250px]">
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                   <Clock size={14} className="text-blue-500" />
@@ -318,7 +336,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
           </div>
 
           {/* MIDDLE LAYOUT: WEATHER AFFECTED TASKS */}
-          <div className="bg-white/90 backdrop-blur-md border border-slate-100 rounded-[32px] p-6 shadow-lg shadow-slate-150/10">
+          <div className="bg-white/90 backdrop-blur-md border border-slate-100 rounded-[32px] p-6 shadow-[0_20px_50px_rgba(239,68,68,0.05),0_8px_20px_rgba(239,68,68,0.03)]">
             <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
