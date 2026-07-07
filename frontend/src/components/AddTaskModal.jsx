@@ -224,6 +224,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   };
 
   const handleAddSubtasks = () => {
+    const priorities = ['P1', 'P2', 'P3', 'P4'];
     // Add all selected subtasks as tasks
     generatedSubtasks.forEach((sub, idx) => {
       if (selectedSubtasks[idx]) {
@@ -231,7 +232,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
           id: `task_${Date.now()}_${idx}`,
           title: sub,
           description: `AI generated subtask from: "${breakerText || transcription}"`,
-          priority: 'P4',
+          priority: priorities[idx % priorities.length],
           dueDate: 'TODAY',
           completed: false,
           section: project,
@@ -260,13 +261,14 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
 
     // 2. Add any checked subtasks if AI breakdown is toggled open and populated
     if (showAiBreakdown && generatedSubtasks.length > 0) {
+      const priorities = ['P1', 'P2', 'P3', 'P4'];
       generatedSubtasks.forEach((sub, idx) => {
         if (selectedSubtasks[idx]) {
           onAddTask({
             id: `task_${Date.now()}_sub_${idx}`,
             title: sub,
             description: `Subtask of: "${title}"`,
-            priority: 'P4',
+            priority: priorities[idx % priorities.length],
             dueDate,
             completed: false,
             section: project,
@@ -455,8 +457,37 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                         {generatedSubtasks.map((sub, idx) => {
                           const isSelected = !!selectedSubtasks[idx];
                           const isLast = idx === generatedSubtasks.length - 1;
+                          
+                          // Dynamic colors resolved from color.jsx
+                          const colorKeys = ['pink', 'yellow', 'green', 'blue'];
+                          const colorKey = colorKeys[idx % colorKeys.length];
+                          
+                          const nodeBgClass = isSelected
+                            ? getColor(`taskColors.${colorKey}.bg`) + ' text-white border-transparent'
+                            : 'bg-white border-gray-300 text-gray-400';
+                            
+                          const ringClass = isSelected
+                            ? `ring-4 ${colorKey === 'pink' ? 'ring-pink-100/70' : colorKey === 'yellow' ? 'ring-amber-100/70' : colorKey === 'green' ? 'ring-emerald-100/70' : 'ring-blue-100/70'}`
+                            : '';
+                            
+                          const cardClass = isSelected
+                            ? `${getColor(`taskColors.${colorKey}.card`)} border-transparent`
+                            : 'bg-gray-50/50 border-gray-150 text-gray-450 opacity-60 hover:opacity-75';
+
+                          const activeBadgeClass = isSelected
+                            ? `${getColor(`taskColors.${colorKey}.status`)}`
+                            : '';
+                            
+                          const textMutedClass = isSelected
+                            ? `${getColor(`taskColors.${colorKey}.muted`)}`
+                            : 'text-gray-450';
+
+                          const textBodyClass = isSelected
+                            ? 'text-white font-bold'
+                            : 'text-gray-500';
+
                           return (
-                            <div key={idx} className="relative flex items-start gap-4 mb-4 last:mb-1 select-none">
+                            <div key={idx} className="relative flex items-start gap-4 mb-4 last:mb-1 select-none animate-scale-up">
                               {/* Visual Timeline connector node */}
                               <div className="flex flex-col items-center flex-shrink-0 mt-0.5">
                                 <button
@@ -467,11 +498,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                                       [idx]: !prev[idx]
                                     }));
                                   }}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center border-2 text-[10px] font-black transition-all cursor-pointer focus:outline-none ${
-                                    isSelected
-                                      ? 'bg-blue-600 border-blue-600 text-white ring-4 ring-blue-50/70 shadow-sm animate-flow-node-active'
-                                      : 'bg-white border-gray-300 text-gray-400 hover:border-gray-400'
-                                  }`}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center border-2 text-[10px] font-black transition-all cursor-pointer focus:outline-none ${nodeBgClass} ${ringClass} ${isSelected ? 'animate-flow-node-active' : ''}`}
                                 >
                                   {isSelected ? <Check size={11} strokeWidth={3} /> : idx + 1}
                                 </button>
@@ -483,7 +510,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                                     <div className="absolute inset-y-0 w-0.5 bg-gray-150 rounded"></div>
                                     {/* Animated flowing line */}
                                     {isSelected && (
-                                      <div className="absolute inset-y-0 w-0.5 rounded animate-flow-dash"></div>
+                                      <div className={`absolute inset-y-0 w-0.5 rounded animate-flow-dash-${colorKey}`}></div>
                                     )}
                                     {/* Arrow head indicator */}
                                     <div className="absolute bottom-0 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-gray-300"></div>
@@ -499,24 +526,20 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                                     [idx]: !prev[idx]
                                   }));
                                 }}
-                                className={`flex-1 p-3 rounded-2xl border transition-all duration-350 cursor-pointer ${
-                                  isSelected
-                                    ? 'bg-white border-blue-100 shadow-[0_6px_16px_rgba(37,99,235,0.05)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.08)]'
-                                    : 'bg-gray-50/50 border-gray-150 text-gray-400 opacity-60 hover:opacity-75'
-                                }`}
+                                className={`flex-1 p-3 rounded-2xl border transition-all duration-350 cursor-pointer ${cardClass}`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className={`text-[9px] font-black uppercase tracking-wider ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
+                                  <span className={`text-[9px] font-black uppercase tracking-wider ${textMutedClass}`}>
                                     Step {idx + 1}
                                   </span>
                                   {isSelected && (
-                                    <span className="text-[8px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-0.5">
-                                      <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                                    <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-0.5 ${activeBadgeClass}`}>
+                                      <span className="w-1 h-1 rounded-full bg-white animate-ping"></span>
                                       Active
                                     </span>
                                   )}
                                 </div>
-                                <p className={`text-xs font-bold mt-1.5 leading-relaxed transition-colors ${isSelected ? 'text-gray-800' : 'text-gray-400'}`}>
+                                <p className={`text-xs mt-1.5 leading-relaxed transition-colors ${textBodyClass}`}>
                                   {sub}
                                 </p>
                               </div>
@@ -530,6 +553,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                         <button
                           type="button"
                           onClick={() => {
+                            const priorities = ['P1', 'P2', 'P3', 'P4'];
                             // Add all selected subtasks as individual tasks directly to TODAY
                             generatedSubtasks.forEach((sub, idx) => {
                               if (selectedSubtasks[idx]) {
@@ -537,7 +561,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                                   id: `task_${Date.now()}_sub_${idx}`,
                                   title: sub,
                                   description: `AI generated subtask from: "${breakerText || transcription}"`,
-                                  priority: 'P4',
+                                  priority: priorities[idx % priorities.length],
                                   dueDate: 'TODAY', // Add directly to daily task list
                                   completed: false,
                                   section: project,

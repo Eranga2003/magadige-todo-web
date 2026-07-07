@@ -63,7 +63,22 @@ body {
     background-position-y: 16px;
   }
 }
-.animate-flow-dash {
+.animate-flow-dash-pink {
+  background-image: linear-gradient(to bottom, #ec4899 50%, transparent 50%);
+  background-size: 2px 10px;
+  animation: flow-dash 0.6s linear infinite;
+}
+.animate-flow-dash-yellow {
+  background-image: linear-gradient(to bottom, #f59e0b 50%, transparent 50%);
+  background-size: 2px 10px;
+  animation: flow-dash 0.6s linear infinite;
+}
+.animate-flow-dash-green {
+  background-image: linear-gradient(to bottom, #10b981 50%, transparent 50%);
+  background-size: 2px 10px;
+  animation: flow-dash 0.6s linear infinite;
+}
+.animate-flow-dash-blue {
   background-image: linear-gradient(to bottom, #3b82f6 50%, transparent 50%);
   background-size: 2px 10px;
   animation: flow-dash 0.6s linear infinite;
@@ -82,4 +97,5 @@ body {
 .animate-flow-node-active {
   animation: pulse-flow-node 2s infinite ease-in-out;
 }
+
 
