@@ -4,6 +4,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { signInWithGoogle, signInWithFacebook } from '../services/firebase';
 import { getColor } from '../utils/color';
+import { supabase } from '../utils/supabase';
 import { 
   User, 
   Users, 
@@ -14,13 +15,15 @@ import {
   Mail, 
   Lock, 
   Check, 
-  UserSquare2 
+  UserSquare2,
+  Camera,
+  Smile
 } from 'lucide-react';
 
 export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }) => {
   const { register, socialLogin, error: authError, clearError } = useAuth();
   
-  // Onboarding wizard steps: 1 = System Purpose, 2 = Current Method, 3 = Account Credentials
+  // Onboarding wizard steps: 1 = System Purpose, 2 = Current Method, 3 = Account Credentials, 4 = Profile Details
   const [step, setStep] = useState(1);
   
   // Questionnaire choices
@@ -32,6 +35,13 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
   const [email, setEmail] = useState(prefilledEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Step 4 Profile fields
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Local error state (validation)
   const [validationError, setValidationError] = useState(null);
@@ -94,6 +104,7 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
     clearError();
     if (step === 2) setStep(1);
     if (step === 3) setStep(2);
+    if (step === 4) setStep(3);
   };
 
   const handleSubmit = async (e) => {
@@ -134,7 +145,47 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
       return;
     }
 
+    // Advance to Step 4 profile onboarding!
+    setStep(4);
+  };
+
+  const handleRegisterSubmit = async (skipProfile = false) => {
+    setValidationError(null);
+    clearError();
     setIsSubmitting(true);
+
+    let photoUrl = '';
+    
+    // Upload image to Supabase if file is chosen
+    if (!skipProfile && avatarFile) {
+      setIsUploading(true);
+      try {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('Profile Images')
+          .upload(filePath, avatarFile, { cacheControl: '3600', upsert: true });
+
+        if (uploadError) {
+          throw new Error(`Upload error: ${uploadError.message}`);
+        }
+
+        const { data } = supabase.storage
+          .from('Profile Images')
+          .getPublicUrl(filePath);
+
+        photoUrl = data.publicUrl;
+      } catch (err) {
+        console.error(err);
+        setValidationError(err.message || 'Failed to upload profile picture.');
+        setIsSubmitting(false);
+        setIsUploading(false);
+        return;
+      }
+    }
+
     try {
       await register({
         name,
@@ -142,17 +193,20 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
         password,
         usageType,
         currentManagementMethod,
+        username: skipProfile ? '' : username.trim(),
+        bio: skipProfile ? '' : bio.trim(),
+        photoUrl: skipProfile ? '' : photoUrl,
       });
     } catch (err) {
       console.error(err);
-      // Detailed validation errors from backend
       if (err.errors && Array.isArray(err.errors)) {
         setValidationError(err.errors.map((e) => e.message).join(' '));
       } else {
-        setValidationError(err.message || 'An error occurred during registration.');
+        setValidationError(err.message || 'Registration failed.');
       }
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
@@ -198,27 +252,34 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
         <div className="bg-white py-8 px-6 shadow-xl border border-gray-100 rounded-2xl sm:px-10">
           
           {/* Progress Indicators */}
-          <div className="mb-8">
+          <div className="mb-8 select-none">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
                   step >= 1 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
                 }`}>1</span>
                 <span className="text-xs font-bold text-black hidden sm:inline">Goal</span>
               </div>
-              <div className={`flex-1 h-[2px] mx-2 transition-all duration-300 ${step >= 2 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
-              <div className="flex items-center gap-2">
+              <div className={`flex-1 h-[2px] mx-1 transition-all duration-300 ${step >= 2 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
                   step >= 2 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
                 }`}>2</span>
                 <span className="text-xs font-bold text-black hidden sm:inline">Routine</span>
               </div>
-              <div className={`flex-1 h-[2px] mx-2 transition-all duration-300 ${step >= 3 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
-              <div className="flex items-center gap-2">
+              <div className={`flex-1 h-[2px] mx-1 transition-all duration-300 ${step >= 3 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
                   step >= 3 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
                 }`}>3</span>
-                <span className="text-xs font-bold text-black hidden sm:inline">Register</span>
+                <span className="text-xs font-bold text-black hidden sm:inline">Details</span>
+              </div>
+              <div className={`flex-1 h-[2px] mx-1 transition-all duration-300 ${step >= 4 ? getColor('primary.base') : 'bg-gray-200'}`}></div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                  step >= 4 ? `${getColor('primary.base')} text-white` : 'bg-gray-200 text-gray-500'
+                }`}>4</span>
+                <span className="text-xs font-bold text-black hidden sm:inline">Profile</span>
               </div>
             </div>
           </div>
@@ -408,8 +469,8 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
                 <Button variant="secondary" type="button" onClick={handlePrevStep} icon={<ArrowLeft size={18} />}>
                   Back
                 </Button>
-                <Button type="submit" loading={isSubmitting}>
-                  Complete Setup
+                <Button type="submit">
+                  Continue
                 </Button>
               </div>
 
@@ -444,6 +505,102 @@ export const RegisterPage = ({ onNavigateToLogin, prefilledEmail, inviteWsName }
                 </Button>
               </div>
             </form>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-6">
+              <div className="text-center mb-2">
+                <h3 className="text-xl font-bold text-black">Set up your profile</h3>
+                <p className="text-sm text-gray-500 mt-1">Add a username and profile photo to stand out.</p>
+              </div>
+
+              {/* Avatar Upload Dropzone */}
+              <div className="flex flex-col items-center justify-center space-y-3 select-none">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full bg-gray-50 border border-gray-250 overflow-hidden flex items-center justify-center shadow-inner relative">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-gray-400 flex flex-col items-center justify-center gap-1">
+                        <Camera size={24} />
+                        <span className="text-[9px] font-black uppercase text-gray-500">ADD PHOTO</span>
+                      </div>
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-750 text-white flex items-center justify-center shadow-md cursor-pointer transition-colors border border-white">
+                    <Camera size={14} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setAvatarFile(file);
+                          setAvatarPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {avatarFile && (
+                  <span className="text-[10px] font-bold text-emerald-600">✓ {avatarFile.name}</span>
+                )}
+              </div>
+
+              {/* Username Input */}
+              <Input
+                label="Username (Optional)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/\s+/g, '').toLowerCase())}
+                placeholder="eranga_2026"
+                icon={<Smile size={20} />}
+              />
+
+              {/* Bio Input */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Bio (Optional)</label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Software engineer working on task management apps..."
+                  rows={3}
+                  className="w-full text-xs text-gray-600 border border-gray-250 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <Button 
+                  variant="secondary" 
+                  type="button" 
+                  onClick={() => setStep(3)} 
+                  icon={<ArrowLeft size={18} />}
+                  disabled={isSubmitting || isUploading}
+                >
+                  Back
+                </Button>
+                <Button 
+                  type="button"
+                  onClick={() => handleRegisterSubmit(false)}
+                  loading={isSubmitting || isUploading}
+                  className="flex-1"
+                >
+                  {isUploading ? 'Uploading...' : 'Save Profile'}
+                </Button>
+              </div>
+
+              {/* Skip option */}
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleRegisterSubmit(true)}
+                  disabled={isSubmitting || isUploading}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-bold transition-all underline cursor-pointer"
+                >
+                  Skip this step for now
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Validation or API Errors */}

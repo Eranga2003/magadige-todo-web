@@ -69,6 +69,16 @@ export const authService = {
   async getMe() {
     return fetchAPI('/auth/me');
   },
+
+  /**
+   * Update user profile details
+   */
+  async updateProfile(payload) {
+    return fetchAPI('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 /**

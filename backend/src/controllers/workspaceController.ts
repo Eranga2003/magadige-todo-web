@@ -133,7 +133,28 @@ export async function getWorkspaceById(req: AuthenticatedRequest, res: Response,
       }
     }
 
-    res.status(200).json({ status: 'success', data: workspace });
+    // Enrich members with name and photoUrl from users collection
+    const enrichedMembers = await Promise.all(
+      (workspace.members || []).map(async (member: any) => {
+        if (member.userId) {
+          try {
+            const memberUserDoc = await db.collection('users').doc(member.userId).get();
+            if (memberUserDoc.exists) {
+              const memberData = memberUserDoc.data();
+              return {
+                ...member,
+                name: memberData.name || null,
+                photoUrl: memberData.photoUrl || null,
+                username: memberData.username || null,
+              };
+            }
+          } catch (_) {}
+        }
+        return member;
+      })
+    );
+
+    res.status(200).json({ status: 'success', data: { ...workspace, members: enrichedMembers } });
   } catch (error) {
     next(error);
   }

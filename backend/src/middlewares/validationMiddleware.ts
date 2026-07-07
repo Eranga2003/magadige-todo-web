@@ -19,6 +19,9 @@ export const registerSchema = z.object({
   currentManagementMethod: z.enum(['PAPER', 'APP'] as const, {
     message: 'Current management method must be PAPER or APP',
   }),
+  username: z.string().max(30, 'Username must be under 30 characters').optional().nullable(),
+  bio: z.string().max(200, 'Bio must be under 200 characters').optional().nullable(),
+  photoUrl: z.string().optional().nullable(),
 });
 
 export const loginSchema = z.object({

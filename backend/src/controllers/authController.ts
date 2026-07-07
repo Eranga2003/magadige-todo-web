@@ -9,7 +9,7 @@ import { AuthenticatedRequest } from '../middlewares/authMiddleware';
  */
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { email, password, name, usageType, currentManagementMethod } = req.body;
+    const { email, password, name, usageType, currentManagementMethod, username, bio, photoUrl } = req.body;
     const db = getDb();
 
     // Check if email already exists in Firestore
@@ -39,6 +39,9 @@ export async function register(req: Request, res: Response, next: NextFunction):
       email,
       passwordHash,
       name,
+      username: username || null,
+      bio: bio || null,
+      photoUrl: photoUrl || null,
       googleId: null,
       facebookId: null,
       usageType,
@@ -65,6 +68,9 @@ export async function register(req: Request, res: Response, next: NextFunction):
           email,
           usageType,
           currentManagementMethod,
+          username: newUser.username,
+          bio: newUser.bio,
+          photoUrl: newUser.photoUrl,
           createdAt: newUser.createdAt,
         },
       },
@@ -133,6 +139,9 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
           email: user.email,
           usageType: user.usageType,
           currentManagementMethod: user.currentManagementMethod,
+          username: user.username || null,
+          bio: user.bio || null,
+          photoUrl: user.photoUrl || null,
           createdAt: user.createdAt,
         },
       },
@@ -273,6 +282,9 @@ export async function socialLogin(req: Request, res: Response, next: NextFunctio
           email: user.email,
           usageType: user.usageType,
           currentManagementMethod: user.currentManagementMethod,
+          username: user.username || null,
+          bio: user.bio || null,
+          photoUrl: user.photoUrl || null,
           createdAt: user.createdAt,
         },
       },
@@ -322,7 +334,72 @@ export async function getMe(req: AuthenticatedRequest, res: Response, next: Next
           email: user.email,
           usageType: user.usageType,
           currentManagementMethod: user.currentManagementMethod,
+          username: user.username || null,
+          bio: user.bio || null,
+          photoUrl: user.photoUrl || null,
           createdAt: user.createdAt,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update user profile details in Firestore
+ */
+export async function updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.userId;
+    const { name, username, bio, photoUrl } = req.body;
+    const db = getDb();
+
+    if (!userId) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Not authorized.',
+      });
+      return;
+    }
+
+    const userDocRef = db.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
+
+    if (!userDoc.exists) {
+      res.status(404).json({
+        status: 'error',
+        message: 'User profile not found.',
+      });
+      return;
+    }
+
+    const updates: any = {};
+    if (name !== undefined) updates.name = name;
+    if (username !== undefined) updates.username = username || null;
+    if (bio !== undefined) updates.bio = bio || null;
+    if (photoUrl !== undefined) updates.photoUrl = photoUrl || null;
+    updates.updatedAt = new Date().toISOString();
+
+    await userDocRef.update(updates);
+
+    const updatedDoc = await userDocRef.get();
+    const updatedUser = updatedDoc.data() as any;
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Profile updated successfully!',
+      data: {
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          usageType: updatedUser.usageType,
+          currentManagementMethod: updatedUser.currentManagementMethod,
+          username: updatedUser.username || null,
+          bio: updatedUser.bio || null,
+          photoUrl: updatedUser.photoUrl || null,
+          createdAt: updatedUser.createdAt,
         },
       },
     });

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, socialLogin, getMe } from '../controllers/authController';
+import { register, login, socialLogin, getMe, updateProfile } from '../controllers/authController';
 import { validateBody, registerSchema, loginSchema, socialLoginSchema } from '../middlewares/validationMiddleware';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
@@ -16,5 +16,8 @@ router.post('/social-login', validateBody(socialLoginSchema), socialLogin);
 
 // Get current logged-in user profile (requires valid JWT)
 router.get('/me', authMiddleware, getMe);
+
+// Update user profile information (requires valid JWT)
+router.put('/profile', authMiddleware, updateProfile);
 
 export default router;
