@@ -197,3 +197,13 @@ export const aiService = {
   },
 };
 
+/**
+ * Weather Service module
+ */
+export const weatherService = {
+  async getWeatherForecast(city = 'Colombo') {
+    return fetchAPI(`/tasks/weather?city=${encodeURIComponent(city)}`);
+  },
+};
+
+

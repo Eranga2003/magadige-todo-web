@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { playTickSound, playChimeSound } from '../../utils/audio';
 import { getColor } from '../../utils/color';
+import { weatherService } from '../../services/api';
+import { analyzeTaskWeather } from '../../utils/weatherService';
 
 export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
   const today = new Date();
@@ -10,6 +12,42 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
   const [searchQuery, setSearchQuery] = useState('');
   const [activeInputDayNum, setActiveInputDayNum] = useState(null);
   const [inlineInputText, setInlineInputText] = useState('');
+  const [weatherForecast, setWeatherForecast] = useState([]);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await weatherService.getWeatherForecast('Colombo');
+        if (res && res.data && res.data.weekly) {
+          setWeatherForecast(res.data.weekly);
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch weather for upcoming page calendar:', err);
+      }
+    };
+    fetchWeather();
+  }, []);
+
+  const getForecastForDate = (dayNum) => {
+    if (!weatherForecast || weatherForecast.length === 0) return null;
+    const cardDate = new Date(year, month, dayNum);
+    const targetDateStr = cardDate.toISOString().split(' ')[0];
+    
+    // Find matching date
+    const exactMatch = weatherForecast.find(d => d.dateStr === targetDateStr);
+    if (exactMatch) return exactMatch;
+
+    // Fallback to day diff
+    const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const cardNoTime = new Date(cardDate.getFullYear(), cardDate.getMonth(), cardDate.getDate());
+    const diffTime = cardNoTime.getTime() - todayNoTime.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays >= 0 && diffDays < weatherForecast.length) {
+      return weatherForecast[diffDays];
+    }
+    return null;
+  };
 
   // Months and Weekdays lists matching the mockup
   const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -223,6 +261,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
         {Array.from({ length: totalDays }, (_, i) => i + 1).map((dayNum) => {
           const dayTasks = getTasksForDayNumber(dayNum);
           const isTdy = dayNum === today.getDate();
+          const dayForecast = getForecastForDate(dayNum);
           
           const total = dayTasks.length;
           const done = dayTasks.filter(t => t.completed).length;
@@ -252,6 +291,18 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                       Today
                     </span>
                   )}
+                  {dayForecast && (
+                    <span 
+                      title={`${dayForecast.desc} - Wind: ${dayForecast.wind} m/s`}
+                      className="text-[9px] font-extrabold text-blue-700 bg-blue-50/70 border border-blue-100/60 rounded-lg px-1.5 py-0.5 mt-1.5 w-fit flex items-center gap-1 select-none"
+                    >
+                      {dayForecast.status === 'SUNNY' ? '☀️' :
+                       dayForecast.status === 'RAINY' ? '🌧️' :
+                       dayForecast.status === 'WINDY' ? '💨' :
+                       dayForecast.status === 'CLOUDY' ? '☁️' : '⛈️'}
+                      {dayForecast.temp}°C
+                    </span>
+                  )}
                 </div>
                 
                 {/* Add button */}
@@ -268,48 +319,66 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
               {/* Todo List Area */}
               <ul className="list-none m-0 p-0 flex flex-col gap-1.5 flex-1 z-10 overflow-y-auto max-h-[110px] pr-0.5 custom-scrollbar">
                 {dayTasks.length > 0 ? (
-                  dayTasks.map((task) => (
-                    <li 
-                      key={task.id} 
-                      className={`todo-item flex items-start gap-2 text-[12.5px] py-1.5 px-2.5 rounded-lg border transition-all hover:scale-[1.01] hover:shadow-xs group cursor-pointer ${
-                        task.completed ? 'opacity-55 line-through' : ''
-                      } ${priorityMeta[task.priority]?.bg || priorityMeta.P4.bg}`}
-                    >
-                      {/* Checkbox */}
-                      <div 
-                        onClick={() => handleToggleComplete(task)}
-                        className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 flex items-center justify-center cursor-pointer mt-0.5 transition-all ${
-                          task.completed 
-                            ? 'bg-white border-white' 
-                            : `bg-transparent ${priorityMeta[task.priority]?.checkboxBorder || 'border-white/80'}`
+                  dayTasks.map((task) => {
+                    const isTaskAffected = !task.completed && dayForecast && analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp).isAffected;
+                    const weatherAnalysis = isTaskAffected ? analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp) : null;
+
+                    return (
+                      <li 
+                        key={task.id} 
+                        title={isTaskAffected ? `⚠️ ${task.title} is affected by ${weatherAnalysis.reason}. AI Suggestion: ${weatherAnalysis.suggestion}` : ''}
+                        className={`todo-item flex items-start gap-2 text-[12.5px] py-1.5 px-2.5 rounded-lg border transition-all hover:scale-[1.01] hover:shadow-xs group cursor-pointer ${
+                          task.completed ? 'opacity-55 line-through' : ''
+                        } ${
+                          isTaskAffected 
+                            ? 'animate-blink-red' 
+                            : (priorityMeta[task.priority]?.bg || priorityMeta.P4.bg)
                         }`}
                       >
-                        {task.completed && (
-                          <div className={`w-1 h-2 border-r-2 border-b-2 transform rotate-45 -translate-y-[1.5px] ${
-                            task.priority === 'P1' ? 'border-pink-500' :
-                            task.priority === 'P2' ? 'border-amber-500' :
-                            task.priority === 'P3' ? 'border-emerald-600' : 'border-blue-600'
-                          }`} />
-                        )}
-                      </div>
+                        {/* Checkbox */}
+                        <div 
+                          onClick={() => handleToggleComplete(task)}
+                          className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 flex items-center justify-center cursor-pointer mt-0.5 transition-all ${
+                            task.completed 
+                              ? 'bg-white border-white' 
+                              : `bg-transparent ${priorityMeta[task.priority]?.checkboxBorder || 'border-white/80'}`
+                          }`}
+                        >
+                          {task.completed && (
+                            <div className={`w-1 h-2 border-r-2 border-b-2 transform rotate-45 -translate-y-[1.5px] ${
+                              isTaskAffected ? 'border-red-600' :
+                              task.priority === 'P1' ? 'border-pink-500' :
+                              task.priority === 'P2' ? 'border-amber-500' :
+                              task.priority === 'P3' ? 'border-emerald-600' : 'border-blue-600'
+                            }`} />
+                          )}
+                        </div>
 
-                      {/* Title text */}
-                      <span className={`todo-text flex-1 leading-snug word-break-all font-semibold ${
-                        task.completed ? 'line-through text-white/70' : (priorityMeta[task.priority]?.text || priorityMeta.P4.text)
-                      }`}>
-                        {task.title}
-                      </span>
+                        {/* Title text */}
+                        <span className={`todo-text flex-1 leading-snug word-break-all font-semibold ${
+                          task.completed ? 'line-through text-white/70' :
+                          isTaskAffected ? 'text-red-750 font-bold' :
+                          (priorityMeta[task.priority]?.text || priorityMeta.P4.text)
+                        }`}>
+                          {task.title}
+                          {isTaskAffected && (
+                            <span className="text-[10px] block font-black text-red-650 mt-0.5 uppercase tracking-wider select-none animate-pulse">
+                              ⚠️ weather warning
+                            </span>
+                          )}
+                        </span>
 
-                      {/* Delete cross */}
-                      <button 
-                        type="button"
-                        onClick={() => handleDeleteTask(task)}
-                        className="opacity-0 group-hover:opacity-100 text-[#b5c3de] hover:text-[#e0577a] transition-all cursor-pointer bg-none border-none text-[13px] leading-none focus:outline-none"
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ))
+                        {/* Delete cross */}
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteTask(task)}
+                          className="opacity-0 group-hover:opacity-100 text-[#b5c3de] hover:text-[#e0577a] transition-all cursor-pointer bg-none border-none text-[13px] leading-none focus:outline-none"
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    );
+                  })
                 ) : (
                   activeInputDayNum !== dayNum ? (
                     <li className="text-[12.5px] text-[#5b6b8c] opacity-60 italic p-1.5 select-none">
