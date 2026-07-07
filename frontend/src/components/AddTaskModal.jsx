@@ -524,6 +524,35 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                           );
                         })}
                       </div>
+
+                      {/* Confirm subtasks button */}
+                      <div className="flex justify-end pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Add all selected subtasks as individual tasks directly to TODAY
+                            generatedSubtasks.forEach((sub, idx) => {
+                              if (selectedSubtasks[idx]) {
+                                onAddTask({
+                                  id: `task_${Date.now()}_sub_${idx}`,
+                                  title: sub,
+                                  description: `AI generated subtask from: "${breakerText || transcription}"`,
+                                  priority: 'P4',
+                                  dueDate: 'TODAY', // Add directly to daily task list
+                                  completed: false,
+                                  section: project,
+                                  createdAt: new Date().toISOString(),
+                                });
+                              }
+                            });
+                            handleClose();
+                          }}
+                          className="w-auto flex items-center justify-center gap-1.5 py-2 px-4 font-black rounded-xl text-xs text-white bg-blue-600 hover:bg-blue-750 transition-all cursor-pointer focus:outline-none shadow-md hover:shadow-lg active:scale-95"
+                        >
+                          <Plus size={14} strokeWidth={2.5} />
+                          Add Flow Steps to Daily List
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
