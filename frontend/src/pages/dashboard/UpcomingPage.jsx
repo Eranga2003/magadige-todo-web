@@ -331,7 +331,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                           task.completed ? 'opacity-55 line-through' : ''
                         } ${
                           isTaskAffected 
-                            ? 'animate-blink-red' 
+                            ? 'weather-affected-task-card' 
                             : (priorityMeta[task.priority]?.bg || priorityMeta.P4.bg)
                         }`}
                       >

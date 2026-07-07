@@ -111,21 +111,19 @@ export const WeatherAssistantPage = ({ tasks }) => {
       default:
         return 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white';
     }
-  };
-
-  // Helper to style small day-cards based on forecast condition
+  };  // Helper to style small day-cards based on forecast condition
   const getDayCardStyles = (status) => {
     switch (status) {
       case 'SUNNY':
-        return 'border-amber-200/50 bg-amber-50/15 shadow-[0_8px_30px_rgba(245,158,11,0.03)] hover:shadow-[0_12px_32px_rgba(245,158,11,0.08)]';
+        return 'border-amber-200/50 bg-amber-50/15 shadow-[0_12px_36px_rgba(245,158,11,0.06)] hover:shadow-[0_16px_40px_rgba(245,158,11,0.12)]';
       case 'RAINY':
-        return 'border-blue-200 bg-blue-50/15 shadow-[0_8px_32px_rgba(59,130,246,0.06)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.12)]';
+        return 'border-blue-200 bg-blue-50/15 shadow-[0_12px_36px_rgba(37,99,235,0.15)] hover:shadow-[0_16px_40px_rgba(37,99,235,0.22)]';
       case 'WINDY':
-        return 'border-teal-200 bg-teal-50/15 shadow-[0_8px_30px_rgba(20,184,166,0.03)] hover:shadow-[0_12px_32px_rgba(20,184,166,0.08)]';
+        return 'border-teal-200 bg-teal-50/15 shadow-[0_12px_36px_rgba(20,184,166,0.06)] hover:shadow-[0_16px_40px_rgba(20,184,166,0.12)]';
       case 'CLOUDY':
-        return 'border-slate-200 bg-slate-50/15 shadow-[0_8px_30px_rgba(100,116,139,0.03)] hover:shadow-[0_12px_32px_rgba(100,116,139,0.08)]';
+        return 'border-slate-200 bg-slate-50/15 shadow-[0_12px_36px_rgba(100,116,139,0.06)] hover:shadow-[0_16px_40px_rgba(100,116,139,0.12)]';
       case 'STORMY':
-        return 'border-indigo-200 bg-indigo-50/15 shadow-[0_8px_32px_rgba(99,102,241,0.06)] hover:shadow-[0_12px_40px_rgba(99,102,241,0.12)]';
+        return 'border-indigo-200 bg-indigo-50/15 shadow-[0_12px_36px_rgba(99,102,241,0.16)] hover:shadow-[0_16px_40px_rgba(99,102,241,0.24)]';
       default:
         return 'border-slate-200 bg-white/50 shadow-sm';
     }
@@ -342,7 +340,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
                 {affectedTasks.map(task => (
                   <div 
                     key={task.id}
-                    className="animate-blink-red border-2 rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-350 shadow-sm relative overflow-hidden group hover:scale-[1.01]"
+                    className="weather-affected-task-card rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-350 relative overflow-hidden group hover:scale-[1.01]"
                   >
                     <div className="space-y-1 z-10">
                       <div className="flex items-center gap-2">
