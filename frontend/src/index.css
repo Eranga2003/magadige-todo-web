@@ -56,3 +56,30 @@ body {
     linear-gradient(180deg, #f3f8ff, #ffffff 40%) padding-box,
     conic-gradient(from var(--a), #c9dbfb, #2563eb 25%, #7fa8f2 50%, #2563eb 75%, #c9dbfb) border-box;
 }
+
+/* AI Task Breakdown flow connector animation */
+@keyframes flow-dash {
+  to {
+    background-position-y: 16px;
+  }
+}
+.animate-flow-dash {
+  background-image: linear-gradient(to bottom, #3b82f6 50%, transparent 50%);
+  background-size: 2px 10px;
+  animation: flow-dash 0.6s linear infinite;
+}
+
+@keyframes pulse-flow-node {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+  }
+}
+.animate-flow-node-active {
+  animation: pulse-flow-node 2s infinite ease-in-out;
+}
+

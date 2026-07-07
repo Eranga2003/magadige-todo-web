@@ -31,7 +31,7 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
         messages: [
           {
             role: 'system',
-            content: 'You are an expert project manager and productivity assistant. Break down the user\'s task/goal into a list of 3-6 concise, actionable subtasks. You must return ONLY a JSON object containing a single key "subtasks" which is an array of strings. Do not include markdown block ticks (like ```json), commentary, or extra text. Example response: {"subtasks": ["Do research", "Write outline", "Draft proposal"]}'
+            content: 'You are an expert project manager and productivity assistant. Analyze the user\'s task/goal and break it down into a list of 3-6 concise, actionable subtasks/steps in a logical, chronological sequential order (e.g. prioritize dependencies like doing school homework before reading a book or leisure activities). You must return ONLY a JSON object containing a single key "subtasks" which is an array of strings. Do not include markdown block ticks, commentary, or extra text. Example response: {"subtasks": ["Complete school homework first", "Read a book afterwards"]}'
           },
           {
             role: 'user',

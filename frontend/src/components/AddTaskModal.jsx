@@ -425,32 +425,104 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     </button>
                   </div>
 
-                  {/* Subtask Checkbox Checklist */}
+                  {/* AI Subtask Flow Diagram Pipeline */}
                   {generatedSubtasks.length > 0 && (
-                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">
-                        Select subtasks to include:
-                      </p>
-                      <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                        {generatedSubtasks.map((sub, idx) => (
-                          <label 
-                            key={idx}
-                            className="flex items-start gap-2.5 p-2.5 border border-slate-100 rounded-xl bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-xxs"
-                          >
-                            <input 
-                              type="checkbox"
-                              checked={!!selectedSubtasks[idx]}
-                              onChange={() => {
-                                setSelectedSubtasks(prev => ({
-                                  ...prev,
-                                  [idx]: !prev[idx]
-                                }));
-                              }}
-                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5 cursor-pointer"
-                            />
-                            <span className="text-xs text-gray-700 font-bold leading-tight">{sub}</span>
-                          </label>
-                        ))}
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          Task Execution Flow:
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Toggle all
+                            const allSelected = Object.keys(selectedSubtasks).length === generatedSubtasks.length;
+                            const nextSelected = {};
+                            if (!allSelected) {
+                              generatedSubtasks.forEach((_, idx) => {
+                                nextSelected[idx] = true;
+                              });
+                            }
+                            setSelectedSubtasks(nextSelected);
+                          }}
+                          className="text-[9px] font-black text-blue-600 hover:text-blue-750 uppercase tracking-wider cursor-pointer focus:outline-none"
+                        >
+                          {Object.keys(selectedSubtasks).length === generatedSubtasks.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
+
+                      <div className="space-y-0.5 max-h-72 overflow-y-auto pr-1 py-1">
+                        {generatedSubtasks.map((sub, idx) => {
+                          const isSelected = !!selectedSubtasks[idx];
+                          const isLast = idx === generatedSubtasks.length - 1;
+                          return (
+                            <div key={idx} className="relative flex items-start gap-4 mb-4 last:mb-1 select-none">
+                              {/* Visual Timeline connector node */}
+                              <div className="flex flex-col items-center flex-shrink-0 mt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedSubtasks(prev => ({
+                                      ...prev,
+                                      [idx]: !prev[idx]
+                                    }));
+                                  }}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center border-2 text-[10px] font-black transition-all cursor-pointer focus:outline-none ${
+                                    isSelected
+                                      ? 'bg-blue-600 border-blue-600 text-white ring-4 ring-blue-50/70 shadow-sm animate-flow-node-active'
+                                      : 'bg-white border-gray-300 text-gray-400 hover:border-gray-400'
+                                  }`}
+                                >
+                                  {isSelected ? <Check size={11} strokeWidth={3} /> : idx + 1}
+                                </button>
+
+                                {/* Connector Line & Arrow Head */}
+                                {!isLast && (
+                                  <div className="relative w-1 h-14 my-1 flex items-center justify-center">
+                                    {/* Base background line */}
+                                    <div className="absolute inset-y-0 w-0.5 bg-gray-150 rounded"></div>
+                                    {/* Animated flowing line */}
+                                    {isSelected && (
+                                      <div className="absolute inset-y-0 w-0.5 rounded animate-flow-dash"></div>
+                                    )}
+                                    {/* Arrow head indicator */}
+                                    <div className="absolute bottom-0 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-gray-300"></div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Card info block */}
+                              <div
+                                onClick={() => {
+                                  setSelectedSubtasks(prev => ({
+                                    ...prev,
+                                    [idx]: !prev[idx]
+                                  }));
+                                }}
+                                className={`flex-1 p-3 rounded-2xl border transition-all duration-350 cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-white border-blue-100 shadow-[0_6px_16px_rgba(37,99,235,0.05)] hover:shadow-[0_8px_20px_rgba(37,99,235,0.08)]'
+                                    : 'bg-gray-50/50 border-gray-150 text-gray-400 opacity-60 hover:opacity-75'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-[9px] font-black uppercase tracking-wider ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    Step {idx + 1}
+                                  </span>
+                                  {isSelected && (
+                                    <span className="text-[8px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-0.5">
+                                      <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                                <p className={`text-xs font-bold mt-1.5 leading-relaxed transition-colors ${isSelected ? 'text-gray-800' : 'text-gray-400'}`}>
+                                  {sub}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
