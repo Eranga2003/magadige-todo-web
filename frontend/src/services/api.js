@@ -184,3 +184,16 @@ export const workspaceService = {
     });
   },
 };
+
+/**
+ * AI Service module for task breakdown
+ */
+export const aiService = {
+  async breakdownTask(text) {
+    return fetchAPI('/tasks/breakdown', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  },
+};
+
