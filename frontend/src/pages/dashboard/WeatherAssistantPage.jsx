@@ -117,17 +117,17 @@ export const WeatherAssistantPage = ({ tasks }) => {
   const getDayCardStyles = (status) => {
     switch (status) {
       case 'SUNNY':
-        return 'border-amber-100 hover:border-amber-250 bg-amber-50/20';
+        return 'border-amber-200/50 bg-amber-50/15 shadow-[0_8px_30px_rgba(245,158,11,0.03)] hover:shadow-[0_12px_32px_rgba(245,158,11,0.08)]';
       case 'RAINY':
-        return 'border-blue-150 hover:border-blue-300 bg-blue-50/20';
+        return 'border-blue-200 bg-blue-50/15 shadow-[0_8px_32px_rgba(59,130,246,0.06)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.12)]';
       case 'WINDY':
-        return 'border-teal-100 hover:border-teal-250 bg-teal-50/20';
+        return 'border-teal-200 bg-teal-50/15 shadow-[0_8px_30px_rgba(20,184,166,0.03)] hover:shadow-[0_12px_32px_rgba(20,184,166,0.08)]';
       case 'CLOUDY':
-        return 'border-slate-200 hover:border-slate-350 bg-slate-50/20';
+        return 'border-slate-200 bg-slate-50/15 shadow-[0_8px_30px_rgba(100,116,139,0.03)] hover:shadow-[0_12px_32px_rgba(100,116,139,0.08)]';
       case 'STORMY':
-        return 'border-indigo-150 hover:border-indigo-300 bg-indigo-50/20';
+        return 'border-indigo-200 bg-indigo-50/15 shadow-[0_8px_32px_rgba(99,102,241,0.06)] hover:shadow-[0_12px_40px_rgba(99,102,241,0.12)]';
       default:
-        return 'border-gray-200 hover:border-gray-300 bg-white';
+        return 'border-slate-200 bg-white/50 shadow-sm';
     }
   };
 
@@ -403,7 +403,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
                 return (
                   <div 
                     key={idx}
-                    className={`bg-white border rounded-2xl p-4 flex flex-col justify-between shadow-sm min-h-[180px] relative overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-md ${dayStyleClass} ${getWeatherAnimationClass(day.status)}`}
+                    className={`border rounded-[24px] p-4 flex flex-col justify-between min-h-[185px] relative overflow-hidden transition-all duration-350 hover:scale-[1.03] backdrop-blur-md ${dayStyleClass} ${getWeatherAnimationClass(day.status)}`}
                   >
                     <div className="z-10">
                       <span className="text-xs font-black text-slate-800 block">
