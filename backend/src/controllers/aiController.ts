@@ -1,5 +1,66 @@
 import { Response, NextFunction } from 'express';
+import https from 'https';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+
+/**
+ * Resilient HTTPS POST request helper using Node core https module.
+ * Bypasses native fetch (undici) IPv6 DNS resolution issues on Windows.
+ */
+function postRequest(url: string, headers: any, body: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const postData = JSON.stringify(body);
+
+    const options = {
+      hostname: urlObj.hostname,
+      port: 443,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Length': Buffer.byteLength(postData),
+      },
+      // Fallback timeout
+      timeout: 15000,
+    };
+
+    const req = https.request(options, (res) => {
+      let responseBody = '';
+
+      res.on('data', (chunk) => {
+        responseBody += chunk;
+      });
+
+      res.on('end', () => {
+        resolve({
+          ok: res.statusCode && res.statusCode >= 200 && res.statusCode < 300,
+          status: res.statusCode,
+          statusText: res.statusMessage,
+          text: async () => responseBody,
+          json: async () => {
+            try {
+              return JSON.parse(responseBody);
+            } catch (err) {
+              throw new Error(`Invalid JSON response: ${responseBody}`);
+            }
+          },
+        });
+      });
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request to OpenAI timed out (15s).'));
+    });
+
+    req.write(postData);
+    req.end();
+  });
+}
 
 /**
  * Break down a task into smaller actionable subtasks using OpenAI GPT model.
@@ -19,14 +80,14 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
       return;
     }
 
-    // Call OpenAI Chat Completions API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
+    // Call OpenAI Chat Completions API using our resilient postRequest
+    const response = await postRequest(
+      'https://api.openai.com/v1/chat/completions',
+      {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
+      {
         model: 'gpt-4o-mini',
         messages: [
           {
@@ -40,8 +101,8 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
-      }),
-    });
+      }
+    );
 
     if (!response.ok) {
       const errBody = await response.text();
@@ -53,7 +114,7 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
       return;
     }
 
-    const result: any = await response.json();
+    const result = await response.json();
     const content = result.choices?.[0]?.message?.content;
 
     if (!content) {
@@ -79,3 +140,4 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
     });
   }
 }
+
