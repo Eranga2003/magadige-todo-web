@@ -184,3 +184,26 @@ export const workspaceService = {
     });
   },
 };
+
+/**
+ * AI Service module for task breakdown
+ */
+export const aiService = {
+  async breakdownTask(text) {
+    return fetchAPI('/tasks/breakdown', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  },
+};
+
+/**
+ * Weather Service module
+ */
+export const weatherService = {
+  async getWeatherForecast(city = 'Colombo') {
+    return fetchAPI(`/tasks/weather?city=${encodeURIComponent(city)}`);
+  },
+};
+
+

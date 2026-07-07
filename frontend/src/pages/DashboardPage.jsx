@@ -17,7 +17,8 @@ import {
   FolderGit2,
   Camera,
   Smile,
-  X
+  X,
+  CloudSun
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
@@ -33,6 +34,8 @@ import { FiltersLabelsPage } from './dashboard/FiltersLabelsPage';
 import { ReportingPage } from './dashboard/ReportingPage';
 import { WorkspacePage } from './dashboard/WorkspacePage';
 import { WorkspaceDashboard } from './dashboard/WorkspaceDashboard';
+import { WeatherAssistantPage } from './dashboard/WeatherAssistantPage';
+
 
 import { taskService, workspaceService, authService } from '../services/api';
 
@@ -291,6 +294,8 @@ export const DashboardPage = () => {
         return <FiltersLabelsPage tasks={tasks} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'REPORTING':
         return <ReportingPage tasks={tasks} />;
+      case 'WEATHER_ASSISTANT':
+        return <WeatherAssistantPage tasks={tasks} />;
       case 'WORKSPACE':
         return (
           <WorkspacePage 
@@ -522,6 +527,19 @@ export const DashboardPage = () => {
               }`}
             >
               <Users size={16} className={activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD' ? getColor('primary.text') : 'text-gray-400'} /> Workspace
+            </button>
+
+            {/* Weather Assistant */}
+            <button 
+              onClick={() => { setActiveTab('WEATHER_ASSISTANT'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
+                activeTab === 'WEATHER_ASSISTANT'
+                  ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
+                  : 'text-gray-600 hover:bg-gray-200/40'
+              }`}
+            >
+              <CloudSun size={16} className={activeTab === 'WEATHER_ASSISTANT' ? getColor('primary.text') : 'text-gray-400'} /> Weather Assistant
             </button>
           </nav>
           {/* Removed projects section */}

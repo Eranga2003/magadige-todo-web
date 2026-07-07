@@ -23,10 +23,13 @@ import {
 import { getColor } from '../utils/color';
 import { Button } from './Button';
 import { MiniCalendarPicker } from './MiniCalendarPicker';
+import { aiService } from '../services/api';
 
 export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   // Modal Navigation view
   const [modalView, setModalView] = useState('STANDARD'); // STANDARD, AI_BREAKER, VOICE_ADD
+  const [showAiBreakdown, setShowAiBreakdown] = useState(false); // Toggle inline AI breakdown
+
 
   // Standard Form states
   const [title, setTitle] = useState('');
@@ -88,6 +91,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
       setShowDateDropdown(false);
       setShowPriorityDropdown(false);
       setShowProjectDropdown(false);
+      setShowAiBreakdown(false);
       setIsGenerating(false);
       setIsRecording(false);
       setModalView('STANDARD');
@@ -130,55 +134,29 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     e.target.value = null;
   };
 
-  // 2. Mock AI Task Breaker logic
-  const handleAIGenerate = (textSource) => {
+  // 2. AI Task Breaker logic using OpenAI API
+  const handleAIGenerate = async (textSource) => {
     if (!textSource.trim()) return;
     setIsGenerating(true);
-
-    setTimeout(() => {
-      const text = textSource.toLowerCase();
-      let subtasks = [];
-
-      // Keyword matching for premium contextual results
-      if (text.includes('landing') || text.includes('homepage') || text.includes('view') || text.includes('web')) {
-        subtasks = [
-          'Research premium SaaS landing page structures',
-          'Code responsive navigation header and footer',
-          'Design interactive visual mockup dashboard in CSS',
-          'Integrate theme styling tokens (SaaS Blue mix)',
-        ];
-      } else if (text.includes('auth') || text.includes('login') || text.includes('database') || text.includes('firestore')) {
-        subtasks = [
-          'Configure Google OAuth pop-up settings in Firebase client',
-          'Define client-side environment secrets in frontend/.env',
-          'Update backend authentication controllers to index users in Cloud Firestore',
-          'Verify tokens securely using firebase-admin SDK',
-        ];
-      } else {
-        // Fallback split logic by punctuation or key conjunctions
-        const parts = textSource.split(/[.,;!?]|\band\b|\bthen\b/).map(p => p.trim()).filter(p => p.length > 5);
-        if (parts.length > 1) {
-          subtasks = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1));
-        } else {
-          subtasks = [
-            `Analyze core goal: "${textSource}"`,
-            'Outline step-by-step developer tasks',
-            'Run tests and execute build checks',
-            'Push updates to git development branch',
-          ];
-        }
+    try {
+      const res = await aiService.breakdownTask(textSource);
+      if (res && res.data && res.data.subtasks) {
+        const subtasks = res.data.subtasks;
+        setGeneratedSubtasks(subtasks);
+        
+        // Select all by default
+        const defaultSelected = {};
+        subtasks.forEach((_, idx) => {
+          defaultSelected[idx] = true;
+        });
+        setSelectedSubtasks(defaultSelected);
       }
-
-      setGeneratedSubtasks(subtasks);
-      
-      // Select all by default
-      const defaultSelected = {};
-      subtasks.forEach((_, idx) => {
-        defaultSelected[idx] = true;
-      });
-      setSelectedSubtasks(defaultSelected);
+    } catch (err) {
+      console.error("❌ Failed to generate task breakdown:", err.message);
+      alert(err.message || "Failed to generate subtasks. Please check your OpenAI API key or network connection.");
+    } finally {
       setIsGenerating(false);
-    }, 1200); // 1.2s loading state simulation
+    }
   };
 
   // 3. Web Speech API Speech Recognition configuration
@@ -195,7 +173,9 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     if (!SpeechRecognition) {
       // Browser fallback simulation if microphone API unavailable
       setIsRecording(true);
-      setTranscription('Listening... (Simulated Speech): Add Google authentication popup and test it.');
+      const simulatedText = 'Add Google authentication popup and test it.';
+      setTranscription(`Listening... (Simulated Speech): ${simulatedText}`);
+      setBreakerText((prev) => prev + (prev ? ' ' : '') + simulatedText);
       setTimeout(() => {
         setIsRecording(false);
       }, 3000);
@@ -216,6 +196,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
       rec.onresult = (event) => {
         const speechToText = event.results[0][0].transcript;
         setTranscription(speechToText);
+        setBreakerText((prev) => prev + (prev ? ' ' : '') + speechToText);
       };
 
       rec.onerror = (e) => {
@@ -243,6 +224,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   };
 
   const handleAddSubtasks = () => {
+    const priorities = ['P1', 'P2', 'P3', 'P4'];
     // Add all selected subtasks as tasks
     generatedSubtasks.forEach((sub, idx) => {
       if (selectedSubtasks[idx]) {
@@ -250,7 +232,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
           id: `task_${Date.now()}_${idx}`,
           title: sub,
           description: `AI generated subtask from: "${breakerText || transcription}"`,
-          priority: 'P4',
+          priority: priorities[idx % priorities.length],
           dueDate: 'TODAY',
           completed: false,
           section: project,
@@ -265,6 +247,7 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     e.preventDefault();
     if (!title.trim()) return;
 
+    // 1. Add the main task
     onAddTask({
       id: `task_${Date.now()}`,
       title,
@@ -275,6 +258,25 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
       section: project,
       createdAt: new Date().toISOString(),
     });
+
+    // 2. Add any checked subtasks if AI breakdown is toggled open and populated
+    if (showAiBreakdown && generatedSubtasks.length > 0) {
+      const priorities = ['P1', 'P2', 'P3', 'P4'];
+      generatedSubtasks.forEach((sub, idx) => {
+        if (selectedSubtasks[idx]) {
+          onAddTask({
+            id: `task_${Date.now()}_sub_${idx}`,
+            title: sub,
+            description: `Subtask of: "${title}"`,
+            priority: priorities[idx % priorities.length],
+            dueDate,
+            completed: false,
+            section: project,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      });
+    }
 
     handleClose();
   };
@@ -352,6 +354,233 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full text-sm text-gray-500 border-0 focus:ring-0 focus:outline-none placeholder:text-gray-400"
               />
+            </div>
+
+            {/* AI Task Breakdown Inline Panel */}
+            <div className="border-t border-gray-100 pt-3 mt-1">
+              <button
+                type="button"
+                onClick={() => setShowAiBreakdown(!showAiBreakdown)}
+                className="flex items-center justify-between w-full text-xs font-black text-gray-500 hover:text-gray-700 transition-colors focus:outline-none cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-purple-500 animate-pulse" />
+                  AI Task Breakdown (Text & Voice)
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-200 ${showAiBreakdown ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {showAiBreakdown && (
+                <div className="mt-3 space-y-3 bg-slate-50/50 rounded-xl p-3 border border-slate-100 animate-scale-up">
+                  {/* Textarea + Voice Button */}
+                  <div className="flex gap-2 items-start">
+                    <textarea
+                      placeholder="Describe what you want to achieve, or tap the microphone to speak..."
+                      value={breakerText}
+                      onChange={(e) => setBreakerText(e.target.value)}
+                      className="flex-1 min-h-[70px] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-700 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none placeholder:text-gray-400 bg-white resize-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={toggleRecording}
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 transform active:scale-95 flex-shrink-0 cursor-pointer ${
+                        isRecording 
+                          ? 'bg-red-500 text-white animate-pulse' 
+                          : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                      }`}
+                    >
+                      {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
+                    </button>
+                  </div>
+
+                  {isRecording && (
+                    <span className="text-[9px] font-black text-red-500 animate-pulse tracking-wide uppercase px-1">
+                      Recording Live... Speak now
+                    </span>
+                  )}
+
+                  {/* Actions Row */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-gray-400 italic">
+                      AI will automatically extract actionable subtasks.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleAIGenerate(breakerText)}
+                      disabled={!breakerText.trim() || isGenerating}
+                      className="w-auto flex items-center justify-center gap-1 py-1.5 px-3 rounded-xl text-[10px] font-black text-white bg-blue-600 hover:bg-blue-750 transition-all cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGenerating ? (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Generating...
+                        </div>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <Wand2 size={11} />
+                          Generate Subtasks
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* AI Subtask Flow Diagram Pipeline */}
+                  {generatedSubtasks.length > 0 && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          Task Execution Flow:
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Toggle all
+                            const allSelected = Object.keys(selectedSubtasks).length === generatedSubtasks.length;
+                            const nextSelected = {};
+                            if (!allSelected) {
+                              generatedSubtasks.forEach((_, idx) => {
+                                nextSelected[idx] = true;
+                              });
+                            }
+                            setSelectedSubtasks(nextSelected);
+                          }}
+                          className="text-[9px] font-black text-blue-600 hover:text-blue-750 uppercase tracking-wider cursor-pointer focus:outline-none"
+                        >
+                          {Object.keys(selectedSubtasks).length === generatedSubtasks.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
+
+                      <div className="space-y-0.5 max-h-72 overflow-y-auto pr-1 py-1">
+                        {generatedSubtasks.map((sub, idx) => {
+                          const isSelected = !!selectedSubtasks[idx];
+                          const isLast = idx === generatedSubtasks.length - 1;
+                          
+                          // Dynamic colors resolved from color.jsx
+                          const colorKeys = ['pink', 'yellow', 'green', 'blue'];
+                          const colorKey = colorKeys[idx % colorKeys.length];
+                          
+                          const nodeBgClass = isSelected
+                            ? getColor(`taskColors.${colorKey}.bg`) + ' text-white border-transparent'
+                            : 'bg-white border-gray-300 text-gray-400';
+                            
+                          const ringClass = isSelected
+                            ? `ring-4 ${colorKey === 'pink' ? 'ring-pink-100/70' : colorKey === 'yellow' ? 'ring-amber-100/70' : colorKey === 'green' ? 'ring-emerald-100/70' : 'ring-blue-100/70'}`
+                            : '';
+                            
+                          const cardClass = isSelected
+                            ? `${getColor(`taskColors.${colorKey}.card`)} border-transparent`
+                            : 'bg-gray-50/50 border-gray-150 text-gray-450 opacity-60 hover:opacity-75';
+
+                          const activeBadgeClass = isSelected
+                            ? `${getColor(`taskColors.${colorKey}.status`)}`
+                            : '';
+                            
+                          const textMutedClass = isSelected
+                            ? `${getColor(`taskColors.${colorKey}.muted`)}`
+                            : 'text-gray-450';
+
+                          const textBodyClass = isSelected
+                            ? 'text-white font-bold'
+                            : 'text-gray-500';
+
+                          return (
+                            <div key={idx} className="relative flex items-start gap-4 mb-4 last:mb-1 select-none animate-scale-up">
+                              {/* Visual Timeline connector node */}
+                              <div className="flex flex-col items-center flex-shrink-0 mt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedSubtasks(prev => ({
+                                      ...prev,
+                                      [idx]: !prev[idx]
+                                    }));
+                                  }}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center border-2 text-[10px] font-black transition-all cursor-pointer focus:outline-none ${nodeBgClass} ${ringClass} ${isSelected ? 'animate-flow-node-active' : ''}`}
+                                >
+                                  {isSelected ? <Check size={11} strokeWidth={3} /> : idx + 1}
+                                </button>
+
+                                {/* Connector Line & Arrow Head */}
+                                {!isLast && (
+                                  <div className="relative w-1 h-14 my-1 flex items-center justify-center">
+                                    {/* Base background line */}
+                                    <div className="absolute inset-y-0 w-0.5 bg-gray-150 rounded"></div>
+                                    {/* Animated flowing line */}
+                                    {isSelected && (
+                                      <div className={`absolute inset-y-0 w-0.5 rounded animate-flow-dash-${colorKey}`}></div>
+                                    )}
+                                    {/* Arrow head indicator */}
+                                    <div className="absolute bottom-0 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-gray-300"></div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Card info block */}
+                              <div
+                                onClick={() => {
+                                  setSelectedSubtasks(prev => ({
+                                    ...prev,
+                                    [idx]: !prev[idx]
+                                  }));
+                                }}
+                                className={`flex-1 p-3 rounded-2xl border transition-all duration-350 cursor-pointer ${cardClass}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-[9px] font-black uppercase tracking-wider ${textMutedClass}`}>
+                                    Step {idx + 1}
+                                  </span>
+                                  {isSelected && (
+                                    <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-0.5 ${activeBadgeClass}`}>
+                                      <span className="w-1 h-1 rounded-full bg-white animate-ping"></span>
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                                <p className={`text-xs mt-1.5 leading-relaxed transition-colors ${textBodyClass}`}>
+                                  {sub}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Confirm subtasks button */}
+                      <div className="flex justify-end pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const priorities = ['P1', 'P2', 'P3', 'P4'];
+                            // Add all selected subtasks as individual tasks directly to TODAY
+                            generatedSubtasks.forEach((sub, idx) => {
+                              if (selectedSubtasks[idx]) {
+                                onAddTask({
+                                  id: `task_${Date.now()}_sub_${idx}`,
+                                  title: sub,
+                                  description: `AI generated subtask from: "${breakerText || transcription}"`,
+                                  priority: priorities[idx % priorities.length],
+                                  dueDate: 'TODAY', // Add directly to daily task list
+                                  completed: false,
+                                  section: project,
+                                  createdAt: new Date().toISOString(),
+                                });
+                              }
+                            });
+                            handleClose();
+                          }}
+                          className="w-auto flex items-center justify-center gap-1.5 py-2 px-4 font-black rounded-xl text-xs text-white bg-blue-600 hover:bg-blue-750 transition-all cursor-pointer focus:outline-none shadow-md hover:shadow-lg active:scale-95"
+                        >
+                          <Plus size={14} strokeWidth={2.5} />
+                          Add Flow Steps to Daily List
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Middle Pills Row */}

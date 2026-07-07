@@ -972,28 +972,28 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
                         // --- Multi-colour palette by priority (matches Upcoming Calendar) ---
                         const priorityPalette = {
                           P1: {
-                            card: 'bg-gradient-to-br from-pink-500 to-rose-600 border-rose-600 text-white shadow-md shadow-rose-200/40',
-                            muted: 'text-rose-100',
-                            badge: 'bg-white/20 text-white',
-                            status: 'bg-white/25 text-white',
+                            card: getColor('taskColors.pink.card'),
+                            muted: getColor('taskColors.pink.muted'),
+                            badge: getColor('taskColors.pink.badge'),
+                            status: getColor('taskColors.pink.status'),
                           },
                           P2: {
-                            card: 'bg-gradient-to-br from-amber-400 to-orange-500 border-orange-500 text-white shadow-md shadow-amber-200/40',
-                            muted: 'text-amber-100',
-                            badge: 'bg-white/20 text-white',
-                            status: 'bg-white/25 text-white',
+                            card: getColor('taskColors.yellow.card'),
+                            muted: getColor('taskColors.yellow.muted'),
+                            badge: getColor('taskColors.yellow.badge'),
+                            status: getColor('taskColors.yellow.status'),
                           },
                           P3: {
-                            card: 'bg-gradient-to-br from-emerald-500 to-teal-600 border-teal-600 text-white shadow-md shadow-emerald-200/40',
-                            muted: 'text-emerald-100',
-                            badge: 'bg-white/20 text-white',
-                            status: 'bg-white/25 text-white',
+                            card: getColor('taskColors.green.card'),
+                            muted: getColor('taskColors.green.muted'),
+                            badge: getColor('taskColors.green.badge'),
+                            status: getColor('taskColors.green.status'),
                           },
                           P4: {
-                            card: 'bg-gradient-to-br from-blue-500 to-indigo-600 border-indigo-600 text-white shadow-md shadow-blue-200/40',
-                            muted: 'text-blue-100',
-                            badge: 'bg-white/20 text-white',
-                            status: 'bg-white/25 text-white',
+                            card: getColor('taskColors.blue.card'),
+                            muted: getColor('taskColors.blue.muted'),
+                            badge: getColor('taskColors.blue.badge'),
+                            status: getColor('taskColors.blue.status'),
                           },
                         };
 
