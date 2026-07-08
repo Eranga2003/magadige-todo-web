@@ -6,6 +6,11 @@ import {
 } from 'lucide-react';
 import { workspaceService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { themeColors } from '../../utils/color';
+
+// Shorthand alias for all productivity design tokens from color.jsx
+const PC = themeColors.productivity;
+
 
 /* ─── helpers ─────────────────────────────────────────── */
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -158,12 +163,8 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
 
   /* ── per-priority breakdown ── */
   const priorities = ['P1', 'P2', 'P3', 'P4'];
-  const priorityColors = {
-    P1: { bar: 'from-red-500 to-rose-600', text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', label: 'Critical', dot: 'bg-red-500' },
-    P2: { bar: 'from-orange-500 to-amber-500', text: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', label: 'High', dot: 'bg-orange-500' },
-    P3: { bar: 'from-blue-500 to-indigo-600', text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: 'Normal', dot: 'bg-blue-500' },
-    P4: { bar: 'from-slate-400 to-slate-500', text: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-100', label: 'Low', dot: 'bg-slate-400' },
-  };
+  // Priority colors sourced from themeColors.productivity.priorities in color.jsx
+  const priorityColors = PC.priorities;
   const priorityStats = priorities.map(p => {
     const all  = tasks.filter(t => t.priority === p);
     const done = all.filter(t => t.completed);
@@ -219,29 +220,30 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
         </div>
 
         {/* ── STAT CARDS ROW ── */}
+        {/* Stat card colors sourced from themeColors.productivity in color.jsx */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon={Calendar} label="Today's Tasks" value={todayTasks}
             sub={`${todayDone} completed today`}
-            bgFrom="from-blue-500" bgTo="to-indigo-600"
+            bgFrom={PC.todayTasks.from} bgTo={PC.todayTasks.to}
             iconColor="text-white" trend={undefined}
           />
           <StatCard
             icon={CheckCircle2} label="Total Completed" value={completedTasks}
             sub={`out of ${totalTasks} total`}
-            bgFrom="from-emerald-500" bgTo="to-teal-600"
+            bgFrom={PC.totalCompleted.from} bgTo={PC.totalCompleted.to}
             iconColor="text-white" trend={completionRate}
           />
           <StatCard
             icon={Zap} label="High Priority Done" value={highPriDone}
             sub="P1 + P2 completed"
-            bgFrom="from-rose-500" bgTo="to-pink-600"
+            bgFrom={PC.highPriority.from} bgTo={PC.highPriority.to}
             iconColor="text-white" trend={undefined}
           />
           <StatCard
             icon={Activity} label="Completion Rate" value={`${completionRate}%`}
             sub="all-time average"
-            bgFrom="from-violet-500" bgTo="to-purple-600"
+            bgFrom={PC.completionRate.from} bgTo={PC.completionRate.to}
             iconColor="text-white" trend={undefined}
           />
         </div>
@@ -258,9 +260,10 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
                 </h2>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Tasks assigned vs completed — last 7 days</p>
               </div>
+              {/* Chart legend colors from PC.chart in color.jsx */}
               <div className="flex items-center gap-3 text-[10px] font-bold">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 inline-block" /> Assigned</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 inline-block" /> Completed</span>
+                <span className="flex items-center gap-1"><span className={`w-2 h-2 rounded-full bg-gradient-to-r ${PC.chart.assignedBar} inline-block`} /> Assigned</span>
+                <span className="flex items-center gap-1"><span className={`w-2 h-2 rounded-full bg-gradient-to-r ${PC.chart.completedBar} inline-block`} /> Completed</span>
               </div>
             </div>
             {/* bars */}
@@ -268,17 +271,17 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
               {weeklyData.map((d, i) => (
                 <div key={i} className="flex-1 flex flex-col gap-1 group cursor-default">
                   <div className="flex flex-col justify-end" style={{ height: 96 }}>
-                    {/* Total bar */}
-                    <div className="relative w-full rounded-t-lg overflow-hidden bg-blue-50" style={{ height: `${weekMax > 0 ? Math.max((d.total / weekMax) * 100, 4) : 4}%` }}>
+                    {/* Total bar — colors from PC.chart in color.jsx */}
+                    <div className={`relative w-full rounded-t-lg overflow-hidden ${PC.chart.assignedBg}`} style={{ height: `${weekMax > 0 ? Math.max((d.total / weekMax) * 100, 4) : 4}%` }}>
                       {/* Done fill inside */}
                       <div
-                        className="absolute bottom-0 left-0 right-0 rounded-t-lg bg-gradient-to-t from-blue-500 to-indigo-600 transition-all duration-700"
+                        className={`absolute bottom-0 left-0 right-0 rounded-t-lg bg-gradient-to-t ${PC.chart.assignedBar} transition-all duration-700`}
                         style={{ height: `${d.total > 0 ? Math.round((d.done / d.total) * 100) : 0}%` }}
                       />
                     </div>
                   </div>
                   <div className="text-center">
-                    <p className={`text-[10px] font-black ${d.isToday ? 'text-blue-600' : 'text-slate-500'}`}>{d.label}</p>
+                    <p className={`text-[10px] font-black ${d.isToday ? PC.chart.todayText : 'text-slate-500'}`}>{d.label}</p>
                     <p className="text-[8px] text-slate-400 font-semibold">{d.sublabel}</p>
                   </div>
                   {/* tooltip */}
@@ -323,7 +326,8 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
               <Target size={16} className="text-indigo-500" /> Today's Achievement
             </h2>
             <div className="flex flex-col items-center gap-4 flex-1 justify-center">
-              <DonutRing pct={todayRate} size={120} stroke={14} color="#4f46e5" bg="#e0e7ff">
+              {/* Donut ring colors from PC.rings in color.jsx */}
+              <DonutRing pct={todayRate} size={120} stroke={14} color={PC.rings.todayDone} bg={PC.rings.todayBg}>
                 <div className="text-center">
                   <p className="text-2xl font-black text-slate-900">{todayRate}%</p>
                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wide">Done</p>
@@ -344,7 +348,7 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
             <div className="mt-4 pt-4 border-t border-slate-100">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">All-Time Rate</p>
               <div className="flex items-center gap-3">
-                <DonutRing pct={completionRate} size={56} stroke={8} color="#10b981" bg="#d1fae5">
+                <DonutRing pct={completionRate} size={56} stroke={8} color={PC.rings.allTimeDone} bg={PC.rings.allTimeBg}>
                   <p className="text-xs font-black text-emerald-700">{completionRate}%</p>
                 </DonutRing>
                 <div>
@@ -370,7 +374,8 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
                     <span className={`text-[9px] font-black uppercase tracking-widest ${c.text}`}>{c.label}</span>
                     <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full bg-white ${c.text}`}>{p}</span>
                   </div>
-                  <DonutRing pct={rate} size={64} stroke={8} color={p === 'P1' ? '#ef4444' : p === 'P2' ? '#f97316' : p === 'P3' ? '#3b82f6' : '#94a3b8'} bg="#f1f5f9">
+                  {/* Priority ring color from PC.priorities in color.jsx */}
+                  <DonutRing pct={rate} size={64} stroke={8} color={c.hex} bg="#f1f5f9">
                     <p className="text-xs font-black text-slate-800">{rate}%</p>
                   </DonutRing>
                   <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
@@ -419,10 +424,11 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
                         <p className="text-[9px] text-slate-400 font-semibold capitalize">{ws.ownerId === user?.id ? '👑 Owner' : '👤 Member'}</p>
                       </div>
                     </div>
+                    {/* Rate badge colors from PC.workspace in color.jsx */}
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${
-                      ws.rate >= 75 ? 'bg-emerald-50 text-emerald-600' :
-                      ws.rate >= 40 ? 'bg-amber-50 text-amber-600' :
-                      'bg-slate-100 text-slate-500'
+                      ws.rate >= 75 ? PC.workspace.high.badge :
+                      ws.rate >= 40 ? PC.workspace.medium.badge :
+                      PC.workspace.low.badge
                     }`}>
                       {ws.rate}%
                     </span>
@@ -468,11 +474,12 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
 
                   {/* progress bar */}
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    {/* Progress bar colors from PC.workspace in color.jsx */}
                     <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        ws.rate >= 75 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
-                        ws.rate >= 40 ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
-                        'bg-gradient-to-r from-blue-500 to-indigo-600'
+                      className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${
+                        ws.rate >= 75 ? PC.workspace.high.bar :
+                        ws.rate >= 40 ? PC.workspace.medium.bar :
+                        PC.workspace.low.bar
                       }`}
                       style={{ width: `${ws.rate}%` }}
                     />
@@ -485,9 +492,10 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
         </div>
 
         {/* ── ACHIEVEMENT BADGES ── */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl">
+        {/* Achievement card colors from PC.achievement in color.jsx */}
+        <div className={`bg-gradient-to-br ${PC.achievement.cardBg} rounded-2xl p-6 text-white shadow-xl`}>
           <h2 className="text-sm font-black flex items-center gap-2 mb-5">
-            <Award size={16} className="text-yellow-300" /> Achievement Summary
+            <Award size={16} className={PC.achievement.accentText} /> Achievement Summary
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[

@@ -217,3 +217,19 @@ export const aiAssistantService = {
     });
   },
 };
+
+/**
+ * WinMe Flowchart service module
+ */
+export const winMeService = {
+  async getFlowchart() {
+    return fetchAPI('/tasks/winme');
+  },
+  async saveFlowchart(nodes, connections) {
+    return fetchAPI('/tasks/winme', {
+      method: 'POST',
+      body: JSON.stringify({ nodes, connections }),
+    });
+  },
+};
+

@@ -104,8 +104,108 @@ export const themeColors = {
       badge: 'bg-white/20 text-white',
       status: 'bg-white/25 text-white',
     }
-  }
-};
+  },
+
+  // ── Win Me Goal Mapper node card tokens ───────────────
+  winMe: {
+    milestone: {
+      // Normal card background gradient (blue)
+      cardBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      // On hover → darker blue
+      cardHover: 'hover:from-blue-700 hover:to-blue-800',
+      border: 'border-blue-400/40',
+      borderHover: 'hover:border-blue-300',
+      shadow: 'shadow-[0_10px_25px_rgba(37,99,235,0.16)]',
+      shadowHover: 'hover:shadow-[0_16px_35px_rgba(37,99,235,0.32)]',
+      badge: 'bg-blue-800/60 text-blue-50 border border-blue-400/30',
+      editBtn: 'hover:bg-blue-800/50 text-blue-100 hover:text-white',
+      deleteBtn: 'hover:bg-blue-900/60 text-blue-100 hover:text-white',
+      title: 'text-white',
+      desc: 'text-blue-100/90',
+      files: 'text-blue-200',
+      port: 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400',
+      // SVG gradient stops
+      lineFrom: '#1e3a8a',
+      lineTo: '#1d4ed8',
+      lineGlow: '#dbeafe',
+      particleFill: '#1d4ed8',
+    },
+    goalNode: {
+      // Goal card background (gold/amber)
+      cardBg: 'bg-gradient-to-br from-amber-400 to-yellow-500',
+      // On hover → dark blue (as requested)
+      cardHover: 'hover:from-blue-700 hover:to-blue-900',
+      border: 'border-yellow-300',
+      borderHover: 'hover:border-blue-300',
+      shadow: 'shadow-[0_12px_30px_rgba(234,179,8,0.25)]',
+      shadowHover: 'hover:shadow-[0_18px_40px_rgba(37,99,235,0.35)]',
+      badge: 'bg-amber-600 text-amber-50',
+      editBtn: 'hover:bg-amber-600 text-white',
+      deleteBtn: 'hover:bg-amber-600 text-white',
+      title: 'text-white',
+      desc: 'text-amber-100 font-medium',
+      files: 'text-amber-100',
+      port: 'bg-amber-500 border-amber-300 text-white hover:bg-amber-600',
+      // SVG gradient stops
+      lineFrom: '#eab308',
+      lineTo: '#fbbf24',
+      lineGlow: '#fef3c7',
+      particleFill: '#d97706',
+    },
+  },
+
+  // ── Productivity Dashboard Theme Colors ────────────────
+  productivity: {
+    todayTasks: {
+      from: 'from-blue-500',
+      to: 'to-indigo-600',
+      iconBg: 'bg-white/20'
+    },
+    totalCompleted: {
+      from: 'from-emerald-500',
+      to: 'to-teal-600',
+      iconBg: 'bg-white/20'
+    },
+    highPriority: {
+      from: 'from-rose-500',
+      to: 'to-pink-600',
+      iconBg: 'bg-white/20'
+    },
+    completionRate: {
+      from: 'from-violet-500',
+      to: 'to-purple-600',
+      iconBg: 'bg-white/20'
+    },
+    chart: {
+      assignedBg: 'bg-blue-50',
+      assignedBar: 'from-blue-500 to-indigo-600',
+      completedBar: 'from-emerald-400 to-teal-500',
+      todayText: 'text-blue-600',
+      todayIndicator: 'ring-blue-500'
+    },
+    rings: {
+      todayDone: '#4f46e5',
+      todayBg: '#e0e7ff',
+      allTimeDone: '#10b981',
+      allTimeBg: '#d1fae5'
+    },
+    priorities: {
+      P1: { bar: 'from-red-500 to-rose-600', hex: '#ef4444', text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', label: 'Critical' },
+      P2: { bar: 'from-orange-500 to-amber-500', hex: '#f97316', text: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', label: 'High' },
+      P3: { bar: 'from-blue-500 to-indigo-600', hex: '#3b82f6', text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: 'Normal' },
+      P4: { bar: 'from-slate-400 to-slate-500', hex: '#94a3b8', text: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-100', label: 'Low' }
+    },
+    workspace: {
+      high: { badge: 'bg-emerald-50 text-emerald-600', bar: 'from-emerald-400 to-teal-500' },
+      medium: { badge: 'bg-amber-50 text-amber-600', bar: 'from-amber-400 to-orange-500' },
+      low: { badge: 'bg-slate-100 text-slate-500', bar: 'from-blue-500 to-indigo-600' }
+    },
+    achievement: {
+      cardBg: 'from-blue-600 to-indigo-700',
+      accentText: 'text-yellow-300'
+    }
+  },
+}
 
 /**
  * Retrieves color class strings from the centralized themeColors configuration by dot-separated path.

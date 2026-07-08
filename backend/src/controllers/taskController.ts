@@ -153,3 +153,82 @@ export async function deleteTask(req: AuthenticatedRequest, res: Response, next:
     next(error);
   }
 }
+
+/**
+ * Retrieve WinMe flowchart (nodes and connections) for the user
+ */
+export async function getWinMe(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ status: 'error', message: 'Not authorized.' });
+      return;
+    }
+
+    const db = getDb();
+    const docRef = db.collection('winme_flowcharts').doc(userId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      // Return default initial layout
+      const defaultFlowchart = {
+        userId,
+        nodes: [
+          {
+            id: 'root',
+            title: '🎯 Ultimate Mission Kickoff',
+            description: 'Your starting milestone. Double-click here or click the pencil icon to edit my text. Click the "+" ports to expand branches!',
+            type: 'normal',
+            x: 800,
+            y: 400,
+            files: []
+          }
+        ],
+        connections: [],
+        updatedAt: new Date().toISOString()
+      };
+      res.status(200).json({ status: 'success', data: defaultFlowchart });
+      return;
+    }
+
+    res.status(200).json({ status: 'success', data: doc.data() });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Save/Update WinMe flowchart for the user
+ */
+export async function saveWinMe(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ status: 'error', message: 'Not authorized.' });
+      return;
+    }
+
+    const { nodes, connections } = req.body;
+    if (!Array.isArray(nodes) || !Array.isArray(connections)) {
+      res.status(400).json({ status: 'error', message: 'Invalid data format. nodes and connections must be arrays.' });
+      return;
+    }
+
+    const db = getDb();
+    const docRef = db.collection('winme_flowcharts').doc(userId);
+
+    const flowchartData = {
+      userId,
+      nodes,
+      connections,
+      updatedAt: new Date().toISOString()
+    };
+
+    await docRef.set(flowchartData);
+
+    res.status(200).json({ status: 'success', data: flowchartData });
+  } catch (error) {
+    next(error);
+  }
+}
+

@@ -24,6 +24,148 @@ import { weatherService } from '../../services/api';
 import { getColor } from '../../utils/color';
 import { analyzeTaskWeather } from '../../utils/weatherService';
 
+/* ─── Modern Weather Animation Components ─────────────── */
+
+// Physics-based rain streaks with shimmer
+const RainAnimation = ({ intensity = 'medium' }) => {
+  const dropCount = intensity === 'heavy' ? 32 : intensity === 'light' ? 14 : 22;
+  const drops = Array.from({ length: dropCount }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 1.8,
+    dur: 0.55 + Math.random() * 0.45,
+    len: 8 + Math.random() * 14,
+    opacity: 0.35 + Math.random() * 0.55,
+    width: 0.8 + Math.random() * 0.8,
+  }));
+  const ripples = Array.from({ length: 5 }, (_, i) => ({
+    id: i,
+    cx: 10 + Math.random() * 80,
+    cy: 88 + Math.random() * 8,
+    delay: Math.random() * 2,
+    dur: 1.2 + Math.random() * 0.8,
+  }));
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      style={{ zIndex: 0 }}
+    >
+      <defs>
+        <linearGradient id="rain-drop-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#bfdbfe" stopOpacity="0" />
+          <stop offset="60%" stopColor="#93c5fd" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.4" />
+        </linearGradient>
+        <filter id="rain-glow">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+      {/* Layered cloud drift */}
+      <ellipse cx="20" cy="12" rx="22" ry="8" fill="rgba(255,255,255,0.08)">
+        <animate attributeName="cx" values="18;24;18" dur="6s" repeatCount="indefinite" />
+      </ellipse>
+      <ellipse cx="70" cy="8" rx="28" ry="6" fill="rgba(255,255,255,0.06)">
+        <animate attributeName="cx" values="68;76;68" dur="8s" repeatCount="indefinite" />
+      </ellipse>
+      {/* Rain streaks */}
+      {drops.map(d => (
+        <line
+          key={d.id}
+          x1={d.x} y1={0}
+          x2={d.x - 2} y2={d.len}
+          stroke="url(#rain-drop-grad)"
+          strokeWidth={d.width}
+          strokeLinecap="round"
+          filter="url(#rain-glow)"
+          opacity={d.opacity}
+        >
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values={`0,−${d.len};3,110`}
+            dur={`${d.dur}s`}
+            begin={`${d.delay}s`}
+            repeatCount="indefinite"
+            calcMode="linear"
+          />
+        </line>
+      ))}
+      {/* Puddle ripples at bottom */}
+      {ripples.map(r => (
+        <ellipse key={r.id} cx={r.cx} cy={r.cy} rx="0" ry="0"
+          fill="none" stroke="rgba(147,197,253,0.5)" strokeWidth="0.4"
+        >
+          <animate attributeName="rx" values="0;6;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="ry" values="0;1.5;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.8;0;0.8" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+        </ellipse>
+      ))}
+    </svg>
+  );
+};
+
+// Floating sun rays
+const SunAnimation = () => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 0 }}>
+    <defs>
+      <radialGradient id="sun-glow" cx="50%" cy="30%" r="40%">
+        <stop offset="0%" stopColor="#fef08a" stopOpacity="0.4" />
+        <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="75" cy="22" r="18" fill="url(#sun-glow)">
+      <animate attributeName="r" values="16;22;16" dur="3s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
+    </circle>
+    {[0,45,90,135,180,225,270,315].map((angle, i) => (
+      <line key={i}
+        x1="75" y1="22"
+        x2={75 + 14 * Math.cos(angle * Math.PI / 180)}
+        y2={22 + 14 * Math.sin(angle * Math.PI / 180)}
+        stroke="rgba(253,224,71,0.5)" strokeWidth="0.8" strokeLinecap="round"
+      >
+        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin={`${i * 0.25}s`} repeatCount="indefinite" />
+      </line>
+    ))}
+  </svg>
+);
+
+// Electric storm lightning
+const StormAnimation = () => {
+  const bolts = Array.from({ length: 3 }, (_, i) => ({
+    id: i,
+    x: 20 + i * 30,
+    delay: i * 1.2,
+  }));
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 0 }}>
+      {bolts.map(b => (
+        <polyline key={b.id}
+          points={`${b.x},0 ${b.x - 4},40 ${b.x + 2},40 ${b.x - 6},100`}
+          fill="none" stroke="rgba(196,181,253,0.7)" strokeWidth="0.8"
+        >
+          <animate attributeName="opacity" values="0;1;0" dur="0.2s" begin={`${b.delay}s`} repeatCount="indefinite" />
+        </polyline>
+      ))}
+    </svg>
+  );
+};
+
+// Cloud drift for cloudy / windy
+const CloudAnimation = ({ color = 'rgba(255,255,255,0.12)' }) => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 0 }}>
+    {[{ cx: 20, cy: 20, rx: 30, ry: 12 }, { cx: 65, cy: 14, rx: 36, ry: 10 }, { cx: 50, cy: 35, rx: 24, ry: 8 }].map((c, i) => (
+      <ellipse key={i} cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry} fill={color}>
+        <animate attributeName="cx" values={`${c.cx - 5};${c.cx + 5};${c.cx - 5}`} dur={`${5 + i * 2}s`} repeatCount="indefinite" />
+      </ellipse>
+    ))}
+  </svg>
+);
+
+
 export const WeatherAssistantPage = ({ tasks }) => {
   const [city, setCity] = useState('Colombo');
   const [searchVal, setSearchVal] = useState('Colombo');
@@ -77,21 +219,15 @@ export const WeatherAssistantPage = ({ tasks }) => {
     }
   };
 
-  // Helper to resolve CSS animation class based on weather status
-  const getWeatherAnimationClass = (status) => {
+  // Modern animated weather scene inside card
+  const getWeatherScene = (status) => {
     switch (status) {
-      case 'SUNNY':
-        return 'weather-sun-anim';
-      case 'RAINY':
-        return 'weather-rain-anim';
-      case 'WINDY':
-        return 'weather-wind-anim';
-      case 'CLOUDY':
-        return 'weather-cloud-anim';
-      case 'STORMY':
-        return 'weather-storm-anim';
-      default:
-        return '';
+      case 'RAINY': return <RainAnimation intensity="medium" />;
+      case 'STORMY': return <StormAnimation />;
+      case 'SUNNY': return <SunAnimation />;
+      case 'CLOUDY': return <CloudAnimation color="rgba(255,255,255,0.10)" />;
+      case 'WINDY': return <CloudAnimation color="rgba(20,184,166,0.15)" />;
+      default: return null;
     }
   };
 
@@ -250,8 +386,10 @@ export const WeatherAssistantPage = ({ tasks }) => {
           {/* TOP LAYOUT: TODAY OVERVIEW + HOUR BY HOUR */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Today Main Weather Card */}
-            <div className={`lg:col-span-1 border border-slate-200/40 rounded-[32px] p-6 flex flex-col justify-between min-h-[250px] relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300 ${getTodayCardShadowClass(todayWeatherStatus)} ${getWeatherGradientClass(todayWeatherStatus)} ${getWeatherAnimationClass(todayWeatherStatus)}`}>
+            {/* Today Main Weather Card — modern animated weather scene inside */}
+            <div className={`lg:col-span-1 border border-slate-200/40 rounded-[32px] p-6 flex flex-col justify-between min-h-[250px] relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300 ${getTodayCardShadowClass(todayWeatherStatus)} ${getWeatherGradientClass(todayWeatherStatus)}`}>
+              {/* Modern animated weather scene */}
+              {getWeatherScene(todayWeatherStatus)}
               <div className="z-10 flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-1.5 text-white/90">
@@ -419,8 +557,10 @@ export const WeatherAssistantPage = ({ tasks }) => {
                 return (
                   <div 
                     key={idx}
-                    className={`border rounded-[24px] p-4 flex flex-col justify-between min-h-[185px] relative overflow-hidden transition-all duration-350 hover:scale-[1.03] backdrop-blur-md ${dayStyleClass} ${getWeatherAnimationClass(day.status)}`}
+                    className={`border rounded-[24px] p-4 flex flex-col justify-between min-h-[185px] relative overflow-hidden transition-all duration-350 hover:scale-[1.03] backdrop-blur-md ${dayStyleClass}`}
                   >
+                    {/* Per-card animated weather scene */}
+                    {getWeatherScene(day.status)}
                     <div className="z-10">
                       <span className="text-xs font-black text-slate-800 block">
                         {formatDayHeader(idx, day.dayName)}
