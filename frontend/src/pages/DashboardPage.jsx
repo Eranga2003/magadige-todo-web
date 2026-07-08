@@ -18,7 +18,9 @@ import {
   Camera,
   Smile,
   X,
-  CloudSun
+  CloudSun,
+  Bot,
+  Trophy
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
@@ -35,6 +37,8 @@ import { ReportingPage } from './dashboard/ReportingPage';
 import { WorkspacePage } from './dashboard/WorkspacePage';
 import { WorkspaceDashboard } from './dashboard/WorkspaceDashboard';
 import { WeatherAssistantPage } from './dashboard/WeatherAssistantPage';
+import { AiAssistantPanel } from './dashboard/AiAssistantPanel';
+import { WinMePage } from './dashboard/WinMePage';
 
 
 import { taskService, workspaceService, authService } from '../services/api';
@@ -43,7 +47,7 @@ export const DashboardPage = () => {
   const { user, logout, updateUser } = useAuth();
   
   // Navigation & Layout states
-  const [activeTab, setActiveTab] = useState('INBOX'); // INBOX, TODAY, UPCOMING, FILTERS, REPORTING, WORKSPACE, WORKSPACE_DASHBOARD
+  const [activeTab, setActiveTab] = useState('TODAY'); // INBOX, TODAY, UPCOMING, FILTERS, REPORTING, WORKSPACE, WORKSPACE_DASHBOARD
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -221,12 +225,15 @@ export const DashboardPage = () => {
       const response = await taskService.createTask(newTask);
       if (response && response.data) {
         setTasks((prev) => [response.data, ...prev]);
+        return response.data;
       } else {
         setTasks((prev) => [newTask, ...prev]);
+        return newTask;
       }
     } catch (err) {
       console.error('❌ Failed to save new task to Firestore:', err.message);
       setTasks((prev) => [newTask, ...prev]);
+      throw err;
     }
   };
 
@@ -252,15 +259,17 @@ export const DashboardPage = () => {
   // Update a task (edit details, change date, add comments)
   const handleUpdateTask = async (updatedTask) => {
     try {
-      await taskService.updateTask(updatedTask.id, updatedTask);
+      const response = await taskService.updateTask(updatedTask.id, updatedTask);
       setTasks((prev) =>
         prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
       );
+      return response;
     } catch (err) {
       console.error('❌ Failed to update task details in Firestore:', err.message);
       setTasks((prev) =>
         prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
       );
+      throw err;
     }
   };
 
@@ -296,6 +305,36 @@ export const DashboardPage = () => {
         return <ReportingPage tasks={tasks} />;
       case 'WEATHER_ASSISTANT':
         return <WeatherAssistantPage tasks={tasks} />;
+      case 'AI_ASSISTANT':
+        return (
+          <div 
+            className="w-full flex-1 overflow-y-auto px-6 py-10"
+            style={{
+              background: 'radial-gradient(1200px 500px at 10% -10%, #e7f0fe, transparent), radial-gradient(900px 500px at 100% 0%, #e2edff, transparent), #f3f8ff',
+              minHeight: '100%',
+              fontFamily: "'Inter', sans-serif"
+            }}
+          >
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-end justify-between mb-8 pb-4 border-b border-blue-100/50">
+                <div>
+                  <h1 className="text-3xl font-extrabold text-[#0f2a5c] flex items-center gap-2 tracking-tight">
+                    <Bot size={28} className="text-blue-600 drop-shadow-[0_4px_8px_rgba(37,99,235,0.2)]" /> AI Assistant
+                  </h1>
+                  <p className="text-xs font-semibold text-[#5b6b8c] mt-1.5">Manage your daily tasks through smart, context-aware conversations</p>
+                </div>
+              </div>
+              <AiAssistantPanel
+                tasks={tasks}
+                onAddTask={handleAddTask}
+                onUpdateTask={handleUpdateTask}
+                isFullPage={true}
+              />
+            </div>
+          </div>
+        );
+      case 'WIN_ME':
+        return <WinMePage />;
       case 'WORKSPACE':
         return (
           <WorkspacePage 
@@ -322,7 +361,8 @@ export const DashboardPage = () => {
 
   // Counts for sidebar indicators
   const inboxCount = tasks.filter((t) => !t.completed).length;
-  const todayCount = tasks.filter((t) => t.dueDate === 'TODAY' && !t.completed).length;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayCount = tasks.filter((t) => (t.dueDate === 'TODAY' || t.dueDate === todayStr) && !t.completed).length;
 
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans">
@@ -420,41 +460,6 @@ export const DashboardPage = () => {
 
           {/* Navigation links list */}
           <nav className="space-y-1">
-            {/* Search link emulation */}
-            <button 
-              onMouseEnter={playBubbleSound}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer focus:outline-none"
-            >
-              <span className="flex items-center gap-3">
-                <Search size={16} className="text-gray-400" /> Search
-              </span>
-              <kbd className="text-xs text-gray-400 bg-white border border-gray-200 px-1 py-0.5 rounded shadow-xxs">
-                Ctrl K
-              </kbd>
-            </button>
-
-            {/* Inbox */}
-            <button 
-              onClick={() => { setActiveTab('INBOX'); setShowProfileMenu(false); }}
-              onMouseEnter={playBubbleSound}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
-                activeTab === 'INBOX' 
-                  ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
-                  : 'text-gray-600 hover:bg-gray-200/40'
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <Inbox size={16} className={activeTab === 'INBOX' ? getColor('primary.text') : 'text-gray-400'} /> Inbox
-              </span>
-              {inboxCount > 0 && (
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                  activeTab === 'INBOX' ? 'bg-white text-current' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {inboxCount}
-                </span>
-              )}
-            </button>
-
             {/* Today */}
             <button 
               onClick={() => { setActiveTab('TODAY'); setShowProfileMenu(false); }}
@@ -488,19 +493,6 @@ export const DashboardPage = () => {
               }`}
             >
               <Calendar size={16} className={activeTab === 'UPCOMING' ? getColor('primary.text') : 'text-gray-400'} /> Upcoming
-            </button>
-
-            {/* Filters */}
-            <button 
-              onClick={() => { setActiveTab('FILTERS'); setShowProfileMenu(false); }}
-              onMouseEnter={playBubbleSound}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
-                activeTab === 'FILTERS' 
-                  ? `${getColor('primary.text')} ${getColor('primary.bgLight')}` 
-                  : 'text-gray-600 hover:bg-gray-200/40'
-              }`}
-            >
-              <Flag size={16} className={activeTab === 'FILTERS' ? getColor('primary.text') : 'text-gray-400'} /> Filters & Labels
             </button>
 
             {/* Reporting */}
@@ -540,6 +532,41 @@ export const DashboardPage = () => {
               }`}
             >
               <CloudSun size={16} className={activeTab === 'WEATHER_ASSISTANT' ? getColor('primary.text') : 'text-gray-400'} /> Weather Assistant
+            </button>
+
+            {/* AI Assistant */}
+            <button 
+              onClick={() => { setActiveTab('AI_ASSISTANT'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
+                activeTab === 'AI_ASSISTANT'
+                  ? 'text-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-100'
+                  : 'text-gray-600 hover:bg-gray-200/40'
+              }`}
+            >
+              <Bot size={16} className={activeTab === 'AI_ASSISTANT' ? 'text-blue-600' : 'text-gray-400'} />
+              <span className="flex-1 text-left">AI Assistant</span>
+              {activeTab !== 'AI_ASSISTANT' && (
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 uppercase tracking-wider">New</span>
+              )}
+            </button>
+
+            {/* Win me */}
+            <button 
+              onClick={() => { setActiveTab('WIN_ME'); setShowProfileMenu(false); }}
+              onMouseEnter={playBubbleSound}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
+                activeTab === 'WIN_ME' 
+                  ? 'text-amber-700 bg-gradient-to-r from-amber-50 to-yellow-50/60 border border-amber-250' 
+                  : 'text-gray-600 hover:bg-gray-200/40'
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <Trophy size={16} className={activeTab === 'WIN_ME' ? 'text-amber-500' : 'text-gray-400'} /> Win Me
+              </span>
+              {activeTab !== 'WIN_ME' && (
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-750 uppercase tracking-wider">Play</span>
+              )}
             </button>
           </nav>
           {/* Removed projects section */}
