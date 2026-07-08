@@ -10,32 +10,58 @@ Built as a full-stack monorepo, Magadige combines **AI-driven planning, interact
 
 ## 🚀 Key Features
 
+### 🧠 AI Assistant: Interactive Productivity & Automation
+The conversational AI Assistant operates as a personal productivity agent. It parses natural language to perform complex scheduling adjustments, wellness interventions, and workflow automations.
+
+#### 💡 Examples & Capabilities:
+*   **"I am tired today" (Fatigue Mitigation Mode)**:
+    *   **What it does**: Automatically restructures your day to prevent burnout.
+    *   **Action**: 
+        1. Reschedules all standard meetings to the next day.
+        2. Automatically shifts lower-priority tasks (P3/P4) to tomorrow to clear your mental load.
+        3. Inserts a new high-priority self-care task: *"🧘 Self-Care: 15-minute guided mindfulness meditation & breathing"* into your Today schedule.
+*   **Task Breakdown ("Break down 'Launch Marketing Campaign'")**:
+    *   **What it does**: Deconstructs large, complex tasks.
+    *   **Action**: Generates a structured checklist of 3-5 logical subtasks (e.g., *Define campaign assets, draft email copy, set up analytics trackers*) and adds them directly under the parent task.
+*   **Meeting Rescheduler**:
+    *   **What it does**: Automates professional email communication.
+    *   **Action**: When a conflict arises, the AI drafts a polished, context-aware email to all meeting members proposing a new time slot and sends it instantly via SMTP.
+
+---
+
+### 🌤️ Weather Assistant: Context-Aware Disruption Engine
+The Weather Assistant syncs with the OpenWeatherMap API to proactively protect your outdoor plans. It evaluates tasks against real-time forecasts to identify scheduling conflicts.
+
+#### 💡 Examples & Capabilities:
+*   **Rainy / Stormy Days**:
+    *   **Task**: *"Run on road"* or *"Exercise at ground"* scheduled for a **RAINY** day.
+    *   **Detection**: The AI detects that this is an outdoor physical activity conflicting with precipitation.
+    *   **UI Feedback**: The task card turns red (`.weather-affected-task-card`), displays a pulsing `AlertTriangle` warning icon, and displays:
+        > ⚠️ **Weather Disruption: Rain**
+        > *AI Mitigation Advice: Move your exercise session indoors to a gym or reschedule for a dry day.*
+*   **Windy Conditions**:
+    *   **Task**: *"Play badminton"* or *"Drone video shooting"*.
+    *   **Detection**: Identifies that high winds will disrupt precision outdoor tasks.
+    *   **AI Advice**: *“Move the session indoors to a closed court / Postpone filming to avoid wind interference.”*
+*   **Extreme Heat Warning**:
+    *   **Task**: Heavy outdoor manual work or long runs when the temperature exceeds **35°C**.
+    *   **AI Advice**: *“Extreme heat detected. Postpone intensive outdoor activities to early morning/evening hours and stay hydrated.”*
+
+---
+
 ### 👥 Collaborative Workspaces & Kanban Boards
 - **Workspace Rooms**: Create workspaces, configure projects, and manage team members.
 - **Interactive Kanban Board**: Drag and drop tasks across columns (`TO DO`, `IN PROGRESS`, `COMPLETE`).
 - **Team Profiles**: Shared workspace view with member initial avatars and inline invitations.
 - **Member Management**: Inline email invites with success/error indicators and owner privileges to remove members.
 
-### 🌤️ Weather-Aware Intelligence
-- **Weather Assistant**: Live hour-by-hour and 7-day forecast sync (via OpenWeatherMap API).
-- **AI Disruption Detection**: Automatically scans task titles (e.g., *"exercise at ground"*) using the **OpenAI API** to detect weather conflicts.
-- **Dynamic UI Indicators**: Disruptive tasks highlight in red, displaying alert icons with AI mitigation advice in the **Today**, **Upcoming**, and **Weather Assistant** pages.
-- **Serene Weather Scenes**: Modern, professional animations for rain, storms, and cloud drift.
-
-### 🧠 AI Productivity Engine (OpenAI)
-- **Task Breakdown**: Deconstruct large objectives into subtasks with a single click.
-- **AI Meeting Assistant**: Automatically drafts and sends professional meeting reschedule emails based on selected members and time slots.
-- **Smart Natural Language Input**: Fast task entry with AI-backed context extraction.
+---
 
 ### 🏆 Win Me — Interactive Goal Mapper
 - **Draggable Milestones**: Flowchart style drag-and-drop node mapper.
 - **Multi-directional Expansion**: Node ports allow branching in four directions (`+` buttons).
 - **Gold Goal Target Nodes**: Mark high-importance goals with gold gradient themes.
 - **Auto-Save**: Saves node coords and connections to Cloud Firestore automatically.
-
-### 💬 Communication & Automated Mailing
-- **Workspace Notifications**: Instant SMTP emails sent when tasks are assigned or completed.
-- **AI Email Sync**: Directly sends generated reschedule emails via SMTP.
 
 ---
 
