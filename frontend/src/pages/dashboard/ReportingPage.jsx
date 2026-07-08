@@ -201,13 +201,13 @@ export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-7">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-7">
 
         {/* ── HEADER ── */}
         <div className="flex items-end justify-between">
           <div>
             <p className="text-sm font-bold text-slate-400 mb-0.5">{greet}, {user?.name?.split(' ')[0] || 'there'}!</p>
-            <h1 className="text-3xl font-black text-slate-900 flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2.5">
               <BarChart3 size={28} className="text-blue-600 drop-shadow-[0_4px_8px_rgba(37,99,235,0.3)]" />
               Productivity Dashboard
             </h1>

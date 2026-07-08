@@ -472,7 +472,7 @@ export const InboxPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
       {tasks.length > 0 && !isAdding && (
         <button
           onClick={handleOpenComposer}
-          className={`fixed bottom-6 right-6 w-12 h-12 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer`}
+          className={`fixed bottom-20 md:bottom-6 right-6 w-12 h-12 rounded-full ${getColor('primary.gradient')} text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer`}
         >
           <Plus size={24} />
         </button>

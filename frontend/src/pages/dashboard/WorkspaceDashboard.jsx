@@ -551,7 +551,7 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
         </div>
 
         {/* Action icons bar */}
-        <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
+        <div className="hidden sm:flex items-center gap-4 text-xs font-bold text-gray-500">
           <button className="hover:text-slate-900 flex items-center gap-1 p-1 transition-colors cursor-pointer">
             🤖 Agents
           </button>

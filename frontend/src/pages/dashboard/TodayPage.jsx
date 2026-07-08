@@ -211,15 +211,14 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
       className="w-full min-h-screen text-[#132242] select-none"
       style={{
         background: 'radial-gradient(1200px 500px at 10% -10%, #e7f0fe, transparent), radial-gradient(900px 500px at 100% 0%, #e2edff, transparent), #f3f8ff',
-        padding: '48px 5vw 90px',
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-10 sm:pt-12 pb-20">
         {/* Header */}
         <div className="flex items-end justify-between mb-8 pb-4 border-b border-blue-100/50">
           <div>
-            <h1 className="text-3xl font-extrabold text-[#0f2a5c] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0f2a5c] tracking-tight">
               Today
             </h1>
             <p className="text-xs font-semibold text-[#5b6b8c] mt-1.5">{todayDateString}</p>
@@ -614,7 +613,7 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
           />
 
           {/* Start and End Time inputs */}
-          <div className="flex items-center gap-4 bg-gray-50/50 p-2.5 rounded-xl border border-gray-100">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-gray-50/50 p-2.5 rounded-xl border border-gray-100">
             <div className="flex-1 flex items-center gap-2">
               <span className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider">Start Time</span>
               <input

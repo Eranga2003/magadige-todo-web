@@ -269,10 +269,9 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
       style={{
         background: 'radial-gradient(1200px 500px at 10% -10%, #e7f0fe, transparent), radial-gradient(900px 500px at 100% 0%, #e2edff, transparent), #f3f8ff',
         minHeight: '100vh',
-        padding: '48px 5vw 90px',
         fontFamily: "'Inter', sans-serif"
       }}
-      className="w-full text-[#132242] select-none"
+      className="w-full text-[#132242] select-none px-4 sm:px-6 pt-10 sm:pt-12 pb-20"
     >
       {/* Top Header Section */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
@@ -280,7 +279,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
           <p className="font-mono text-xs font-bold tracking-widest text-[#2563eb] uppercase mb-2">
             30-day sprint
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">
             {MONTHS[month]} {year}
           </h1>
           <p className="text-sm text-[#5b6b8c] font-medium">
@@ -328,7 +327,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
           return (
             <div 
               key={dayNum} 
-              className={`focus-calendar-card card ${isTdy ? 'today' : ''} relative bg-white border-2 border-[#dbe6fb] rounded-[20px] p-4.5 min-h-[210px] flex flex-col overflow-hidden`}
+              className={`focus-calendar-card card ${isTdy ? 'today' : ''} relative bg-white border-2 border-[#dbe6fb] rounded-[20px] p-4.5 min-h-[180px] sm:min-h-[210px] flex flex-col overflow-hidden`}
             >
               {/* Large Watermark day number */}
               <div className="absolute top-[-18px] right-[-6px] font-bold text-[88px] text-[#2563eb] opacity-7 select-none pointer-events-none leading-none">
@@ -509,7 +508,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in select-none">
           <form 
             onSubmit={handleSaveEdit}
-            className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-lg overflow-hidden animate-scale-up flex flex-col max-h-[90vh]"
+            className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-scale-up flex flex-col max-h-[90vh]"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50/60">

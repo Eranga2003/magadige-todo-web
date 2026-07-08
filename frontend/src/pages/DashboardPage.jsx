@@ -55,6 +55,7 @@ export const DashboardPage = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
@@ -442,13 +443,45 @@ export const DashboardPage = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayCount = tasks.filter((t) => (t.dueDate === 'TODAY' || t.dueDate === todayStr) && !t.completed).length;
 
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
+  const navTo = (tab) => { setActiveTab(tab); setShowProfileMenu(false); closeMobileSidebar(); };
+
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans">
-      
+
+      {/* MOBILE OVERLAY BACKDROP */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
+      {/* MOBILE TOP HEADER BAR */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none"
+        >
+          <Menu size={22} />
+        </button>
+        <span className="text-sm font-black text-gray-900 tracking-tight">Magadige ToDo</span>
+        <button
+          onClick={() => setIsAddTaskModalOpen(true)}
+          className={`p-1.5 rounded-lg ${getColor('primary.gradient')} text-white shadow-sm focus:outline-none`}
+        >
+          <Plus size={20} />
+        </button>
+      </header>
+
       {/* 1. SIDEBAR PANEL */}
-      <aside 
-        className={`bg-gray-50 border-r border-gray-200 flex flex-col justify-between transition-all duration-300 ${
-          isSidebarCollapsed ? 'w-0 overflow-hidden border-none' : 'w-64'
+      <aside
+        className={`fixed md:relative top-0 left-0 h-full z-50 md:z-auto bg-gray-50 border-r border-gray-200 flex flex-col justify-between transition-all duration-300 ${
+          /* Desktop: collapse by width */
+          isSidebarCollapsed ? 'md:w-0 md:overflow-hidden md:border-none' : 'md:w-64'
+        } ${
+          /* Mobile: slide in/out via translate */
+          isMobileSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <div className="flex flex-col flex-1 py-4 px-3 space-y-6">
@@ -489,7 +522,7 @@ export const DashboardPage = () => {
                   <Bell size={16} />
                 </button>
                 <button 
-                  onClick={() => setIsSidebarCollapsed(true)}
+                  onClick={() => { setIsSidebarCollapsed(true); closeMobileSidebar(); }}
                   onMouseEnter={playBubbleSound}
                   className="text-gray-500 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-none"
                 >
@@ -540,7 +573,7 @@ export const DashboardPage = () => {
           <nav className="space-y-1">
             {/* Today */}
             <button 
-              onClick={() => { setActiveTab('TODAY'); setShowProfileMenu(false); }}
+              onClick={() => navTo('TODAY')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'TODAY' 
@@ -562,7 +595,7 @@ export const DashboardPage = () => {
 
             {/* Upcoming */}
             <button 
-              onClick={() => { setActiveTab('UPCOMING'); setShowProfileMenu(false); }}
+              onClick={() => navTo('UPCOMING')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'UPCOMING' 
@@ -575,7 +608,7 @@ export const DashboardPage = () => {
 
             {/* Reporting */}
             <button 
-              onClick={() => { setActiveTab('REPORTING'); setShowProfileMenu(false); }}
+              onClick={() => navTo('REPORTING')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'REPORTING' 
@@ -588,7 +621,7 @@ export const DashboardPage = () => {
 
             {/* Workspace */}
             <button 
-              onClick={handleWorkspaceClick}
+              onClick={() => { handleWorkspaceClick(); closeMobileSidebar(); }}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD'
@@ -601,7 +634,7 @@ export const DashboardPage = () => {
 
             {/* Weather Assistant */}
             <button 
-              onClick={() => { setActiveTab('WEATHER_ASSISTANT'); setShowProfileMenu(false); }}
+              onClick={() => navTo('WEATHER_ASSISTANT')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WEATHER_ASSISTANT'
@@ -614,7 +647,7 @@ export const DashboardPage = () => {
 
             {/* AI Assistant */}
             <button 
-              onClick={() => { setActiveTab('AI_ASSISTANT'); setShowProfileMenu(false); }}
+              onClick={() => navTo('AI_ASSISTANT')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'AI_ASSISTANT'
@@ -631,7 +664,7 @@ export const DashboardPage = () => {
 
             {/* Win me */}
             <button 
-              onClick={() => { setActiveTab('WIN_ME'); setShowProfileMenu(false); }}
+              onClick={() => navTo('WIN_ME')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WIN_ME' 
@@ -812,9 +845,9 @@ export const DashboardPage = () => {
       {/* 2. MAIN CONTAINER AREA */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
         
-        {/* Floating Menu button if sidebar collapsed */}
+        {/* Desktop: Floating Menu button if sidebar collapsed */}
         {isSidebarCollapsed && (
-          <header className="py-4 px-6 border-b border-gray-100 flex items-center gap-4">
+          <header className="hidden md:flex py-4 px-6 border-b border-gray-100 items-center gap-4">
             <button 
               onClick={() => setIsSidebarCollapsed(false)}
               className="text-gray-500 hover:bg-gray-100 p-1.5 rounded-lg transition-all cursor-pointer focus:outline-none"
@@ -825,11 +858,35 @@ export const DashboardPage = () => {
           </header>
         )}
 
-        {/* Dynamic subpage view container */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Dynamic subpage view container — offset top on mobile for fixed header */}
+        <main className="flex-1 overflow-y-auto mt-[52px] md:mt-0 mb-[60px] md:mb-0">
           {renderActiveSection()}
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAV BAR */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 flex items-center justify-around px-2 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <button onClick={() => navTo('TODAY')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'TODAY' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Calendar size={20} />
+          <span className="text-[9px] font-bold">Today</span>
+        </button>
+        <button onClick={() => navTo('UPCOMING')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'UPCOMING' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Flag size={20} />
+          <span className="text-[9px] font-bold">Upcoming</span>
+        </button>
+        <button onClick={() => navTo('REPORTING')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'REPORTING' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <BarChart3 size={20} />
+          <span className="text-[9px] font-bold">Stats</span>
+        </button>
+        <button onClick={() => { handleWorkspaceClick(); }} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ (activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD') ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Users size={20} />
+          <span className="text-[9px] font-bold">Space</span>
+        </button>
+        <button onClick={() => navTo('AI_ASSISTANT')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'AI_ASSISTANT' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Bot size={20} />
+          <span className="text-[9px] font-bold">AI</span>
+        </button>
+      </nav>
 
       {/* Global Add Task Pop-up Modal */}
       <AddTaskModal 

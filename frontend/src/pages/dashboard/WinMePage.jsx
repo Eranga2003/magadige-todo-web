@@ -369,7 +369,7 @@ export const WinMePage = () => {
       `}} />
 
       {/* Header Toolbar */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 bg-white/70 backdrop-blur-md px-6 py-4 z-20">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/80 bg-white/70 backdrop-blur-md px-6 py-4 z-20">
         <div>
           <h1 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
             🏆 Win Me <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase tracking-wider">Goal Mapper</span>
@@ -643,7 +643,7 @@ export const WinMePage = () => {
       </div>
 
       {/* Floating Legend / Quick Info Box */}
-      <div className="absolute bottom-6 left-6 z-20 bg-white/90 backdrop-blur-md border border-slate-100 rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.05)] p-4 max-w-xs animate-slide-up pointer-events-auto">
+      <div className="absolute bottom-20 sm:bottom-6 left-6 z-20 bg-white/90 backdrop-blur-md border border-slate-100 rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.05)] p-4 max-w-xs animate-slide-up pointer-events-auto">
         <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
           <AlertCircle size={12} className="text-blue-500" /> Canvas Instructions
         </h4>

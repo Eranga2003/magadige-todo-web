@@ -369,16 +369,16 @@ export const WeatherAssistantPage = ({ tasks }) => {
     .filter(t => t.isAffected);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 space-y-7 select-none font-sans relative">
+    <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 space-y-7 select-none font-sans relative">
       
       {/* Decorative top ambient blurs */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-400/5 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute top-48 left-10 w-80 h-80 bg-purple-400/5 rounded-full blur-[90px] pointer-events-none"></div>
 
       {/* HEADER WITH GLASS SEARCH BAR */}
-      <div className="relative flex flex-wrap items-center justify-between gap-5 border-b border-slate-100 pb-5 z-10">
+      <div className="relative flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4 sm:gap-5 border-b border-slate-100 pb-5 z-10">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2.5 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2.5 tracking-tight">
             <span className="p-2 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
               <CloudSun size={24} />
             </span>
@@ -389,13 +389,13 @@ export const WeatherAssistantPage = ({ tasks }) => {
           </p>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+        <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full sm:w-auto">
           <input
             type="text"
             placeholder="Search city (e.g. Colombo, London)..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            className="w-64 pl-4 pr-10 py-2.5 text-xs border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white/80 backdrop-blur-md placeholder:text-gray-400 font-bold outline-none shadow-sm transition-all"
+            className="w-full sm:w-64 pl-4 pr-10 py-2.5 text-xs border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white/80 backdrop-blur-md placeholder:text-gray-400 font-bold outline-none shadow-sm transition-all"
           />
           <button
             type="submit"
@@ -540,7 +540,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
             </div>
 
             {affectedTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {affectedTasks.map(task => (
                   <div 
                     key={task.id}
