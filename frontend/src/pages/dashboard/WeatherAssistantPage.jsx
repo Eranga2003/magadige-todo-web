@@ -26,25 +26,30 @@ import { analyzeTaskWeather } from '../../utils/weatherService';
 
 /* ─── Modern Weather Animation Components ─────────────── */
 
-// Physics-based rain streaks with shimmer
+// Calm serene rain — gentle drizzle with mist layers, ambient breathing glow and soft ripples
 const RainAnimation = ({ intensity = 'medium' }) => {
-  const dropCount = intensity === 'heavy' ? 32 : intensity === 'light' ? 14 : 22;
+  const dropCount = intensity === 'heavy' ? 20 : intensity === 'light' ? 8 : 14;
   const drops = Array.from({ length: dropCount }, (_, i) => ({
     id: i,
-    x: Math.random() * 100,
-    delay: Math.random() * 1.8,
-    dur: 0.55 + Math.random() * 0.45,
-    len: 8 + Math.random() * 14,
-    opacity: 0.35 + Math.random() * 0.55,
-    width: 0.8 + Math.random() * 0.8,
+    x: 4 + Math.random() * 92,
+    delay: Math.random() * 3.5,
+    dur: 2.2 + Math.random() * 1.8,
+    len: 6 + Math.random() * 8,
+    opacity: 0.18 + Math.random() * 0.22,
+    width: 0.45 + Math.random() * 0.25,
   }));
-  const ripples = Array.from({ length: 5 }, (_, i) => ({
+  const ripples = Array.from({ length: 4 }, (_, i) => ({
     id: i,
-    cx: 10 + Math.random() * 80,
-    cy: 88 + Math.random() * 8,
-    delay: Math.random() * 2,
-    dur: 1.2 + Math.random() * 0.8,
+    cx: 12 + Math.random() * 76,
+    cy: 90 + Math.random() * 6,
+    delay: Math.random() * 2.5,
+    dur: 2.2 + Math.random() * 0.8,
   }));
+  const mistLayers = [
+    { cx: 25, cy: 50, rx: 40, ry: 18, opacity: 0.04, dur: 12, dx: 8 },
+    { cx: 70, cy: 65, rx: 35, ry: 14, opacity: 0.05, dur: 15, dx: -6 },
+    { cx: 50, cy: 80, rx: 45, ry: 12, opacity: 0.03, dur: 18, dx: 10 },
+  ];
   return (
     <svg
       className="absolute inset-0 w-full h-full pointer-events-none"
@@ -54,38 +59,79 @@ const RainAnimation = ({ intensity = 'medium' }) => {
     >
       <defs>
         <linearGradient id="rain-drop-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#bfdbfe" stopOpacity="0" />
-          <stop offset="60%" stopColor="#93c5fd" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.4" />
+          <stop offset="0%" stopColor="#dbeafe" stopOpacity="0" />
+          <stop offset="50%" stopColor="#bfdbfe" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#93c5fd" stopOpacity="0.25" />
         </linearGradient>
-        <filter id="rain-glow">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" result="blur" />
+        <radialGradient id="rain-ambient-glow" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0" />
+        </radialGradient>
+        <filter id="rain-soft">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.2" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
+        <filter id="mist-blur">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
+        </filter>
       </defs>
-      {/* Layered cloud drift */}
-      <ellipse cx="20" cy="12" rx="22" ry="8" fill="rgba(255,255,255,0.08)">
-        <animate attributeName="cx" values="18;24;18" dur="6s" repeatCount="indefinite" />
+
+      {/* Calm ambient background breathing pulse */}
+      <rect x="0" y="0" width="100" height="100" fill="url(#rain-ambient-glow)">
+        <animate attributeName="opacity" values="0.2;0.5;0.2" dur="6s" repeatCount="indefinite" />
+      </rect>
+
+      {/* Slow-drifting cloud layers */}
+      <ellipse cx="22" cy="10" rx="24" ry="8" fill="rgba(255,255,255,0.06)">
+        <animate attributeName="cx" values="18;26;18" dur="12s" repeatCount="indefinite" />
       </ellipse>
-      <ellipse cx="70" cy="8" rx="28" ry="6" fill="rgba(255,255,255,0.06)">
-        <animate attributeName="cx" values="68;76;68" dur="8s" repeatCount="indefinite" />
+      <ellipse cx="72" cy="7" rx="30" ry="7" fill="rgba(255,255,255,0.04)">
+        <animate attributeName="cx" values="68;78;68" dur="14s" repeatCount="indefinite" />
       </ellipse>
-      {/* Rain streaks */}
+
+      {/* Misty atmosphere layers */}
+      {mistLayers.map((m, i) => (
+        <ellipse
+          key={`mist-${i}`}
+          cx={m.cx}
+          cy={m.cy}
+          rx={m.rx}
+          ry={m.ry}
+          fill="rgba(255,255,255,1)"
+          opacity={m.opacity}
+          filter="url(#mist-blur)"
+        >
+          <animate
+            attributeName="cx"
+            values={`${m.cx};${m.cx + m.dx};${m.cx}`}
+            dur={`${m.dur}s`}
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values={`${m.opacity};${m.opacity + 0.02};${m.opacity}`}
+            dur={`${m.dur * 0.7}s`}
+            repeatCount="indefinite"
+          />
+        </ellipse>
+      ))}
+
+      {/* Gentle rain streaks */}
       {drops.map(d => (
         <line
           key={d.id}
           x1={d.x} y1={0}
-          x2={d.x - 2} y2={d.len}
+          x2={d.x - 1} y2={d.len}
           stroke="url(#rain-drop-grad)"
           strokeWidth={d.width}
           strokeLinecap="round"
-          filter="url(#rain-glow)"
+          filter="url(#rain-soft)"
           opacity={d.opacity}
         >
           <animateTransform
             attributeName="transform"
             type="translate"
-            values={`0,−${d.len};3,110`}
+            values={`0,-${d.len};1.5,110`}
             dur={`${d.dur}s`}
             begin={`${d.delay}s`}
             repeatCount="indefinite"
@@ -93,14 +139,15 @@ const RainAnimation = ({ intensity = 'medium' }) => {
           />
         </line>
       ))}
-      {/* Puddle ripples at bottom */}
+
+      {/* Soft puddle ripples */}
       {ripples.map(r => (
         <ellipse key={r.id} cx={r.cx} cy={r.cy} rx="0" ry="0"
-          fill="none" stroke="rgba(147,197,253,0.5)" strokeWidth="0.4"
+          fill="none" stroke="rgba(191,219,254,0.3)" strokeWidth="0.25"
         >
-          <animate attributeName="rx" values="0;6;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
-          <animate attributeName="ry" values="0;1.5;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.8;0;0.8" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="rx" values="0;5;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="ry" values="0;1.2;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0;0.4" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
         </ellipse>
       ))}
     </svg>

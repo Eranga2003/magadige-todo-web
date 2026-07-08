@@ -20,7 +20,9 @@ import {
   X,
   CloudSun,
   Bot,
-  Trophy
+  Trophy,
+  BookOpen,
+  ChevronRight
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
@@ -52,6 +54,7 @@ export const DashboardPage = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
@@ -573,21 +576,163 @@ export const DashboardPage = () => {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-gray-200 space-y-2 text-gray-500">
+        <div className="p-3 border-t border-gray-200 space-y-1 text-gray-500">
           <button 
+            onClick={() => setIsHelpOpen(true)}
             onMouseEnter={playBubbleSound}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
           >
-            <Users size={16} /> Add a team
-          </button>
-          <button 
-            onMouseEnter={playBubbleSound}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
-          >
-            <HelpCircle size={16} /> Help & resources
+            <BookOpen size={16} /> Help & Guide
           </button>
         </div>
       </aside>
+
+      {/* ── HELP & GUIDE FULL-SCREEN OVERLAY ── */}
+      {isHelpOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-3xl max-h-[88vh] overflow-hidden flex flex-col animate-scale-up">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+                  <BookOpen size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">Help & Guide</h2>
+                  <p className="text-[10px] text-slate-400 font-bold">Learn what you can do on every page</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer focus:outline-none"
+              >
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Guide Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+              {/* 1 ─ Today */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-blue-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><Calendar size={16} className="text-blue-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">1. Today</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> View all tasks due today in a clean, focused list</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Mark tasks as complete with a single click</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Add new tasks directly with the "+" button</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Set priority levels (P1–P4) and due times</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Add comments and notes to any task</li>
+                </ul>
+              </div>
+
+              {/* 2 ─ Upcoming */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-blue-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center"><Calendar size={16} className="text-indigo-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">2. Upcoming</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> See all scheduled tasks for the next 7 days</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> Tasks are grouped by day for easy planning</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> Drag tasks between days to reschedule</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> Plan ahead and balance your workload</li>
+                </ul>
+              </div>
+
+              {/* 3 ─ Productivity */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-emerald-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><BarChart3 size={16} className="text-emerald-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">3. Productivity Dashboard</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> Track today's completed tasks vs total</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> View weekly progress with bar charts</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> See achievement rings for completion rates</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> Priority breakdown shows P1–P4 task status</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> Monitor workspace progress and team member avatars</li>
+                </ul>
+              </div>
+
+              {/* 4 ─ Workspace */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-violet-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center"><Users size={16} className="text-violet-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">4. Workspace</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Create new workspaces for team projects</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Invite members via email to collaborate</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Assign tasks to team members</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Track task progress per workspace</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Create projects inside workspaces to organize work</li>
+                </ul>
+              </div>
+
+              {/* 5 ─ Weather Assistant */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-sky-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center"><CloudSun size={16} className="text-sky-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">5. Weather Assistant</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> See live weather forecast for any city</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> View hourly temperature and wind projections</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> AI scans your tasks for weather conflicts</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> Get smart suggestions to reschedule outdoor tasks</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> 7-day forecast cards with animated weather icons</li>
+                </ul>
+              </div>
+
+              {/* 6 ─ AI Assistant */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-blue-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><Bot size={16} className="text-blue-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">6. AI Assistant</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Automatically draft professional meeting reschedule emails</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Fill in attendee details, reason, and new time</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> AI generates a polished email body for you</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Send emails directly from the app</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Use AI to break down complex tasks into subtasks</li>
+                </ul>
+              </div>
+
+              {/* 7 ─ Win Me */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-amber-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center"><Trophy size={16} className="text-amber-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">7. Win Me — Goal Mapper</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Create a visual roadmap of your goals and milestones</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Click "+" ports on any node to branch out in 4 directions</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Set nodes as normal milestones or golden goal targets</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Double-click any node to edit its title, description, and files</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Zoom, pan, and recenter the canvas with toolbar controls</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Your flowchart auto-saves to the database</li>
+                </ul>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-gray-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-[10px] text-slate-400 font-bold">Magadige ToDo — Your Productivity Companion 🚀</p>
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none shadow-sm active:scale-95"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. MAIN CONTAINER AREA */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
