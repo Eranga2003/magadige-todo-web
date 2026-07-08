@@ -839,28 +839,103 @@ export const WorkspaceDashboard = ({ workspaceId, onBackToWorkspaces }) => {
               </div>
             </div>
 
-            {/* Space Members Card */}
+            {/* Space Members Card — with inline Add Member */}
             <div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">
-                👥 Space Members ({workspace.members.length})
-              </h3>
-              <div className="bg-[#f0f9ff]/80 border border-blue-200/50 shadow-[0_25px_50px_-12px_rgba(37,99,235,0.65),0_0_25px_rgba(37,99,235,0.3)] rounded-3xl p-5 space-y-3 max-h-[220px] overflow-y-auto pr-1">
-                {workspace.members.map((memb, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2.5 bg-white/80 border border-blue-50/50 shadow-xxs rounded-xl select-none">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <MemberAvatar member={memb} size="sm" className="ring-1" />
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-gray-800 truncate">
-                          {memb.name || memb.email}
-                        </p>
-                        {memb.name && (
-                          <p className="text-[8px] text-gray-400 truncate">{memb.email}</p>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  👥 Space Members ({workspace.members.length})
+                </h3>
+                {isOwner && (
+                  <span className="text-[9px] font-bold text-blue-500 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
+                    Owner
+                  </span>
+                )}
+              </div>
+
+              <div className="bg-[#f0f9ff]/80 border border-blue-200/50 shadow-[0_25px_50px_-12px_rgba(37,99,235,0.65),0_0_25px_rgba(37,99,235,0.3)] rounded-3xl p-5 space-y-3">
+
+                {/* Members List */}
+                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-0.5 custom-scrollbar">
+                  {workspace.members.length === 0 ? (
+                    <p className="text-[10px] text-gray-400 italic text-center py-3">No members yet. Invite someone below.</p>
+                  ) : (
+                    workspace.members.map((memb, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-white/80 border border-blue-50/50 shadow-xxs rounded-xl group">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <MemberAvatar member={memb} size="sm" className="ring-1" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-gray-800 truncate">
+                              {memb.name || memb.email}
+                            </p>
+                            {memb.name && (
+                              <p className="text-[8px] text-gray-400 truncate">{memb.email}</p>
+                            )}
+                            <span className="text-[7.5px] font-extrabold text-blue-400 uppercase tracking-wider">{memb.role}</span>
+                          </div>
+                        </div>
+                        {/* Remove button — only owner sees it, can't remove self */}
+                        {isOwner && memb.email !== user.email && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(memb.email)}
+                            title={`Remove ${memb.email}`}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-all cursor-pointer focus:outline-none"
+                          >
+                            <UserMinus size={11} />
+                          </button>
                         )}
-                        <span className="text-[7.5px] font-extrabold text-gray-455 uppercase">{memb.role}</span>
                       </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-blue-100/60 pt-3">
+
+                  {/* Success / Error feedback */}
+                  {inviteSuccess && (
+                    <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 text-[10px] font-semibold mb-2">
+                      <Check size={11} className="flex-shrink-0" />
+                      {inviteSuccess}
                     </div>
-                  </div>
-                ))}
+                  )}
+                  {inviteError && (
+                    <div className="flex items-center gap-1.5 text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-[10px] font-semibold mb-2">
+                      <X size={11} className="flex-shrink-0" />
+                      {inviteError}
+                    </div>
+                  )}
+
+                  {/* Add Member inline form */}
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <Mail size={9} /> Invite by email
+                  </p>
+                  <form onSubmit={handleInviteSubmit} className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      placeholder="colleague@email.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      disabled={isInviting}
+                      className="flex-1 text-[11px] font-semibold text-gray-800 border border-blue-150 rounded-xl px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 placeholder:text-gray-400 transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!inviteEmail.trim() || isInviting}
+                      title="Send invitation"
+                      className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer focus:outline-none flex-shrink-0"
+                    >
+                      {isInviting ? (
+                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Plus size={14} />
+                      )}
+                    </button>
+                  </form>
+                  <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">
+                    An email invitation will be sent to the address. They'll join as a Member.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
