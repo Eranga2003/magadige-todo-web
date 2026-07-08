@@ -1,128 +1,522 @@
-import React from 'react';
-import { BarChart3, TrendingUp, Heart, CheckCircle2, ShieldAlert, AlertCircle } from 'lucide-react';
-import { getColor } from '../../utils/color';
+import React, { useMemo, useState, useEffect } from 'react';
+import {
+  BarChart3, CheckCircle2, TrendingUp, Target, Users,
+  Calendar, Zap, Award, Clock, ArrowUp, ArrowDown, Minus,
+  Layers, Star, Activity
+} from 'lucide-react';
+import { workspaceService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { themeColors } from '../../utils/color';
 
-export const ReportingPage = ({ tasks = [] }) => {
-  const completedCount = tasks.filter((t) => t.completed).length;
-  const totalCount = tasks.length;
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+// Shorthand alias for all productivity design tokens from color.jsx
+const PC = themeColors.productivity;
 
-  // Mock analytics data
-  const charts = [
-    { day: 'Mon', count: 4, height: 'h-16' },
-    { day: 'Tue', count: 6, height: 'h-24' },
-    { day: 'Wed', count: 3, height: 'h-12' },
-    { day: 'Thu', count: 8, height: 'h-32' },
-    { day: 'Fri', count: 5, height: 'h-20' },
-    { day: 'Sat', count: 2, height: 'h-8' },
-    { day: 'Sun', count: 1, height: 'h-4' },
+
+/* ─── helpers ─────────────────────────────────────────── */
+const todayStr = () => new Date().toISOString().split('T')[0];
+const dayName = (offset = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+};
+const dateStr = (offset = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return d.toISOString().split('T')[0];
+};
+const initials = (name = '') =>
+  name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '??';
+const avatarBg = (name = '') => {
+  const colors = [
+    'from-blue-500 to-indigo-600',
+    'from-violet-500 to-purple-600',
+    'from-rose-500 to-pink-600',
+    'from-amber-500 to-orange-500',
+    'from-emerald-500 to-teal-600',
+    'from-cyan-500 to-blue-600',
   ];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % colors.length;
+  return colors[h];
+};
+
+/* ─── mini chart bar ──────────────────────────────────── */
+const Bar = ({ value, max, label, sublabel, color = 'from-blue-500 to-indigo-600', today = false }) => {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="flex flex-col items-center gap-1.5 flex-1 group cursor-default">
+      <span className="text-[10px] font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
+        {value}
+      </span>
+      <div className="w-full flex flex-col justify-end" style={{ height: 96 }}>
+        <div
+          className={`w-full rounded-t-lg bg-gradient-to-t ${color} transition-all duration-700 ease-out relative`}
+          style={{ height: `${Math.max(pct, 4)}%` }}
+        >
+          {today && (
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white ring-2 ring-blue-500" />
+          )}
+        </div>
+      </div>
+      <span className={`text-[10px] font-bold ${today ? 'text-blue-600' : 'text-slate-500'}`}>{label}</span>
+      {sublabel && <span className="text-[8px] text-slate-400 font-semibold">{sublabel}</span>}
+    </div>
+  );
+};
+
+/* ─── donut ring ──────────────────────────────────────── */
+const DonutRing = ({ pct, size = 80, stroke = 10, color = '#3b82f6', bg = '#e0e7ff', children }) => {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={bg} strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={color} strokeWidth={stroke}
+          strokeDasharray={`${dash} ${circ - dash}`}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dasharray 1s ease' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+/* ─── stat card ───────────────────────────────────────── */
+const StatCard = ({ icon: Icon, label, value, sub, iconColor, bgFrom, bgTo, trend }) => (
+  <div className={`relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br ${bgFrom} ${bgTo} shadow-lg`}>
+    <div className="flex items-start justify-between mb-3">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-white/20 ${iconColor}`}>
+        <Icon size={20} />
+      </div>
+      {trend !== undefined && (
+        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
+          trend > 0 ? 'bg-green-400/30 text-green-100' : trend < 0 ? 'bg-red-400/30 text-red-100' : 'bg-white/20 text-white/70'
+        }`}>
+          {trend > 0 ? <ArrowUp size={8} /> : trend < 0 ? <ArrowDown size={8} /> : <Minus size={8} />}
+          {Math.abs(trend)}%
+        </span>
+      )}
+    </div>
+    <p className="text-white/70 text-[10px] font-black uppercase tracking-widest">{label}</p>
+    <p className="text-white text-3xl font-black mt-0.5 leading-none">{value}</p>
+    {sub && <p className="text-white/60 text-[10px] font-semibold mt-1">{sub}</p>}
+    {/* decorative bubble */}
+    <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/10" />
+  </div>
+);
+
+/* ════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════ */
+export const ReportingPage = ({ tasks = [], workspaces: propWorkspaces }) => {
+  const { user } = useAuth();
+  const [workspaces, setWorkspaces] = useState(propWorkspaces || []);
+  const [wsLoading, setWsLoading] = useState(!propWorkspaces);
+
+  useEffect(() => {
+    if (propWorkspaces) {
+      setWorkspaces(propWorkspaces);
+      setWsLoading(false);
+      return;
+    }
+    workspaceService.getWorkspaces()
+      .then(r => { if (r?.data) setWorkspaces(r.data); })
+      .catch(() => {})
+      .finally(() => setWsLoading(false));
+  }, [propWorkspaces]);
+
+  /* ── computed stats ── */
+  const today = todayStr();
+  const totalTasks     = tasks.length;
+  const completedTasks = tasks.filter(t => t.completed).length;
+  const todayTasks     = tasks.filter(t => t.dueDate === today || t.scheduledDate === today).length;
+  const todayDone      = tasks.filter(t => (t.dueDate === today || t.scheduledDate === today) && t.completed).length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const todayRate      = todayTasks > 0 ? Math.round((todayDone / todayTasks) * 100) : 0;
+
+  const highPriDone = tasks.filter(t => t.completed && (t.priority === 'P1' || t.priority === 'P2')).length;
+
+  /* ── weekly data (last 7 days) ── */
+  const weeklyData = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const ds = dateStr(6 - i);
+      const dayTasks = tasks.filter(t => t.dueDate === ds || t.scheduledDate === ds);
+      const done     = dayTasks.filter(t => t.completed).length;
+      return {
+        label: dayName(6 - i),
+        sublabel: ds.slice(5),
+        total: dayTasks.length,
+        done,
+        isToday: ds === today,
+      };
+    });
+  }, [tasks]);
+
+  const weekMax = Math.max(...weeklyData.map(d => d.total), 1);
+
+  /* ── per-priority breakdown ── */
+  const priorities = ['P1', 'P2', 'P3', 'P4'];
+  // Priority colors sourced from themeColors.productivity.priorities in color.jsx
+  const priorityColors = PC.priorities;
+  const priorityStats = priorities.map(p => {
+    const all  = tasks.filter(t => t.priority === p);
+    const done = all.filter(t => t.completed);
+    return { p, total: all.length, done: done.length, rate: all.length > 0 ? Math.round((done.length / all.length) * 100) : 0 };
+  });
+
+  /* ── workspace stats ── */
+  const wsStats = workspaces.map(ws => {
+    const wsTasks = tasks.filter(t => t.workspaceId === ws.id);
+    const wsDone  = wsTasks.filter(t => t.completed).length;
+    return { ...ws, total: wsTasks.length, done: wsDone, rate: wsTasks.length > 0 ? Math.round((wsDone / wsTasks.length) * 100) : 0 };
+  });
+
+  /* ── streak ── */
+  const streak = useMemo(() => {
+    let count = 0;
+    for (let i = 0; i < 30; i++) {
+      const ds = dateStr(i);
+      const dayDone = tasks.filter(t => t.completed && (t.dueDate === ds || t.scheduledDate === ds)).length;
+      if (dayDone > 0) count++;
+      else break;
+    }
+    return count;
+  }, [tasks]);
+
+  const greetHour = new Date().getHours();
+  const greet = greetHour < 12 ? '☀️ Good morning' : greetHour < 17 ? '⚡ Good afternoon' : '🌙 Good evening';
 
   return (
-    <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-100">
-        <h1 className="text-2xl font-extrabold text-black flex items-center gap-2">
-          AI Analytics & Reporting
-        </h1>
-        <span className={`text-xs font-bold ${getColor('primary.bgLight')} ${getColor('primary.accentText')} px-2.5 py-0.5 rounded-full border ${getColor('primary.borderLight')}`}>
-          Active
-        </span>
-      </div>
+    <div
+      className="w-full min-h-full overflow-y-auto"
+      style={{
+        background: 'radial-gradient(1200px 600px at 10% -10%, #eef2ff, transparent), radial-gradient(900px 600px at 100% 0%, #f0f9ff, transparent), #f8fafc',
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-7">
 
-      {/* Grid of Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {/* Card 1: Completion Ratio */}
-        <div className="bg-white p-5 border border-gray-100 rounded-2xl shadow-xxs space-y-2">
-          <div className="flex items-center justify-between text-blue-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Task Completion</span>
-            <CheckCircle2 size={20} />
+        {/* ── HEADER ── */}
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-400 mb-0.5">{greet}, {user?.name?.split(' ')[0] || 'there'}!</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2.5">
+              <BarChart3 size={28} className="text-blue-600 drop-shadow-[0_4px_8px_rgba(37,99,235,0.3)]" />
+              Productivity Dashboard
+            </h1>
+            <p className="text-xs text-slate-500 font-semibold mt-1">Track your performance, workspace progress, and weekly trends</p>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-gray-900">{completionRate}%</span>
-            <span className="text-xs text-gray-500 font-semibold">{completedCount}/{totalCount} tasks</span>
+          <div className="hidden sm:flex items-center gap-2 bg-white border border-slate-100 rounded-2xl px-4 py-2.5 shadow-sm">
+            <Star size={14} className="text-amber-500 fill-amber-500" />
+            <span className="text-xs font-black text-slate-700">{streak}-day streak</span>
           </div>
         </div>
 
-        {/* Card 2: Productivity Index */}
-        <div className="bg-white p-5 border border-gray-100 rounded-2xl shadow-xxs space-y-2">
-          <div className="flex items-center justify-between text-indigo-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Focus Index</span>
-            <TrendingUp size={20} />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-gray-900">8.4</span>
-            <span className="text-xs text-green-600 font-extrabold bg-green-50 px-1.5 py-0.5 rounded">
-              +12% vs last week
-            </span>
-          </div>
+        {/* ── STAT CARDS ROW ── */}
+        {/* Stat card colors sourced from themeColors.productivity in color.jsx */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            icon={Calendar} label="Today's Tasks" value={todayTasks}
+            sub={`${todayDone} completed today`}
+            bgFrom={PC.todayTasks.from} bgTo={PC.todayTasks.to}
+            iconColor="text-white" trend={undefined}
+          />
+          <StatCard
+            icon={CheckCircle2} label="Total Completed" value={completedTasks}
+            sub={`out of ${totalTasks} total`}
+            bgFrom={PC.totalCompleted.from} bgTo={PC.totalCompleted.to}
+            iconColor="text-white" trend={completionRate}
+          />
+          <StatCard
+            icon={Zap} label="High Priority Done" value={highPriDone}
+            sub="P1 + P2 completed"
+            bgFrom={PC.highPriority.from} bgTo={PC.highPriority.to}
+            iconColor="text-white" trend={undefined}
+          />
+          <StatCard
+            icon={Activity} label="Completion Rate" value={`${completionRate}%`}
+            sub="all-time average"
+            bgFrom={PC.completionRate.from} bgTo={PC.completionRate.to}
+            iconColor="text-white" trend={undefined}
+          />
         </div>
 
-        {/* Card 3: Wellbeing Score */}
-        <div className="bg-white p-5 border border-gray-100 rounded-2xl shadow-xxs space-y-2">
-          <div className="flex items-center justify-between text-rose-500">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Wellbeing Health</span>
-            <Heart size={20} className="fill-current" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-gray-900">95%</span>
-            <span className="text-xs text-gray-500 font-semibold">Break targets met</span>
-          </div>
-        </div>
-      </div>
+        {/* ── MAIN 2-COLUMN GRID ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-      {/* Main Performance and AI Feedback Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        {/* Performance Chart Column */}
-        <div className="bg-white p-6 border border-gray-100 rounded-2xl shadow-xxs md:col-span-3 space-y-6">
-          <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-            <BarChart3 size={18} className="text-blue-500" />
-            Weekly Completion Trends
-          </h3>
-
-          {/* Bar Chart Container */}
-          <div className="flex items-end justify-between gap-2 h-48 pt-4 border-b border-gray-100 px-2">
-            {charts.map((c) => (
-              <div key={c.day} className="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
-                <div className="text-xxs font-bold text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1">
-                  {c.count}
+          {/* ── WEEKLY PROGRESS CHART ── */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <TrendingUp size={16} className="text-blue-500" /> Weekly Progress
+                </h2>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Tasks assigned vs completed — last 7 days</p>
+              </div>
+              {/* Chart legend colors from PC.chart in color.jsx */}
+              <div className="flex items-center gap-3 text-[10px] font-bold">
+                <span className="flex items-center gap-1"><span className={`w-2 h-2 rounded-full bg-gradient-to-r ${PC.chart.assignedBar} inline-block`} /> Assigned</span>
+                <span className="flex items-center gap-1"><span className={`w-2 h-2 rounded-full bg-gradient-to-r ${PC.chart.completedBar} inline-block`} /> Completed</span>
+              </div>
+            </div>
+            {/* bars */}
+            <div className="flex items-end gap-3">
+              {weeklyData.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col gap-1 group cursor-default">
+                  <div className="flex flex-col justify-end" style={{ height: 96 }}>
+                    {/* Total bar — colors from PC.chart in color.jsx */}
+                    <div className={`relative w-full rounded-t-lg overflow-hidden ${PC.chart.assignedBg}`} style={{ height: `${weekMax > 0 ? Math.max((d.total / weekMax) * 100, 4) : 4}%` }}>
+                      {/* Done fill inside */}
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 rounded-t-lg bg-gradient-to-t ${PC.chart.assignedBar} transition-all duration-700`}
+                        style={{ height: `${d.total > 0 ? Math.round((d.done / d.total) * 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-[10px] font-black ${d.isToday ? PC.chart.todayText : 'text-slate-500'}`}>{d.label}</p>
+                    <p className="text-[8px] text-slate-400 font-semibold">{d.sublabel}</p>
+                  </div>
+                  {/* tooltip */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                    <span className="text-[8px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full">{d.done}/{d.total}</span>
+                  </div>
                 </div>
-                <div className={`w-full ${c.height} ${getColor('primary.gradient')} rounded-t-md hover:opacity-90 transition-all duration-300 shadow-sm`} />
-                <span className="text-xxs font-bold text-gray-500 mt-2">{c.day}</span>
+              ))}
+            </div>
+
+            {/* summary row */}
+            <div className="flex items-center gap-4 mt-5 pt-4 border-t border-slate-100">
+              {weeklyData.reduce((s, d) => ({ total: s.total + d.total, done: s.done + d.done }), { total: 0, done: 0 }) && (() => {
+                const wTotal = weeklyData.reduce((s, d) => s + d.total, 0);
+                const wDone  = weeklyData.reduce((s, d) => s + d.done, 0);
+                const wRate  = wTotal > 0 ? Math.round((wDone / wTotal) * 100) : 0;
+                return (
+                  <>
+                    <div className="text-center">
+                      <p className="text-xl font-black text-slate-900">{wDone}</p>
+                      <p className="text-[9px] text-slate-400 font-semibold">This week done</p>
+                    </div>
+                    <div className="w-px h-8 bg-slate-100" />
+                    <div className="text-center">
+                      <p className="text-xl font-black text-slate-900">{wTotal}</p>
+                      <p className="text-[9px] text-slate-400 font-semibold">Total assigned</p>
+                    </div>
+                    <div className="w-px h-8 bg-slate-100" />
+                    <div className="text-center">
+                      <p className="text-xl font-black text-emerald-600">{wRate}%</p>
+                      <p className="text-[9px] text-slate-400 font-semibold">Weekly rate</p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* ── TODAY'S ACHIEVEMENT RING ── */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col justify-between">
+            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
+              <Target size={16} className="text-indigo-500" /> Today's Achievement
+            </h2>
+            <div className="flex flex-col items-center gap-4 flex-1 justify-center">
+              {/* Donut ring colors from PC.rings in color.jsx */}
+              <DonutRing pct={todayRate} size={120} stroke={14} color={PC.rings.todayDone} bg={PC.rings.todayBg}>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-slate-900">{todayRate}%</p>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wide">Done</p>
+                </div>
+              </DonutRing>
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="text-center bg-indigo-50 rounded-xl py-2.5">
+                  <p className="text-lg font-black text-indigo-700">{todayDone}</p>
+                  <p className="text-[9px] font-bold text-indigo-400 uppercase">Completed</p>
+                </div>
+                <div className="text-center bg-slate-50 rounded-xl py-2.5">
+                  <p className="text-lg font-black text-slate-700">{todayTasks - todayDone}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">Remaining</p>
+                </div>
+              </div>
+            </div>
+            {/* Overall all-time ring */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">All-Time Rate</p>
+              <div className="flex items-center gap-3">
+                <DonutRing pct={completionRate} size={56} stroke={8} color={PC.rings.allTimeDone} bg={PC.rings.allTimeBg}>
+                  <p className="text-xs font-black text-emerald-700">{completionRate}%</p>
+                </DonutRing>
+                <div>
+                  <p className="text-sm font-black text-slate-900">{completedTasks} / {totalTasks}</p>
+                  <p className="text-[9px] text-slate-400 font-semibold">tasks completed total</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── PRIORITY BREAKDOWN ── */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-5">
+            <Layers size={16} className="text-violet-500" /> My Tasks — Priority Achievement
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {priorityStats.map(({ p, total, done, rate }) => {
+              const c = priorityColors[p];
+              return (
+                <div key={p} className={`rounded-2xl border ${c.border} ${c.bg} p-4 flex flex-col gap-3`}>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${c.text}`}>{c.label}</span>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full bg-white ${c.text}`}>{p}</span>
+                  </div>
+                  {/* Priority ring color from PC.priorities in color.jsx */}
+                  <DonutRing pct={rate} size={64} stroke={8} color={c.hex} bg="#f1f5f9">
+                    <p className="text-xs font-black text-slate-800">{rate}%</p>
+                  </DonutRing>
+                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
+                    <span>{done} done</span>
+                    <span className="text-slate-400">{total} total</span>
+                  </div>
+                  {/* mini progress bar */}
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div className={`h-full rounded-full bg-gradient-to-r ${c.bar} transition-all duration-700`} style={{ width: `${rate}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── WORKSPACE CARDS ── */}
+        <div>
+          <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
+            <Users size={16} className="text-blue-500" /> Workspace Progress
+          </h2>
+          {wsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 animate-pulse h-36" />
+              ))}
+            </div>
+          ) : wsStats.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
+              <Users size={32} className="text-slate-300 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-400">No workspaces yet</p>
+              <p className="text-[10px] text-slate-300 mt-1">Create or join a workspace to see team progress here</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {wsStats.map(ws => (
+                <div key={ws.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md hover:border-blue-200/80 transition-all duration-200 group">
+                  {/* header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-black flex-shrink-0">
+                        {ws.name?.[0]?.toUpperCase() || 'W'}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-black text-slate-900 truncate">{ws.name}</h3>
+                        <p className="text-[9px] text-slate-400 font-semibold capitalize">{ws.ownerId === user?.id ? '👑 Owner' : '👤 Member'}</p>
+                      </div>
+                    </div>
+                    {/* Rate badge colors from PC.workspace in color.jsx */}
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${
+                      ws.rate >= 75 ? PC.workspace.high.badge :
+                      ws.rate >= 40 ? PC.workspace.medium.badge :
+                      PC.workspace.low.badge
+                    }`}>
+                      {ws.rate}%
+                    </span>
+                  </div>
+
+                  {/* stats row */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="text-center">
+                      <p className="text-lg font-black text-slate-900">{ws.total}</p>
+                      <p className="text-[8px] text-slate-400 font-semibold uppercase">Tasks</p>
+                    </div>
+                    <div className="w-px h-8 bg-slate-100" />
+                    <div className="text-center">
+                      <p className="text-lg font-black text-emerald-600">{ws.done}</p>
+                      <p className="text-[8px] text-slate-400 font-semibold uppercase">Done</p>
+                    </div>
+                    <div className="w-px h-8 bg-slate-100" />
+                    {/* member avatars */}
+                    <div className="flex items-center flex-1 justify-end">
+                      {(ws.members || []).slice(0, 4).map((m, mi) => (
+                        <div
+                          key={m.userId || mi}
+                          className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarBg(m.name || m.email || '')} flex items-center justify-center text-white text-[9px] font-black border-2 border-white shadow-sm`}
+                          style={{ marginLeft: mi > 0 ? -8 : 0, zIndex: 4 - mi }}
+                          title={m.name || m.email || 'Member'}
+                        >
+                          {initials(m.name || m.email || '?')}
+                        </div>
+                      ))}
+                      {(ws.members || []).length > 4 && (
+                        <div
+                          className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-[8px] font-black border-2 border-white shadow-sm"
+                          style={{ marginLeft: -8 }}
+                        >
+                          +{(ws.members || []).length - 4}
+                        </div>
+                      )}
+                      {(!ws.members || ws.members.length === 0) && (
+                        <div className="text-[9px] text-slate-400 font-semibold">No members</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* progress bar */}
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    {/* Progress bar colors from PC.workspace in color.jsx */}
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${
+                        ws.rate >= 75 ? PC.workspace.high.bar :
+                        ws.rate >= 40 ? PC.workspace.medium.bar :
+                        PC.workspace.low.bar
+                      }`}
+                      style={{ width: `${ws.rate}%` }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-slate-400 font-semibold mt-1">{ws.done} of {ws.total} tasks completed</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── ACHIEVEMENT BADGES ── */}
+        {/* Achievement card colors from PC.achievement in color.jsx */}
+        <div className={`bg-gradient-to-br ${PC.achievement.cardBg} rounded-2xl p-6 text-white shadow-xl`}>
+          <h2 className="text-sm font-black flex items-center gap-2 mb-5">
+            <Award size={16} className={PC.achievement.accentText} /> Achievement Summary
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: '🔥', label: 'Day Streak', value: streak, sub: 'days in a row' },
+              { icon: '✅', label: 'Total Done', value: completedTasks, sub: 'tasks completed' },
+              { icon: '⚡', label: 'High Priority', value: highPriDone, sub: 'P1+P2 cleared' },
+              { icon: '📅', label: 'Today Done', value: todayDone, sub: `of ${todayTasks} today` },
+            ].map(({ icon, label, value, sub }) => (
+              <div key={label} className="bg-white/10 rounded-xl p-4 text-center backdrop-blur-sm border border-white/10">
+                <p className="text-2xl mb-1">{icon}</p>
+                <p className="text-2xl font-black text-white">{value}</p>
+                <p className="text-[9px] font-black text-white/70 uppercase tracking-wider">{label}</p>
+                <p className="text-[9px] text-white/50 mt-0.5">{sub}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* AI wellbeing check column */}
-        <div className="bg-white p-6 border border-gray-100 rounded-2xl shadow-xxs md:col-span-2 flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-              <ShieldAlert size={18} className="text-indigo-500" />
-              AI Copilot Insights
-            </h3>
-
-            <div className="bg-indigo-50/50 border border-indigo-100/50 rounded-xl p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-indigo-700">
-                <AlertCircle size={14} />
-                <span>Stress Warning Check</span>
-              </div>
-              <p className="text-xs text-indigo-900 leading-relaxed font-semibold">
-                "You have completed 4 high-priority tasks in the morning. Your focus rating is excellent. Remember to take a 5-minute break at 2:30 PM to avoid screen fatigue."
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100 pt-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold">
-              AI
-            </div>
-            <div>
-              <span className="text-xs font-bold text-black block">Magadige Coach</span>
-              <span className="text-xxs text-gray-400 block">Active 2 mins ago</span>
-            </div>
-          </div>
-        </div>
+        <p className="text-center text-[10px] text-slate-400 font-semibold pb-4">
+          🚀 Keep going! Every completed task gets you closer to your goals.
+        </p>
       </div>
     </div>
   );

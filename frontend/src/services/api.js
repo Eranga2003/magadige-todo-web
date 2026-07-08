@@ -195,6 +195,12 @@ export const aiService = {
       body: JSON.stringify({ text }),
     });
   },
+  async analyzeTaskWeather(title, weatherStatus, temp) {
+    return fetchAPI('/tasks/analyze-weather', {
+      method: 'POST',
+      body: JSON.stringify({ title, weatherStatus, temp }),
+    });
+  },
 };
 
 /**
@@ -217,3 +223,19 @@ export const aiAssistantService = {
     });
   },
 };
+
+/**
+ * WinMe Flowchart service module
+ */
+export const winMeService = {
+  async getFlowchart() {
+    return fetchAPI('/tasks/winme');
+  },
+  async saveFlowchart(nodes, connections) {
+    return fetchAPI('/tasks/winme', {
+      method: 'POST',
+      body: JSON.stringify({ nodes, connections }),
+    });
+  },
+};
+

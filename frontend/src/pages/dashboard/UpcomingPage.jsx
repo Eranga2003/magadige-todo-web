@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Pencil, Check, X, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { playTickSound, playChimeSound } from '../../utils/audio';
 import { getColor } from '../../utils/color';
 import { weatherService } from '../../services/api';
@@ -13,6 +14,55 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
   const [activeInputDayNum, setActiveInputDayNum] = useState(null);
   const [inlineInputText, setInlineInputText] = useState('');
   const [weatherForecast, setWeatherForecast] = useState([]);
+
+  // Editing state
+  const [editingTask, setEditingTask] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState('P4');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editMeetingMembers, setEditMeetingMembers] = useState([]);
+  const [editMeetingMemberInput, setEditMeetingMemberInput] = useState('');
+  const [isMeeting, setIsMeeting] = useState(false);
+
+  const startEditing = (task) => {
+    setEditingTask(task);
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditPriority(task.priority || 'P4');
+    setEditStartTime(task.startTime || '');
+    setEditEndTime(task.endTime || '');
+    setEditDueDate(task.dueDate || '');
+    setEditMeetingMembers(task.meeting?.members || []);
+    setEditMeetingMemberInput('');
+    setIsMeeting(!!task.meeting);
+  };
+
+  const handleSaveEdit = (e) => {
+    if (e) e.preventDefault();
+    if (!editingTask) return;
+
+    const updatedTask = {
+      ...editingTask,
+      title: editTitle.trim() || editingTask.title,
+      description: editDescription.trim(),
+      priority: editPriority,
+      dueDate: editDueDate,
+      startTime: editStartTime || null,
+      endTime: editEndTime || null,
+      meeting: isMeeting || editMeetingMembers.length > 0 ? {
+        title: editTitle.trim() || editingTask.title,
+        description: editDescription.trim(),
+        members: editMeetingMembers
+      } : null
+    };
+
+    if (onUpdateTask) onUpdateTask(updatedTask);
+    setEditingTask(null);
+  };
+
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -219,10 +269,9 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
       style={{
         background: 'radial-gradient(1200px 500px at 10% -10%, #e7f0fe, transparent), radial-gradient(900px 500px at 100% 0%, #e2edff, transparent), #f3f8ff',
         minHeight: '100vh',
-        padding: '48px 5vw 90px',
         fontFamily: "'Inter', sans-serif"
       }}
-      className="w-full text-[#132242] select-none"
+      className="w-full text-[#132242] select-none px-4 sm:px-6 pt-10 sm:pt-12 pb-20"
     >
       {/* Top Header Section */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
@@ -230,7 +279,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
           <p className="font-mono text-xs font-bold tracking-widest text-[#2563eb] uppercase mb-2">
             30-day sprint
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">
             {MONTHS[month]} {year}
           </h1>
           <p className="text-sm text-[#5b6b8c] font-medium">
@@ -278,7 +327,7 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
           return (
             <div 
               key={dayNum} 
-              className={`focus-calendar-card card ${isTdy ? 'today' : ''} relative bg-white border-2 border-[#dbe6fb] rounded-[20px] p-4.5 min-h-[210px] flex flex-col overflow-hidden`}
+              className={`focus-calendar-card card ${isTdy ? 'today' : ''} relative bg-white border-2 border-[#dbe6fb] rounded-[20px] p-4.5 min-h-[180px] sm:min-h-[210px] flex flex-col overflow-hidden`}
             >
               {/* Large Watermark day number */}
               <div className="absolute top-[-18px] right-[-6px] font-bold text-[88px] text-[#2563eb] opacity-7 select-none pointer-events-none leading-none">
@@ -328,8 +377,12 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
               <ul className="list-none m-0 p-0 flex flex-col gap-1.5 flex-1 z-10 overflow-y-auto max-h-[110px] pr-0.5 custom-scrollbar">
                 {dayTasks.length > 0 ? (
                   dayTasks.map((task) => {
-                    const isTaskAffected = !task.completed && dayForecast && analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp).isAffected;
-                    const weatherAnalysis = isTaskAffected ? analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp) : null;
+                    const localAnalysis = dayForecast ? analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp) : { isAffected: false, reason: '', suggestion: '' };
+                    const isTaskAffected = !task.completed && (task.isAffected || localAnalysis.isAffected);
+                    const weatherAnalysis = isTaskAffected ? {
+                      reason: task.weatherReason || localAnalysis.reason || 'Weather Warning',
+                      suggestion: task.weatherSuggestion || localAnalysis.suggestion || 'Move indoor or reschedule.'
+                    } : null;
 
                     return (
                       <li 
@@ -387,14 +440,25 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                           )}
                         </span>
 
-                        {/* Delete cross */}
-                        <button 
-                          type="button"
-                          onClick={() => handleDeleteTask(task)}
-                          className="opacity-0 group-hover:opacity-100 text-[#b5c3de] hover:text-[#e0577a] transition-all cursor-pointer bg-none border-none text-[13px] leading-none focus:outline-none"
-                        >
-                          ✕
-                        </button>
+                        {/* Action buttons (Edit & Delete) */}
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 ml-auto flex-shrink-0">
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); startEditing(task); }}
+                            className="text-[#b5c3de] hover:text-[#2563eb] transition-all cursor-pointer bg-none border-none text-[11px] leading-none focus:outline-none"
+                            title="Edit task details"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteTask(task); }}
+                            className="text-[#b5c3de] hover:text-[#e0577a] transition-all cursor-pointer bg-none border-none text-[11px] leading-none focus:outline-none"
+                            title="Delete task"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </li>
                     );
                   })
@@ -438,6 +502,187 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
           );
         })}
       </div>
+
+      {/* ── EDIT TASK MODAL OVERLAY ── */}
+      {editingTask && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <form 
+            onSubmit={handleSaveEdit}
+            className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-scale-up flex flex-col max-h-[90vh]"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+                  <Pencil size={16} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">Edit Sprint Task</h2>
+                  <p className="text-[10px] text-slate-400 font-bold">Modify schedule details and properties</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTask(null)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer focus:outline-none"
+              >
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Fields Form */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Task Title</label>
+                <input 
+                  type="text" 
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full text-xs font-bold text-gray-900 border border-gray-250/65 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Description</label>
+                <textarea 
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full text-xxs text-gray-600 border border-gray-250/65 rounded-xl px-3 py-2 h-20 resize-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500"
+                  placeholder="Task details..."
+                />
+              </div>
+
+              {/* Time Slots */}
+              <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-150">
+                <div className="flex-1 flex flex-col gap-1">
+                  <span className="text-[9px] font-black text-gray-400 uppercase">Start Time</span>
+                  <input
+                    type="time"
+                    value={editStartTime}
+                    onChange={(e) => setEditStartTime(e.target.value)}
+                    className="w-full text-xs font-semibold text-gray-800 border border-gray-200 bg-white rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-1">
+                  <span className="text-[9px] font-black text-gray-400 uppercase">End Time</span>
+                  <input
+                    type="time"
+                    value={editEndTime}
+                    onChange={(e) => setEditEndTime(e.target.value)}
+                    className="w-full text-xs font-semibold text-gray-800 border border-gray-200 bg-white rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Priority and Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Priority</label>
+                  <select
+                    value={editPriority}
+                    onChange={(e) => setEditPriority(e.target.value)}
+                    className="w-full text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-250/65 rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none"
+                  >
+                    <option value="P1" className="text-red-500 font-bold">🚩 Priority 1</option>
+                    <option value="P2" className="text-orange-500 font-bold">🚩 Priority 2</option>
+                    <option value="P3" className="text-blue-500 font-bold">🚩 Priority 3</option>
+                    <option value="P4" className="text-gray-400 font-bold">🚩 Priority 4</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Due Date</label>
+                  <input 
+                    type="text" 
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    placeholder="e.g. TODAY, 5 Jul, 2026-07-09"
+                    className="w-full text-xs font-bold text-gray-900 border border-gray-250/65 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Meeting Toggle */}
+              <div className="flex items-center justify-between py-2 border-t border-gray-100">
+                <span className="text-xs font-black text-slate-700">Set as Meeting</span>
+                <button
+                  type="button"
+                  onClick={() => setIsMeeting(!isMeeting)}
+                  className={`w-10 h-6 rounded-full transition-all flex items-center p-1 focus:outline-none ${
+                    isMeeting ? 'bg-blue-600 justify-end' : 'bg-gray-200 justify-start'
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-white shadow-sm" />
+                </button>
+              </div>
+
+              {/* Meeting Details Input */}
+              {isMeeting && (
+                <div className="bg-blue-50/50 border border-blue-150 rounded-2xl p-4 space-y-3">
+                  <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider block">👥 Meeting Invitees</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter invitee email..."
+                      value={editMeetingMemberInput}
+                      onChange={(e) => setEditMeetingMemberInput(e.target.value)}
+                      className="flex-1 text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const email = editMeetingMemberInput.trim();
+                        if (email && !editMeetingMembers.includes(email)) {
+                          setEditMeetingMembers(prev => [...prev, email]);
+                        }
+                        setEditMeetingMemberInput('');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {editMeetingMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {editMeetingMembers.map((m, idx) => (
+                        <span key={idx} className="bg-blue-100 text-blue-850 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xxs">
+                          {m}
+                          <button
+                            type="button"
+                            onClick={() => setEditMeetingMembers(prev => prev.filter(e => e !== m))}
+                            className="text-blue-500 hover:text-blue-800 font-extrabold text-[12px] leading-none"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-slate-50/50 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingTask(null)}
+                className="px-4 py-2 hover:bg-gray-100 text-gray-505 text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none shadow-md active:scale-95"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

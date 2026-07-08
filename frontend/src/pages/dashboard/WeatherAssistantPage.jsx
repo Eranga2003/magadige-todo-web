@@ -24,6 +24,195 @@ import { weatherService } from '../../services/api';
 import { getColor } from '../../utils/color';
 import { analyzeTaskWeather } from '../../utils/weatherService';
 
+/* ─── Modern Weather Animation Components ─────────────── */
+
+// Calm serene rain — gentle drizzle with mist layers, ambient breathing glow and soft ripples
+const RainAnimation = ({ intensity = 'medium' }) => {
+  const dropCount = intensity === 'heavy' ? 20 : intensity === 'light' ? 8 : 14;
+  const drops = Array.from({ length: dropCount }, (_, i) => ({
+    id: i,
+    x: 4 + Math.random() * 92,
+    delay: Math.random() * 3.5,
+    dur: 2.2 + Math.random() * 1.8,
+    len: 6 + Math.random() * 8,
+    opacity: 0.18 + Math.random() * 0.22,
+    width: 0.45 + Math.random() * 0.25,
+  }));
+  const ripples = Array.from({ length: 4 }, (_, i) => ({
+    id: i,
+    cx: 12 + Math.random() * 76,
+    cy: 90 + Math.random() * 6,
+    delay: Math.random() * 2.5,
+    dur: 2.2 + Math.random() * 0.8,
+  }));
+  const mistLayers = [
+    { cx: 25, cy: 50, rx: 40, ry: 18, opacity: 0.04, dur: 12, dx: 8 },
+    { cx: 70, cy: 65, rx: 35, ry: 14, opacity: 0.05, dur: 15, dx: -6 },
+    { cx: 50, cy: 80, rx: 45, ry: 12, opacity: 0.03, dur: 18, dx: 10 },
+  ];
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      style={{ zIndex: 0 }}
+    >
+      <defs>
+        <linearGradient id="rain-drop-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#dbeafe" stopOpacity="0" />
+          <stop offset="50%" stopColor="#bfdbfe" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#93c5fd" stopOpacity="0.25" />
+        </linearGradient>
+        <radialGradient id="rain-ambient-glow" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0" />
+        </radialGradient>
+        <filter id="rain-soft">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.2" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="mist-blur">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
+        </filter>
+      </defs>
+
+      {/* Calm ambient background breathing pulse */}
+      <rect x="0" y="0" width="100" height="100" fill="url(#rain-ambient-glow)">
+        <animate attributeName="opacity" values="0.2;0.5;0.2" dur="6s" repeatCount="indefinite" />
+      </rect>
+
+      {/* Slow-drifting cloud layers */}
+      <ellipse cx="22" cy="10" rx="24" ry="8" fill="rgba(255,255,255,0.06)">
+        <animate attributeName="cx" values="18;26;18" dur="12s" repeatCount="indefinite" />
+      </ellipse>
+      <ellipse cx="72" cy="7" rx="30" ry="7" fill="rgba(255,255,255,0.04)">
+        <animate attributeName="cx" values="68;78;68" dur="14s" repeatCount="indefinite" />
+      </ellipse>
+
+      {/* Misty atmosphere layers */}
+      {mistLayers.map((m, i) => (
+        <ellipse
+          key={`mist-${i}`}
+          cx={m.cx}
+          cy={m.cy}
+          rx={m.rx}
+          ry={m.ry}
+          fill="rgba(255,255,255,1)"
+          opacity={m.opacity}
+          filter="url(#mist-blur)"
+        >
+          <animate
+            attributeName="cx"
+            values={`${m.cx};${m.cx + m.dx};${m.cx}`}
+            dur={`${m.dur}s`}
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values={`${m.opacity};${m.opacity + 0.02};${m.opacity}`}
+            dur={`${m.dur * 0.7}s`}
+            repeatCount="indefinite"
+          />
+        </ellipse>
+      ))}
+
+      {/* Gentle rain streaks */}
+      {drops.map(d => (
+        <line
+          key={d.id}
+          x1={d.x} y1={0}
+          x2={d.x - 1} y2={d.len}
+          stroke="url(#rain-drop-grad)"
+          strokeWidth={d.width}
+          strokeLinecap="round"
+          filter="url(#rain-soft)"
+          opacity={d.opacity}
+        >
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values={`0,-${d.len};1.5,110`}
+            dur={`${d.dur}s`}
+            begin={`${d.delay}s`}
+            repeatCount="indefinite"
+            calcMode="linear"
+          />
+        </line>
+      ))}
+
+      {/* Soft puddle ripples */}
+      {ripples.map(r => (
+        <ellipse key={r.id} cx={r.cx} cy={r.cy} rx="0" ry="0"
+          fill="none" stroke="rgba(191,219,254,0.3)" strokeWidth="0.25"
+        >
+          <animate attributeName="rx" values="0;5;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="ry" values="0;1.2;0" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0;0.4" dur={`${r.dur}s`} begin={`${r.delay}s`} repeatCount="indefinite" />
+        </ellipse>
+      ))}
+    </svg>
+  );
+};
+
+// Floating sun rays
+const SunAnimation = () => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 0 }}>
+    <defs>
+      <radialGradient id="sun-glow" cx="50%" cy="30%" r="40%">
+        <stop offset="0%" stopColor="#fef08a" stopOpacity="0.4" />
+        <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="75" cy="22" r="18" fill="url(#sun-glow)">
+      <animate attributeName="r" values="16;22;16" dur="3s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
+    </circle>
+    {[0,45,90,135,180,225,270,315].map((angle, i) => (
+      <line key={i}
+        x1="75" y1="22"
+        x2={75 + 14 * Math.cos(angle * Math.PI / 180)}
+        y2={22 + 14 * Math.sin(angle * Math.PI / 180)}
+        stroke="rgba(253,224,71,0.5)" strokeWidth="0.8" strokeLinecap="round"
+      >
+        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin={`${i * 0.25}s`} repeatCount="indefinite" />
+      </line>
+    ))}
+  </svg>
+);
+
+// Electric storm lightning
+const StormAnimation = () => {
+  const bolts = Array.from({ length: 3 }, (_, i) => ({
+    id: i,
+    x: 20 + i * 30,
+    delay: i * 1.2,
+  }));
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 0 }}>
+      {bolts.map(b => (
+        <polyline key={b.id}
+          points={`${b.x},0 ${b.x - 4},40 ${b.x + 2},40 ${b.x - 6},100`}
+          fill="none" stroke="rgba(196,181,253,0.7)" strokeWidth="0.8"
+        >
+          <animate attributeName="opacity" values="0;1;0" dur="0.2s" begin={`${b.delay}s`} repeatCount="indefinite" />
+        </polyline>
+      ))}
+    </svg>
+  );
+};
+
+// Cloud drift for cloudy / windy
+const CloudAnimation = ({ color = 'rgba(255,255,255,0.12)' }) => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ zIndex: 0 }}>
+    {[{ cx: 20, cy: 20, rx: 30, ry: 12 }, { cx: 65, cy: 14, rx: 36, ry: 10 }, { cx: 50, cy: 35, rx: 24, ry: 8 }].map((c, i) => (
+      <ellipse key={i} cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry} fill={color}>
+        <animate attributeName="cx" values={`${c.cx - 5};${c.cx + 5};${c.cx - 5}`} dur={`${5 + i * 2}s`} repeatCount="indefinite" />
+      </ellipse>
+    ))}
+  </svg>
+);
+
+
 export const WeatherAssistantPage = ({ tasks }) => {
   const [city, setCity] = useState('Colombo');
   const [searchVal, setSearchVal] = useState('Colombo');
@@ -77,21 +266,15 @@ export const WeatherAssistantPage = ({ tasks }) => {
     }
   };
 
-  // Helper to resolve CSS animation class based on weather status
-  const getWeatherAnimationClass = (status) => {
+  // Modern animated weather scene inside card
+  const getWeatherScene = (status) => {
     switch (status) {
-      case 'SUNNY':
-        return 'weather-sun-anim';
-      case 'RAINY':
-        return 'weather-rain-anim';
-      case 'WINDY':
-        return 'weather-wind-anim';
-      case 'CLOUDY':
-        return 'weather-cloud-anim';
-      case 'STORMY':
-        return 'weather-storm-anim';
-      default:
-        return '';
+      case 'RAINY': return <RainAnimation intensity="medium" />;
+      case 'STORMY': return <StormAnimation />;
+      case 'SUNNY': return <SunAnimation />;
+      case 'CLOUDY': return <CloudAnimation color="rgba(255,255,255,0.10)" />;
+      case 'WINDY': return <CloudAnimation color="rgba(20,184,166,0.15)" />;
+      default: return null;
     }
   };
 
@@ -175,26 +358,27 @@ export const WeatherAssistantPage = ({ tasks }) => {
   const affectedTasks = todayTasks
     .map(task => {
       const analysis = analyzeTaskWeather(task.title, todayWeatherStatus, todayTemp);
+      const isAffected = task.isAffected || analysis.isAffected;
       return {
         ...task,
-        isAffected: analysis.isAffected,
-        reason: analysis.reason,
-        suggestion: analysis.suggestion,
+        isAffected,
+        reason: task.weatherReason || analysis.reason || 'Weather Warning',
+        suggestion: task.weatherSuggestion || analysis.suggestion || 'Move indoor or reschedule.',
       };
     })
     .filter(t => t.isAffected);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 space-y-7 select-none font-sans relative">
+    <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 space-y-7 select-none font-sans relative">
       
       {/* Decorative top ambient blurs */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-400/5 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute top-48 left-10 w-80 h-80 bg-purple-400/5 rounded-full blur-[90px] pointer-events-none"></div>
 
       {/* HEADER WITH GLASS SEARCH BAR */}
-      <div className="relative flex flex-wrap items-center justify-between gap-5 border-b border-slate-100 pb-5 z-10">
+      <div className="relative flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4 sm:gap-5 border-b border-slate-100 pb-5 z-10">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2.5 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2.5 tracking-tight">
             <span className="p-2 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
               <CloudSun size={24} />
             </span>
@@ -205,13 +389,13 @@ export const WeatherAssistantPage = ({ tasks }) => {
           </p>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+        <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full sm:w-auto">
           <input
             type="text"
             placeholder="Search city (e.g. Colombo, London)..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            className="w-64 pl-4 pr-10 py-2.5 text-xs border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white/80 backdrop-blur-md placeholder:text-gray-400 font-bold outline-none shadow-sm transition-all"
+            className="w-full sm:w-64 pl-4 pr-10 py-2.5 text-xs border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white/80 backdrop-blur-md placeholder:text-gray-400 font-bold outline-none shadow-sm transition-all"
           />
           <button
             type="submit"
@@ -250,8 +434,10 @@ export const WeatherAssistantPage = ({ tasks }) => {
           {/* TOP LAYOUT: TODAY OVERVIEW + HOUR BY HOUR */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Today Main Weather Card */}
-            <div className={`lg:col-span-1 border border-slate-200/40 rounded-[32px] p-6 flex flex-col justify-between min-h-[250px] relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300 ${getTodayCardShadowClass(todayWeatherStatus)} ${getWeatherGradientClass(todayWeatherStatus)} ${getWeatherAnimationClass(todayWeatherStatus)}`}>
+            {/* Today Main Weather Card — modern animated weather scene inside */}
+            <div className={`lg:col-span-1 border border-slate-200/40 rounded-[32px] p-6 flex flex-col justify-between min-h-[250px] relative overflow-hidden group hover:scale-[1.01] transition-transform duration-300 ${getTodayCardShadowClass(todayWeatherStatus)} ${getWeatherGradientClass(todayWeatherStatus)}`}>
+              {/* Modern animated weather scene */}
+              {getWeatherScene(todayWeatherStatus)}
               <div className="z-10 flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-1.5 text-white/90">
@@ -354,7 +540,7 @@ export const WeatherAssistantPage = ({ tasks }) => {
             </div>
 
             {affectedTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {affectedTasks.map(task => (
                   <div 
                     key={task.id}
@@ -419,8 +605,10 @@ export const WeatherAssistantPage = ({ tasks }) => {
                 return (
                   <div 
                     key={idx}
-                    className={`border rounded-[24px] p-4 flex flex-col justify-between min-h-[185px] relative overflow-hidden transition-all duration-350 hover:scale-[1.03] backdrop-blur-md ${dayStyleClass} ${getWeatherAnimationClass(day.status)}`}
+                    className={`border rounded-[24px] p-4 flex flex-col justify-between min-h-[185px] relative overflow-hidden transition-all duration-350 hover:scale-[1.03] backdrop-blur-md ${dayStyleClass}`}
                   >
+                    {/* Per-card animated weather scene */}
+                    {getWeatherScene(day.status)}
                     <div className="z-10">
                       <span className="text-xs font-black text-slate-800 block">
                         {formatDayHeader(idx, day.dayName)}

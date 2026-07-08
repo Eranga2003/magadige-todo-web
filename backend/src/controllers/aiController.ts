@@ -141,3 +141,93 @@ export async function breakDownTask(req: AuthenticatedRequest, res: Response, ne
   }
 }
 
+/**
+ * Analyze if a task is disrupted by weather using OpenAI GPT model.
+ */
+export async function analyzeTaskWeatherAI(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { title, weatherStatus, temp } = req.body;
+
+    if (!title || !title.trim()) {
+      res.status(400).json({ status: 'error', message: 'Task title is required for weather analysis.' });
+      return;
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ status: 'error', message: 'OpenAI API Key is not configured on the server.' });
+      return;
+    }
+
+    const weather = weatherStatus || 'SUNNY';
+    const temperature = temp !== undefined ? temp : 25;
+
+    const response = await postRequest(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert weather integration assistant. Analyze whether the user's task is affected, disrupted, or made difficult by the given weather condition: ${weather} at ${temperature}°C.
+            For example:
+            - If it is RAINY or STORMY, outdoor activities like "exercise at ground", "jogging", "walking outside", "painting fence", "wash car", "cricket" ARE affected.
+            - Indoor activities like "study", "code", "cook", "watch movie", "office meeting", "indoor gym" are NOT affected.
+            - If it is WINDY, outdoor activities like "badminton", "drone flying" ARE affected.
+            - If it is extremely hot (>35°C), heavy outdoor workouts ARE affected.
+            You must return ONLY a JSON object containing three keys:
+            1. "isAffected": boolean (true if the task is disrupted, false otherwise)
+            2. "reason": string (a short reason like "Rain", "Thunderstorm", "High Winds", "Extreme Heat", or empty if not affected)
+            3. "suggestion": string (a short, encouraging tip like "Move your exercise session indoors or reschedule for a dry day" or empty if not affected)
+            Do not include markdown blocks (e.g. \`\`\`json ... \`\`\`), commentary, or extra text. Example response: {"isAffected": true, "reason": "Rain", "suggestion": "Move your exercise session indoors or reschedule for a dry day"}`
+          },
+          {
+            role: 'user',
+            content: `Analyze task: "${title.trim()}"`
+          }
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+      }
+    );
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error('OpenAI API weather analysis error response:', errBody);
+      res.status(response.status).json({
+        status: 'error',
+        message: `OpenAI API returned an error: ${response.statusText}`,
+      });
+      return;
+    }
+
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('No content returned from OpenAI API.');
+    }
+
+    const parsed = JSON.parse(content);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        isAffected: !!parsed.isAffected,
+        reason: parsed.reason || '',
+        suggestion: parsed.suggestion || ''
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ analyzeTaskWeatherAI failed:', error.message || error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal Server Error',
+    });
+  }
+}
+
+

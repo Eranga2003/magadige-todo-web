@@ -25,7 +25,7 @@ export function analyzeTaskWeather(taskTitle, weatherStatus, temp = 25) {
   // Define rules mapping keywords to affected conditions and suggestions
   const rules = [
     {
-      keywords: ['run', 'running', 'jog', 'jogging'],
+      keywords: ['run', 'running', 'jog', 'jogging', 'exercise', 'workout', 'ground', 'outdoor', 'field', 'play outside'],
       trigger: () => status === 'RAINY' || status === 'STORMY' || isExtremeHeat,
       reason: status === 'RAINY' || status === 'STORMY' ? 'Rain' : 'Extreme heat',
       suggestion: 'Reschedule or suggest indoor exercise'

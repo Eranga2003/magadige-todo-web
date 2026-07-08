@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { playBubbleSound, playChimeSound, playTickSound } from '../../utils/audio';
+import { themeColors } from '../../utils/color';
+import { winMeService } from '../../services/api';
+
+// Shorthand aliases for Win Me color tokens
+const MC = themeColors.winMe.milestone;
+const GC = themeColors.winMe.goalNode;
 
 export const WinMePage = () => {
   // Canvas viewport translation & zoom
@@ -39,6 +45,42 @@ export const WinMePage = () => {
   ]);
 
   const [connections, setConnections] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const isLoadedRef = useRef(false);
+
+  // Load from Firestore on mount
+  useEffect(() => {
+    const fetchFlowchart = async () => {
+      try {
+        const res = await winMeService.getFlowchart();
+        if (res && res.data) {
+          if (res.data.nodes) setNodes(res.data.nodes);
+          if (res.data.connections) setConnections(res.data.connections);
+        }
+      } catch (err) {
+        console.error('❌ Failed to load WinMe flowchart:', err.message);
+      } finally {
+        setIsLoading(false);
+        isLoadedRef.current = true;
+      }
+    };
+    fetchFlowchart();
+  }, []);
+
+  // Auto-save to Firestore when nodes/connections change
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    const saveTimer = setTimeout(async () => {
+      try {
+        await winMeService.saveFlowchart(nodes, connections);
+        console.log('💾 Flowchart saved to Firestore successfully.');
+      } catch (err) {
+        console.error('❌ Failed to auto-save flowchart:', err.message);
+      }
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(saveTimer);
+  }, [nodes, connections]);
 
   // Form Modals State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -278,6 +320,15 @@ export const WinMePage = () => {
     return { start, end };
   };
 
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50" style={{ minHeight: '400px' }}>
+        <RefreshCw className="animate-spin text-blue-600 mb-2" size={32} />
+        <p className="text-xs font-bold text-slate-500">Loading your goal roadmap...</p>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="w-full flex-1 flex flex-col select-none relative h-screen overflow-hidden"
@@ -318,7 +369,7 @@ export const WinMePage = () => {
       `}} />
 
       {/* Header Toolbar */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 bg-white/70 backdrop-blur-md px-6 py-4 z-20">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/80 bg-white/70 backdrop-blur-md px-6 py-4 z-20">
         <div>
           <h1 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
             🏆 Win Me <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase tracking-wider">Goal Mapper</span>
@@ -381,13 +432,14 @@ export const WinMePage = () => {
           {/* SVG Connection Lines Area */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
             <defs>
+              {/* Colors sourced from themeColors.winMe in color.jsx */}
               <linearGradient id="conn-blue" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1e3a8a" />
-                <stop offset="100%" stopColor="#1d4ed8" />
+                <stop offset="0%" stopColor={MC.lineFrom} />
+                <stop offset="100%" stopColor={MC.lineTo} />
               </linearGradient>
               <linearGradient id="conn-gold" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#eab308" />
-                <stop offset="100%" stopColor="#fbbf24" />
+                <stop offset="0%" stopColor={GC.lineFrom} />
+                <stop offset="100%" stopColor={GC.lineTo} />
               </linearGradient>
             </defs>
 
@@ -411,11 +463,11 @@ export const WinMePage = () => {
 
               return (
                 <g key={conn.id}>
-                  {/* Glow outline path */}
+                  {/* Glow outline — colors from themeColors.winMe in color.jsx */}
                   <path 
                     d={pathData} 
                     fill="none" 
-                    stroke={isGoalNode ? '#fef3c7' : '#dbeafe'} 
+                    stroke={isGoalNode ? GC.lineGlow : MC.lineGlow} 
                     strokeWidth={8} 
                     strokeOpacity={0.6}
                   />
@@ -427,10 +479,10 @@ export const WinMePage = () => {
                     strokeWidth={3} 
                     className={isGoalNode ? 'animate-line-gold' : 'animate-line-blue'}
                   />
-                  {/* Flowing particle bubble animation from node to node */}
+                  {/* Flowing particle bubble — color from themeColors.winMe */}
                   <circle 
                     r="4.5" 
-                    fill={isGoalNode ? '#d97706' : '#2563eb'} 
+                    fill={isGoalNode ? GC.particleFill : MC.particleFill} 
                     className={isGoalNode ? 'filter drop-shadow-[0_0_3px_#f59e0b]' : 'filter drop-shadow-[0_0_3px_#3b82f6]'}
                   >
                     <animateMotion path={pathData} dur="1.8s" repeatCount="indefinite" />
@@ -452,10 +504,10 @@ export const WinMePage = () => {
                 <div 
                   key={node.id} 
                   onDoubleClick={() => handleOpenEditNode(node)}
-                  className={`absolute rounded-[24px] border p-4 flex flex-col justify-between group transition-all duration-350 cursor-pointer animate-card-bob hover:-translate-y-1.5 ${
+                  className={`absolute rounded-[24px] border p-4 flex flex-col justify-between group transition-all duration-300 cursor-pointer animate-card-bob hover:-translate-y-1.5 ${
                     node.type === 'goal'
-                      ? 'bg-gradient-to-br from-amber-500 to-yellow-500 text-white border-yellow-300 shadow-[0_12px_30px_rgba(234,179,8,0.25)] hover:shadow-[0_18px_40px_rgba(234,179,8,0.35)]'
-                      : 'bg-gradient-to-br from-blue-500 to-indigo-650 text-white border-blue-400/40 shadow-[0_10px_25px_rgba(37,99,235,0.16)] hover:from-blue-600 hover:to-indigo-700 hover:border-blue-300 hover:shadow-[0_16px_35px_rgba(37,99,235,0.28)]'
+                      ? `${GC.cardBg} ${GC.cardHover} text-white ${GC.border} ${GC.borderHover} ${GC.shadow} ${GC.shadowHover}`
+                      : `${MC.cardBg} ${MC.cardHover} text-white ${MC.border} ${MC.borderHover} ${MC.shadow} ${MC.shadowHover}`
                   }`}
                   style={{
                     left: `${node.x}px`,
@@ -468,20 +520,19 @@ export const WinMePage = () => {
                 >
                   {/* Top Action Header inside card */}
                   <div className="flex items-start justify-between">
+                    {/* Badge — from MC.badge / GC.badge */}
                     <span className={`text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                      node.type === 'goal'
-                        ? 'bg-amber-600 text-amber-50'
-                        : 'bg-blue-800/60 text-blue-50 border border-blue-400/30'
+                      node.type === 'goal' ? GC.badge : MC.badge
                     }`}>
                       {node.type === 'goal' ? '✨ Goal Target' : '📍 Milestone'}
                     </span>
 
-                    {/* Controls */}
+                    {/* Controls — from MC.editBtn/deleteBtn or GC equivalents */}
                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleOpenEditNode(node); }}
                         className={`p-1.5 rounded-lg cursor-pointer ${
-                          node.type === 'goal' ? 'hover:bg-amber-600 text-white' : 'hover:bg-blue-700/50 text-blue-100 hover:text-white'
+                          node.type === 'goal' ? GC.editBtn : MC.editBtn
                         }`}
                         title="Edit Node"
                       >
@@ -491,7 +542,7 @@ export const WinMePage = () => {
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleDeleteNode(node.id); }}
                           className={`p-1.5 rounded-lg cursor-pointer ${
-                            node.type === 'goal' ? 'hover:bg-amber-600 text-white' : 'hover:bg-red-750/70 text-blue-100 hover:text-white'
+                            node.type === 'goal' ? GC.deleteBtn : MC.deleteBtn
                           }`}
                           title="Delete Node and sub-branches"
                         >
@@ -503,10 +554,14 @@ export const WinMePage = () => {
 
                   {/* Body Content */}
                   <div className="flex-1 my-2 overflow-hidden flex flex-col justify-center">
-                    <h3 className="font-extrabold text-xs truncate text-white">
+                    <h3 className={`font-extrabold text-xs truncate ${
+                      node.type === 'goal' ? GC.title : MC.title
+                    }`}>
                       {node.title}
                     </h3>
-                    <p className={`text-[10px] line-clamp-2 mt-0.5 ${node.type === 'goal' ? 'text-amber-100 font-medium' : 'text-blue-100/90 font-medium'}`}>
+                    <p className={`text-[10px] line-clamp-2 mt-0.5 font-medium ${
+                      node.type === 'goal' ? GC.desc : MC.desc
+                    }`}>
                       {node.description || 'No description provided.'}
                     </p>
                   </div>
@@ -516,7 +571,7 @@ export const WinMePage = () => {
                     <div className="flex items-center gap-1">
                       {node.files && node.files.length > 0 && (
                         <span className={`text-[9px] font-bold flex items-center gap-0.5 ${
-                          node.type === 'goal' ? 'text-amber-100' : 'text-blue-200'
+                          node.type === 'goal' ? GC.files : MC.files
                         }`} title={`${node.files.length} file attachments`}>
                           <Paperclip size={10} />
                           {node.files.length} Attachment{node.files.length > 1 ? 's' : ''}
@@ -525,16 +580,14 @@ export const WinMePage = () => {
                     </div>
                   </div>
 
-                  {/* Connection Ports on 4 Sides */}
-                  
+                  {/* Connection Ports — from MC.port / GC.port */}
+
                   {/* Top Port */}
                   {!hasTopConnection && (
                     <button
                       onClick={() => handleOpenAddNode(node.id, 'top')}
                       className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer shadow-sm hover:scale-110 active:scale-95 transition-all z-20 ${
-                        node.type === 'goal'
-                          ? 'bg-amber-500 border-amber-300 text-white hover:bg-amber-600'
-                          : 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
+                        node.type === 'goal' ? GC.port : MC.port
                       }`}
                       title="Add top node"
                     >
@@ -547,9 +600,7 @@ export const WinMePage = () => {
                     <button
                       onClick={() => handleOpenAddNode(node.id, 'right')}
                       className={`absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer shadow-sm hover:scale-110 active:scale-95 transition-all z-20 ${
-                        node.type === 'goal'
-                          ? 'bg-amber-500 border-amber-300 text-white hover:bg-amber-600'
-                          : 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
+                        node.type === 'goal' ? GC.port : MC.port
                       }`}
                       title="Add right node"
                     >
@@ -562,9 +613,7 @@ export const WinMePage = () => {
                     <button
                       onClick={() => handleOpenAddNode(node.id, 'bottom')}
                       className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer shadow-sm hover:scale-110 active:scale-95 transition-all z-20 ${
-                        node.type === 'goal'
-                          ? 'bg-amber-500 border-amber-300 text-white hover:bg-amber-600'
-                          : 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
+                        node.type === 'goal' ? GC.port : MC.port
                       }`}
                       title="Add bottom node"
                     >
@@ -577,9 +626,7 @@ export const WinMePage = () => {
                     <button
                       onClick={() => handleOpenAddNode(node.id, 'left')}
                       className={`absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer shadow-sm hover:scale-110 active:scale-95 transition-all z-20 ${
-                        node.type === 'goal'
-                          ? 'bg-amber-500 border-amber-300 text-white hover:bg-amber-600'
-                          : 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
+                        node.type === 'goal' ? GC.port : MC.port
                       }`}
                       title="Add left node"
                     >
@@ -596,7 +643,7 @@ export const WinMePage = () => {
       </div>
 
       {/* Floating Legend / Quick Info Box */}
-      <div className="absolute bottom-6 left-6 z-20 bg-white/90 backdrop-blur-md border border-slate-100 rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.05)] p-4 max-w-xs animate-slide-up pointer-events-auto">
+      <div className="absolute bottom-20 sm:bottom-6 left-6 z-20 bg-white/90 backdrop-blur-md border border-slate-100 rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.05)] p-4 max-w-xs animate-slide-up pointer-events-auto">
         <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
           <AlertCircle size={12} className="text-blue-500" /> Canvas Instructions
         </h4>

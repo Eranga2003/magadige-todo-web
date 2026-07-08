@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Sun, Plus, Calendar, Flag, CheckCircle, Check, Pencil, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sun, Plus, Calendar, Flag, CheckCircle, Check, Pencil, MessageSquare, AlertTriangle } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { playTickSound, playChimeSound } from '../../utils/audio';
 import { MiniCalendarPicker } from '../../components/MiniCalendarPicker';
+import { weatherService } from '../../services/api';
+import { analyzeTaskWeather } from '../../utils/weatherService';
 
 export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -15,11 +17,31 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [completingTasks, setCompletingTasks] = useState({});
+  const [todayWeather, setTodayWeather] = useState(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await weatherService.getWeatherForecast('Colombo');
+        if (res && res.data && res.data.weekly && res.data.weekly.length > 0) {
+          setTodayWeather(res.data.weekly[0]);
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch weather in TodayPage:', err);
+      }
+    };
+    fetchWeather();
+  }, []);
 
   // Inline editing state
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState('P4');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editMeetingMembers, setEditMeetingMembers] = useState([]);
+  const [editMeetingMemberInput, setEditMeetingMemberInput] = useState('');
 
   // Date picker state
   const [activeDatePickerTaskId, setActiveDatePickerTaskId] = useState(null);
@@ -32,6 +54,11 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
     setEditingTaskId(task.id);
     setEditTitle(task.title);
     setEditDescription(task.description || '');
+    setEditPriority(task.priority || 'P4');
+    setEditStartTime(task.startTime || '');
+    setEditEndTime(task.endTime || '');
+    setEditMeetingMembers(task.meeting?.members || []);
+    setEditMeetingMemberInput('');
   };
 
   const handleSaveEdit = (taskId) => {
@@ -42,6 +69,14 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
       ...task,
       title: editTitle.trim() || task.title,
       description: editDescription.trim(),
+      priority: editPriority,
+      startTime: editStartTime || null,
+      endTime: editEndTime || null,
+      meeting: task.meeting || editMeetingMembers.length > 0 ? {
+        title: editTitle.trim() || task.title,
+        description: editDescription.trim(),
+        members: editMeetingMembers,
+      } : null,
     };
     if (onUpdateTask) onUpdateTask(updatedTask);
     setEditingTaskId(null);
@@ -176,15 +211,14 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
       className="w-full min-h-screen text-[#132242] select-none"
       style={{
         background: 'radial-gradient(1200px 500px at 10% -10%, #e7f0fe, transparent), radial-gradient(900px 500px at 100% 0%, #e2edff, transparent), #f3f8ff',
-        padding: '48px 5vw 90px',
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-10 sm:pt-12 pb-20">
         {/* Header */}
         <div className="flex items-end justify-between mb-8 pb-4 border-b border-blue-100/50">
           <div>
-            <h1 className="text-3xl font-extrabold text-[#0f2a5c] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0f2a5c] tracking-tight">
               Today
             </h1>
             <p className="text-xs font-semibold text-[#5b6b8c] mt-1.5">{todayDateString}</p>
@@ -200,6 +234,12 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
           <div className="flex flex-col pl-1">
             {sortedTasks.map((task, index) => {
               const isLast = index === sortedTasks.length - 1;
+              const localAnalysis = todayWeather ? analyzeTaskWeather(task.title, todayWeather.status, todayWeather.temp) : { isAffected: false, reason: '', suggestion: '' };
+              const isTaskAffected = !task.completed && (task.isAffected || localAnalysis.isAffected);
+              const weatherAnalysis = isTaskAffected ? {
+                reason: task.weatherReason || localAnalysis.reason || 'Weather Warning',
+                suggestion: task.weatherSuggestion || localAnalysis.suggestion || 'Move indoor or reschedule.'
+              } : null;
             return (
               <div key={task.id} className="flex gap-4 w-full relative">
                 {/* Flow Axis (Left Column) */}
@@ -238,29 +278,121 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
 
                 {/* Task Card (Right Column) */}
                 <div className="flex-1 pb-6">
-                  <div className={`p-4 bg-white rounded-2xl border transition-all duration-300 relative group flex flex-col ${
+                  <div className={`p-4 rounded-2xl border transition-all duration-300 relative group flex flex-col ${
                     (task.completed || completingTasks[task.id])
                       ? 'border-gray-150 opacity-65 bg-gray-50/50 shadow-none'
-                      : 'border-gray-100 hover:border-gray-250 shadow-[0_4px_12px_rgba(37,99,235,0.02)] hover:shadow-[0_10px_20px_rgba(37,99,235,0.06)] hover:-translate-y-[1px]'
+                      : isTaskAffected
+                        ? 'weather-affected-task-card'
+                        : 'bg-white border-gray-100 hover:border-gray-250 shadow-[0_4px_12px_rgba(37,99,235,0.02)] hover:shadow-[0_10px_20px_rgba(37,99,235,0.06)] hover:-translate-y-[1px]'
                   }`}>
                     <div className="flex items-start gap-3 w-full justify-between">
                       {editingTaskId === task.id ? (
                         /* Inline Editor */
-                        <div className="flex-1 space-y-2">
-                          <input 
-                            type="text" 
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                            required
-                          />
-                          <textarea 
-                            value={editDescription}
-                            onChange={(e) => setEditDescription(e.target.value)}
-                            className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
-                            placeholder="Add description..."
-                          />
-                          <div className="flex justify-end gap-1.5">
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Task Title</label>
+                            <input 
+                              type="text" 
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Description</label>
+                            <textarea 
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
+                              placeholder="Add description..."
+                            />
+                          </div>
+
+                          {/* Time Slots */}
+                          <div className="flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl border border-gray-150">
+                            <div className="flex-1 flex flex-col gap-0.5">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">Start Time</span>
+                              <input
+                                type="time"
+                                value={editStartTime}
+                                onChange={(e) => setEditStartTime(e.target.value)}
+                                className="w-full text-[11px] font-semibold text-gray-800 border border-gray-200 bg-white rounded-lg p-1"
+                              />
+                            </div>
+                            <div className="flex-1 flex flex-col gap-0.5">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">End Time</span>
+                              <input
+                                type="time"
+                                value={editEndTime}
+                                onChange={(e) => setEditEndTime(e.target.value)}
+                                className="w-full text-[11px] font-semibold text-gray-800 border border-gray-200 bg-white rounded-lg p-1"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Priority */}
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Priority</label>
+                            <select
+                              value={editPriority}
+                              onChange={(e) => setEditPriority(e.target.value)}
+                              className="w-full text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-1.5 cursor-pointer focus:outline-none"
+                            >
+                              <option value="P1" className="text-red-500">🚩 Priority 1</option>
+                              <option value="P2" className="text-orange-500">🚩 Priority 2</option>
+                              <option value="P3" className="text-blue-500">🚩 Priority 3</option>
+                              <option value="P4" className="text-gray-400">🚩 Priority 4</option>
+                            </select>
+                          </div>
+
+                          {/* Meeting Section if task.meeting exists or editMeetingMembers has elements */}
+                          {(task.meeting || editMeetingMembers.length > 0) && (
+                            <div className="bg-blue-50/50 border border-blue-150 rounded-xl p-3 space-y-2">
+                              <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">👥 Edit Meeting Members</span>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Invitee email..."
+                                  value={editMeetingMemberInput}
+                                  onChange={(e) => setEditMeetingMemberInput(e.target.value)}
+                                  className="flex-1 text-xxs font-semibold border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const email = editMeetingMemberInput.trim();
+                                    if (email && !editMeetingMembers.includes(email)) {
+                                      setEditMeetingMembers(prev => [...prev, email]);
+                                    }
+                                    setEditMeetingMemberInput('');
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white text-xxs font-bold px-2 py-1 rounded-lg"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                              {editMeetingMembers.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {editMeetingMembers.map((m, idx) => (
+                                    <span key={idx} className="bg-blue-100 text-blue-850 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      {m}
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditMeetingMembers(prev => prev.filter(e => e !== m))}
+                                        className="text-blue-500 hover:text-blue-800 font-extrabold"
+                                      >
+                                        ×
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex justify-end gap-1.5 pt-1.5 border-t border-gray-100">
                             <button 
                               type="button" 
                               onClick={() => setEditingTaskId(null)}
@@ -288,6 +420,41 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                                 (task.completed || completingTasks[task.id]) ? 'text-gray-305 line-through opacity-70' : 'text-gray-500'
                               }`}>{task.description}</p>
                             )}
+
+                            {/* Meeting details display overlay */}
+                            {task.meeting && (
+                              <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1 text-xxs font-semibold text-blue-800">
+                                <div className="flex items-center gap-1.5 font-bold">
+                                  <span>📅</span> Meeting Details
+                                </div>
+                                <div><span className="font-extrabold text-blue-900">Title:</span> {task.meeting.title}</div>
+                                {task.meeting.description && (
+                                  <div><span className="font-extrabold text-blue-900">Desc:</span> {task.meeting.description}</div>
+                                )}
+                                {task.meeting.members && task.meeting.members.length > 0 && (
+                                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                                    <span className="font-extrabold text-blue-900">Members:</span>
+                                    {task.meeting.members.map((m, idx) => (
+                                      <span key={idx} className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-md font-bold">{m}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Weather warning alert block */}
+                            {isTaskAffected && weatherAnalysis && (
+                              <div className="mt-2 p-2.5 bg-red-50/80 border border-red-200 rounded-xl space-y-1 text-xxs font-semibold text-red-800">
+                                <div className="flex items-center gap-1.5 font-bold text-red-900">
+                                  <AlertTriangle size={12} className="text-red-600 animate-pulse" />
+                                  <span>Weather Disruption: {weatherAnalysis.reason}</span>
+                                </div>
+                                {weatherAnalysis.suggestion && (
+                                  <p className="text-[10px] text-red-750 leading-relaxed font-bold">{weatherAnalysis.suggestion}</p>
+                                )}
+                              </div>
+                            )}
+
                             {/* Inline mini indicators if set */}
                             {(task.dueDate !== 'TODAY' || task.comments?.length > 0 || task.startTime || task.endTime) && (
                               <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[10px] font-extrabold text-gray-400">
@@ -446,7 +613,7 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
           />
 
           {/* Start and End Time inputs */}
-          <div className="flex items-center gap-4 bg-gray-50/50 p-2.5 rounded-xl border border-gray-100">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-gray-50/50 p-2.5 rounded-xl border border-gray-100">
             <div className="flex-1 flex items-center gap-2">
               <span className="text-xxs font-extrabold text-gray-400 uppercase tracking-wider">Start Time</span>
               <input

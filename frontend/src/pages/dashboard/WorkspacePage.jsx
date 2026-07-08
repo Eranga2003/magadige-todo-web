@@ -79,7 +79,7 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header section */}
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100 select-none">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-gray-100 select-none">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black text-slate-900 tracking-tight">Workspaces</h1>
@@ -96,7 +96,7 @@ export const WorkspacePage = ({ onSelectWorkspace }) => {
             <Button
               onClick={() => setIsCreating(true)}
               icon={<Plus size={14} />}
-              className="!w-auto !py-1.5 !px-3.5 !text-xs !bg-blue-600 hover:!bg-blue-750 shadow-sm"
+              className="!w-full sm:!w-auto !py-1.5 !px-3.5 !text-xs !bg-blue-600 hover:!bg-blue-750 shadow-sm"
             >
               Create Workspace
             </Button>

@@ -20,7 +20,9 @@ import {
   X,
   CloudSun,
   Bot,
-  Trophy
+  Trophy,
+  BookOpen,
+  ChevronRight
 } from 'lucide-react';
 import { getColor } from '../utils/color';
 import { Button } from '../components/Button';
@@ -41,7 +43,7 @@ import { AiAssistantPanel } from './dashboard/AiAssistantPanel';
 import { WinMePage } from './dashboard/WinMePage';
 
 
-import { taskService, workspaceService, authService } from '../services/api';
+import { taskService, workspaceService, authService, weatherService, aiService } from '../services/api';
 
 export const DashboardPage = () => {
   const { user, logout, updateUser } = useAuth();
@@ -52,9 +54,28 @@ export const DashboardPage = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
+
+  // Weather forecast for AI analysis
+  const [weatherForecast, setWeatherForecast] = useState([]);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await weatherService.getWeatherForecast('Colombo');
+        if (res && res.data && res.data.weekly) {
+          setWeatherForecast(res.data.weekly);
+        }
+      } catch (err) {
+        console.error('❌ Failed to load weather for DashboardPage:', err);
+      }
+    };
+    fetchWeather();
+  }, []);
 
   // Workspaces list
   const [myWorkspaces, setMyWorkspaces] = useState([]);
@@ -219,16 +240,73 @@ export const DashboardPage = () => {
 
   if (!user) return null;
 
+  const getForecastForTaskDate = (dueDate) => {
+    if (!dueDate || dueDate === 'NONE' || !weatherForecast || weatherForecast.length === 0) return null;
+    
+    const today = new Date();
+    let targetDateStr = '';
+    
+    if (dueDate === 'TODAY') {
+      targetDateStr = today.toISOString().split('T')[0];
+    } else if (dueDate === 'TOMORROW') {
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+      targetDateStr = tomorrow.toISOString().split('T')[0];
+    } else if (dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      targetDateStr = dueDate;
+    } else {
+      // Custom date string like "5 Jul" or similar - let's parse it
+      const currentYear = today.getFullYear();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const parts = dueDate.split(' ');
+      if (parts.length >= 2) {
+        const dayNum = parseInt(parts[0], 10);
+        const monthShort = parts[1].substring(0, 3);
+        const monthIdx = months.indexOf(monthShort);
+        if (monthIdx !== -1 && !isNaN(dayNum)) {
+          const parsedDate = new Date(currentYear, monthIdx, dayNum);
+          targetDateStr = parsedDate.toISOString().split('T')[0];
+        }
+      }
+    }
+    
+    if (!targetDateStr) return weatherForecast[0]; // fallback to today
+
+    const match = weatherForecast.find(d => d.dateStr === targetDateStr);
+    return match || weatherForecast[0]; // fallback to today if not found
+  };
+
+  const enrichTaskWithWeatherAI = async (task) => {
+    const forecast = getForecastForTaskDate(task.dueDate);
+    if (!forecast) return task;
+
+    try {
+      const aiRes = await aiService.analyzeTaskWeather(task.title, forecast.status, forecast.temp);
+      if (aiRes && aiRes.data) {
+        return {
+          ...task,
+          isAffected: aiRes.data.isAffected,
+          weatherReason: aiRes.data.reason,
+          weatherSuggestion: aiRes.data.suggestion
+        };
+      }
+    } catch (err) {
+      console.error('❌ OpenAI weather disruption analysis failed:', err);
+    }
+    return task;
+  };
+
   // Add a new task
   const handleAddTask = async (newTask) => {
     try {
-      const response = await taskService.createTask(newTask);
+      const enriched = await enrichTaskWithWeatherAI(newTask);
+      const response = await taskService.createTask(enriched);
       if (response && response.data) {
         setTasks((prev) => [response.data, ...prev]);
         return response.data;
       } else {
-        setTasks((prev) => [newTask, ...prev]);
-        return newTask;
+        setTasks((prev) => [enriched, ...prev]);
+        return enriched;
       }
     } catch (err) {
       console.error('❌ Failed to save new task to Firestore:', err.message);
@@ -259,9 +337,10 @@ export const DashboardPage = () => {
   // Update a task (edit details, change date, add comments)
   const handleUpdateTask = async (updatedTask) => {
     try {
-      const response = await taskService.updateTask(updatedTask.id, updatedTask);
+      const enriched = await enrichTaskWithWeatherAI(updatedTask);
+      const response = await taskService.updateTask(enriched.id, enriched);
       setTasks((prev) =>
-        prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+        prev.map((t) => (t.id === enriched.id ? enriched : t))
       );
       return response;
     } catch (err) {
@@ -302,7 +381,7 @@ export const DashboardPage = () => {
       case 'FILTERS':
         return <FiltersLabelsPage tasks={tasks} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'REPORTING':
-        return <ReportingPage tasks={tasks} />;
+        return <ReportingPage tasks={tasks} workspaces={myWorkspaces} />;
       case 'WEATHER_ASSISTANT':
         return <WeatherAssistantPage tasks={tasks} />;
       case 'AI_ASSISTANT':
@@ -364,13 +443,45 @@ export const DashboardPage = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayCount = tasks.filter((t) => (t.dueDate === 'TODAY' || t.dueDate === todayStr) && !t.completed).length;
 
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
+  const navTo = (tab) => { setActiveTab(tab); setShowProfileMenu(false); closeMobileSidebar(); };
+
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans">
-      
+
+      {/* MOBILE OVERLAY BACKDROP */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
+      {/* MOBILE TOP HEADER BAR */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none"
+        >
+          <Menu size={22} />
+        </button>
+        <span className="text-sm font-black text-gray-900 tracking-tight">Magadige ToDo</span>
+        <button
+          onClick={() => setIsAddTaskModalOpen(true)}
+          className={`p-1.5 rounded-lg ${getColor('primary.gradient')} text-white shadow-sm focus:outline-none`}
+        >
+          <Plus size={20} />
+        </button>
+      </header>
+
       {/* 1. SIDEBAR PANEL */}
-      <aside 
-        className={`bg-gray-50 border-r border-gray-200 flex flex-col justify-between transition-all duration-300 ${
-          isSidebarCollapsed ? 'w-0 overflow-hidden border-none' : 'w-64'
+      <aside
+        className={`fixed md:relative top-0 left-0 h-full z-50 md:z-auto bg-gray-50 border-r border-gray-200 flex flex-col justify-between transition-all duration-300 ${
+          /* Desktop: collapse by width */
+          isSidebarCollapsed ? 'md:w-0 md:overflow-hidden md:border-none' : 'md:w-64'
+        } ${
+          /* Mobile: slide in/out via translate */
+          isMobileSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <div className="flex flex-col flex-1 py-4 px-3 space-y-6">
@@ -411,7 +522,7 @@ export const DashboardPage = () => {
                   <Bell size={16} />
                 </button>
                 <button 
-                  onClick={() => setIsSidebarCollapsed(true)}
+                  onClick={() => { setIsSidebarCollapsed(true); closeMobileSidebar(); }}
                   onMouseEnter={playBubbleSound}
                   className="text-gray-500 hover:bg-gray-200/50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-none"
                 >
@@ -462,7 +573,7 @@ export const DashboardPage = () => {
           <nav className="space-y-1">
             {/* Today */}
             <button 
-              onClick={() => { setActiveTab('TODAY'); setShowProfileMenu(false); }}
+              onClick={() => navTo('TODAY')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'TODAY' 
@@ -484,7 +595,7 @@ export const DashboardPage = () => {
 
             {/* Upcoming */}
             <button 
-              onClick={() => { setActiveTab('UPCOMING'); setShowProfileMenu(false); }}
+              onClick={() => navTo('UPCOMING')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'UPCOMING' 
@@ -497,7 +608,7 @@ export const DashboardPage = () => {
 
             {/* Reporting */}
             <button 
-              onClick={() => { setActiveTab('REPORTING'); setShowProfileMenu(false); }}
+              onClick={() => navTo('REPORTING')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'REPORTING' 
@@ -510,7 +621,7 @@ export const DashboardPage = () => {
 
             {/* Workspace */}
             <button 
-              onClick={handleWorkspaceClick}
+              onClick={() => { handleWorkspaceClick(); closeMobileSidebar(); }}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD'
@@ -523,7 +634,7 @@ export const DashboardPage = () => {
 
             {/* Weather Assistant */}
             <button 
-              onClick={() => { setActiveTab('WEATHER_ASSISTANT'); setShowProfileMenu(false); }}
+              onClick={() => navTo('WEATHER_ASSISTANT')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WEATHER_ASSISTANT'
@@ -536,7 +647,7 @@ export const DashboardPage = () => {
 
             {/* AI Assistant */}
             <button 
-              onClick={() => { setActiveTab('AI_ASSISTANT'); setShowProfileMenu(false); }}
+              onClick={() => navTo('AI_ASSISTANT')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'AI_ASSISTANT'
@@ -553,7 +664,7 @@ export const DashboardPage = () => {
 
             {/* Win me */}
             <button 
-              onClick={() => { setActiveTab('WIN_ME'); setShowProfileMenu(false); }}
+              onClick={() => navTo('WIN_ME')}
               onMouseEnter={playBubbleSound}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer focus:outline-none ${
                 activeTab === 'WIN_ME' 
@@ -573,28 +684,170 @@ export const DashboardPage = () => {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-gray-200 space-y-2 text-gray-500">
+        <div className="p-3 border-t border-gray-200 space-y-1 text-gray-500">
           <button 
+            onClick={() => setIsHelpOpen(true)}
             onMouseEnter={playBubbleSound}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
           >
-            <Users size={16} /> Add a team
-          </button>
-          <button 
-            onMouseEnter={playBubbleSound}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm font-bold hover:bg-gray-200/40 rounded-lg transition-colors cursor-pointer text-left focus:outline-none"
-          >
-            <HelpCircle size={16} /> Help & resources
+            <BookOpen size={16} /> Help & Guide
           </button>
         </div>
       </aside>
 
+      {/* ── HELP & GUIDE FULL-SCREEN OVERLAY ── */}
+      {isHelpOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-3xl max-h-[88vh] overflow-hidden flex flex-col animate-scale-up">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+                  <BookOpen size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">Help & Guide</h2>
+                  <p className="text-[10px] text-slate-400 font-bold">Learn what you can do on every page</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer focus:outline-none"
+              >
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Guide Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+              {/* 1 ─ Today */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-blue-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><Calendar size={16} className="text-blue-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">1. Today</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> View all tasks due today in a clean, focused list</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Mark tasks as complete with a single click</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Add new tasks directly with the "+" button</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Set priority levels (P1–P4) and due times</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Add comments and notes to any task</li>
+                </ul>
+              </div>
+
+              {/* 2 ─ Upcoming */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-blue-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center"><Calendar size={16} className="text-indigo-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">2. Upcoming</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> See all scheduled tasks for the next 7 days</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> Tasks are grouped by day for easy planning</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> Drag tasks between days to reschedule</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-indigo-400 flex-shrink-0" /> Plan ahead and balance your workload</li>
+                </ul>
+              </div>
+
+              {/* 3 ─ Productivity */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-emerald-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><BarChart3 size={16} className="text-emerald-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">3. Productivity Dashboard</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> Track today's completed tasks vs total</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> View weekly progress with bar charts</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> See achievement rings for completion rates</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> Priority breakdown shows P1–P4 task status</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-emerald-400 flex-shrink-0" /> Monitor workspace progress and team member avatars</li>
+                </ul>
+              </div>
+
+              {/* 4 ─ Workspace */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-violet-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center"><Users size={16} className="text-violet-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">4. Workspace</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Create new workspaces for team projects</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Invite members via email to collaborate</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Assign tasks to team members</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Track task progress per workspace</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-violet-400 flex-shrink-0" /> Create projects inside workspaces to organize work</li>
+                </ul>
+              </div>
+
+              {/* 5 ─ Weather Assistant */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-sky-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center"><CloudSun size={16} className="text-sky-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">5. Weather Assistant</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> See live weather forecast for any city</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> View hourly temperature and wind projections</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> AI scans your tasks for weather conflicts</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> Get smart suggestions to reschedule outdoor tasks</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-sky-400 flex-shrink-0" /> 7-day forecast cards with animated weather icons</li>
+                </ul>
+              </div>
+
+              {/* 6 ─ AI Assistant */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-blue-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><Bot size={16} className="text-blue-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">6. AI Assistant</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Automatically draft professional meeting reschedule emails</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Fill in attendee details, reason, and new time</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> AI generates a polished email body for you</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Send emails directly from the app</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-blue-400 flex-shrink-0" /> Use AI to break down complex tasks into subtasks</li>
+                </ul>
+              </div>
+
+              {/* 7 ─ Win Me */}
+              <div className="rounded-2xl border border-slate-100 p-4 hover:border-amber-200 hover:shadow-sm transition-all">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center"><Trophy size={16} className="text-amber-600" /></div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">7. Win Me — Goal Mapper</h3>
+                </div>
+                <ul className="text-[11px] text-slate-600 font-medium space-y-1.5 pl-10">
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Create a visual roadmap of your goals and milestones</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Click "+" ports on any node to branch out in 4 directions</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Set nodes as normal milestones or golden goal targets</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Double-click any node to edit its title, description, and files</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Zoom, pan, and recenter the canvas with toolbar controls</li>
+                  <li className="flex items-start gap-1.5"><ChevronRight size={10} className="mt-0.5 text-amber-400 flex-shrink-0" /> Your flowchart auto-saves to the database</li>
+                </ul>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-gray-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-[10px] text-slate-400 font-bold">Magadige ToDo — Your Productivity Companion 🚀</p>
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none shadow-sm active:scale-95"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. MAIN CONTAINER AREA */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
         
-        {/* Floating Menu button if sidebar collapsed */}
+        {/* Desktop: Floating Menu button if sidebar collapsed */}
         {isSidebarCollapsed && (
-          <header className="py-4 px-6 border-b border-gray-100 flex items-center gap-4">
+          <header className="hidden md:flex py-4 px-6 border-b border-gray-100 items-center gap-4">
             <button 
               onClick={() => setIsSidebarCollapsed(false)}
               className="text-gray-500 hover:bg-gray-100 p-1.5 rounded-lg transition-all cursor-pointer focus:outline-none"
@@ -605,11 +858,35 @@ export const DashboardPage = () => {
           </header>
         )}
 
-        {/* Dynamic subpage view container */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Dynamic subpage view container — offset top on mobile for fixed header */}
+        <main className="flex-1 overflow-y-auto mt-[52px] md:mt-0 mb-[60px] md:mb-0">
           {renderActiveSection()}
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAV BAR */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 flex items-center justify-around px-2 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <button onClick={() => navTo('TODAY')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'TODAY' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Calendar size={20} />
+          <span className="text-[9px] font-bold">Today</span>
+        </button>
+        <button onClick={() => navTo('UPCOMING')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'UPCOMING' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Flag size={20} />
+          <span className="text-[9px] font-bold">Upcoming</span>
+        </button>
+        <button onClick={() => navTo('REPORTING')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'REPORTING' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <BarChart3 size={20} />
+          <span className="text-[9px] font-bold">Stats</span>
+        </button>
+        <button onClick={() => { handleWorkspaceClick(); }} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ (activeTab === 'WORKSPACE' || activeTab === 'WORKSPACE_DASHBOARD') ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Users size={20} />
+          <span className="text-[9px] font-bold">Space</span>
+        </button>
+        <button onClick={() => navTo('AI_ASSISTANT')} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all focus:outline-none ${ activeTab === 'AI_ASSISTANT' ? 'text-blue-600' : 'text-gray-400' }`}>
+          <Bot size={20} />
+          <span className="text-[9px] font-bold">AI</span>
+        </button>
+      </nav>
 
       {/* Global Add Task Pop-up Modal */}
       <AddTaskModal 
