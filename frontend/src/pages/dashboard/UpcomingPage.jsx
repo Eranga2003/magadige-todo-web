@@ -111,6 +111,14 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
         return false;
       }
 
+      // Check standard ISO date YYYY-MM-DD
+      if (task.dueDate && task.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [tYear, tMonth, tDay] = task.dueDate.split('-').map(Number);
+        return cardDate.getDate() === tDay &&
+               cardDate.getMonth() === (tMonth - 1) &&
+               cardDate.getFullYear() === tYear;
+      }
+
       // Check TODAY
       if (task.dueDate === 'TODAY') {
         return cardDate.getDate() === todayDateNum && 
@@ -332,7 +340,9 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                         } ${
                           isTaskAffected 
                             ? 'weather-affected-task-card' 
-                            : (priorityMeta[task.priority]?.bg || priorityMeta.P4.bg)
+                            : task.rescheduled
+                              ? 'bg-gradient-to-br from-amber-500 to-orange-500 border-orange-600 text-white shadow-md shadow-orange-100/20'
+                              : (priorityMeta[task.priority]?.bg || priorityMeta.P4.bg)
                         }`}
                       >
                         {/* Checkbox */}
@@ -341,12 +351,15 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                           className={`checkbox w-4 h-4 min-w-[16px] rounded-[5px] border-2 flex items-center justify-center cursor-pointer mt-0.5 transition-all ${
                             task.completed 
                               ? 'bg-white border-white' 
-                              : `bg-transparent ${priorityMeta[task.priority]?.checkboxBorder || 'border-white/80'}`
+                              : task.rescheduled
+                                ? 'bg-transparent border-white/80'
+                                : `bg-transparent ${priorityMeta[task.priority]?.checkboxBorder || 'border-white/80'}`
                           }`}
                         >
                           {task.completed && (
                             <div className={`w-1 h-2 border-r-2 border-b-2 transform rotate-45 -translate-y-[1.5px] ${
                               isTaskAffected ? 'border-red-600' :
+                              task.rescheduled ? 'border-orange-600' :
                               task.priority === 'P1' ? 'border-pink-500' :
                               task.priority === 'P2' ? 'border-amber-500' :
                               task.priority === 'P3' ? 'border-emerald-600' : 'border-blue-600'
@@ -358,12 +371,18 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
                         <span className={`todo-text flex-1 leading-snug word-break-all font-semibold ${
                           task.completed ? 'line-through text-white/70' :
                           isTaskAffected ? 'text-red-750 font-bold' :
+                          task.rescheduled ? 'text-white font-bold' :
                           (priorityMeta[task.priority]?.text || priorityMeta.P4.text)
                         }`}>
                           {task.title}
                           {isTaskAffected && (
                             <span className="text-[10px] block font-black text-red-650 mt-0.5 uppercase tracking-wider select-none animate-pulse">
                               ⚠️ weather warning
+                            </span>
+                          )}
+                          {!isTaskAffected && task.rescheduled && (
+                            <span className="text-[9px] block font-black text-orange-100 mt-0.5 uppercase tracking-wider select-none">
+                              🔄 Rescheduled
                             </span>
                           )}
                         </span>

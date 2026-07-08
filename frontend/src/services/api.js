@@ -206,4 +206,14 @@ export const weatherService = {
   },
 };
 
-
+/**
+ * AI Assistant Service module for meeting reschedule emails
+ */
+export const aiAssistantService = {
+  async sendMeetingEmail(payload) {
+    return fetchAPI('/tasks/ai/send-email', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};

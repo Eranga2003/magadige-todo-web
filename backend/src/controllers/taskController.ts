@@ -38,7 +38,7 @@ export async function createTask(req: AuthenticatedRequest, res: Response, next:
       return;
     }
 
-    const { id, title, description, priority, dueDate, completed, section, comments, createdAt } = req.body;
+    const { id, title, description, priority, dueDate, completed, section, comments, createdAt, meeting, startTime, endTime } = req.body;
     const db = getDb();
 
     // Generate or use client-provided task ID
@@ -57,6 +57,9 @@ export async function createTask(req: AuthenticatedRequest, res: Response, next:
       comments: comments || [],
       createdAt: createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      meeting: meeting || null,
+      startTime: startTime || null,
+      endTime: endTime || null,
     };
 
     await taskDocRef.set(newTask);

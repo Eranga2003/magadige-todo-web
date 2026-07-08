@@ -50,6 +50,19 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
   const [attachedFile, setAttachedFile] = useState(null);
   const [reminderTime, setReminderTime] = useState('');
   
+  // Meeting feature states
+  const [isMeeting, setIsMeeting] = useState(false);
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const [meetingDescription, setMeetingDescription] = useState('');
+  const [meetingMemberInput, setMeetingMemberInput] = useState('');
+  const [meetingMembers, setMeetingMembers] = useState([]);
+
+  // Time management states
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [showTimeInputs, setShowTimeInputs] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Dropdown states
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
@@ -87,6 +100,15 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
       setTranscription('');
       setAttachedFile(null);
       setReminderTime('');
+      setIsMeeting(false);
+      setMeetingTitle('');
+      setMeetingDescription('');
+      setMeetingMemberInput('');
+      setMeetingMembers([]);
+      setStartTime('');
+      setEndTime('');
+      setShowTimeInputs(false);
+      setIsSubmitting(false);
       setShowReminderDropdown(false);
       setShowDateDropdown(false);
       setShowPriorityDropdown(false);
@@ -223,62 +245,88 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
     setIsRecording(false);
   };
 
-  const handleAddSubtasks = () => {
-    const priorities = ['P1', 'P2', 'P3', 'P4'];
-    // Add all selected subtasks as tasks
-    generatedSubtasks.forEach((sub, idx) => {
-      if (selectedSubtasks[idx]) {
-        onAddTask({
-          id: `task_${Date.now()}_${idx}`,
-          title: sub,
-          description: `AI generated subtask from: "${breakerText || transcription}"`,
-          priority: priorities[idx % priorities.length],
-          dueDate: 'TODAY',
-          completed: false,
-          section: project,
-          createdAt: new Date().toISOString(),
-        });
-      }
-    });
-    handleClose();
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    // 1. Add the main task
-    onAddTask({
-      id: `task_${Date.now()}`,
-      title,
-      description,
-      priority,
-      dueDate,
-      completed: false,
-      section: project,
-      createdAt: new Date().toISOString(),
-    });
-
-    // 2. Add any checked subtasks if AI breakdown is toggled open and populated
-    if (showAiBreakdown && generatedSubtasks.length > 0) {
+  const handleAddSubtasks = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
       const priorities = ['P1', 'P2', 'P3', 'P4'];
-      generatedSubtasks.forEach((sub, idx) => {
+      // Add all selected subtasks as tasks
+      for (let idx = 0; idx < generatedSubtasks.length; idx++) {
+        const sub = generatedSubtasks[idx];
         if (selectedSubtasks[idx]) {
-          onAddTask({
-            id: `task_${Date.now()}_sub_${idx}`,
+          await onAddTask({
+            id: `task_${Date.now()}_${idx}`,
             title: sub,
-            description: `Subtask of: "${title}"`,
+            description: `AI generated subtask from: "${breakerText || transcription}"`,
             priority: priorities[idx % priorities.length],
-            dueDate,
+            dueDate: 'TODAY',
             completed: false,
             section: project,
             createdAt: new Date().toISOString(),
           });
         }
-      });
+      }
+      handleClose();
+    } catch (err) {
+      console.error("❌ Failed to add subtasks:", err);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    handleClose();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      // 1. Add the main task
+      await onAddTask({
+        id: `task_${Date.now()}`,
+        title,
+        description,
+        priority,
+        dueDate,
+        completed: false,
+        section: project,
+        createdAt: new Date().toISOString(),
+        startTime: startTime || null,
+        endTime: endTime || null,
+        ...(isMeeting ? {
+          meeting: {
+            title: meetingTitle || title,
+            description: meetingDescription || description,
+            members: meetingMembers,
+          }
+        } : {}),
+      });
+
+      // 2. Add any checked subtasks if AI breakdown is toggled open and populated
+      if (showAiBreakdown && generatedSubtasks.length > 0) {
+        const priorities = ['P1', 'P2', 'P3', 'P4'];
+        for (let idx = 0; idx < generatedSubtasks.length; idx++) {
+          const sub = generatedSubtasks[idx];
+          if (selectedSubtasks[idx]) {
+            await onAddTask({
+              id: `task_${Date.now()}_sub_${idx}`,
+              title: sub,
+              description: `Subtask of: "${title}"`,
+              priority: priorities[idx % priorities.length],
+              dueDate,
+              completed: false,
+              section: project,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
+
+      handleClose();
+    } catch (err) {
+      console.error("❌ Failed to save new task:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const priorityMeta = {
@@ -550,32 +598,15 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
 
                       {/* Confirm subtasks button */}
                       <div className="flex justify-end pt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const priorities = ['P1', 'P2', 'P3', 'P4'];
-                            // Add all selected subtasks as individual tasks directly to TODAY
-                            generatedSubtasks.forEach((sub, idx) => {
-                              if (selectedSubtasks[idx]) {
-                                onAddTask({
-                                  id: `task_${Date.now()}_sub_${idx}`,
-                                  title: sub,
-                                  description: `AI generated subtask from: "${breakerText || transcription}"`,
-                                  priority: priorities[idx % priorities.length],
-                                  dueDate: 'TODAY', // Add directly to daily task list
-                                  completed: false,
-                                  section: project,
-                                  createdAt: new Date().toISOString(),
-                                });
-                              }
-                            });
-                            handleClose();
-                          }}
-                          className="w-auto flex items-center justify-center gap-1.5 py-2 px-4 font-black rounded-xl text-xs text-white bg-blue-600 hover:bg-blue-750 transition-all cursor-pointer focus:outline-none shadow-md hover:shadow-lg active:scale-95"
+                        <Button
+                          onClick={handleAddSubtasks}
+                          disabled={isSubmitting}
+                          loading={isSubmitting}
+                          icon={<Plus size={14} strokeWidth={2.5} />}
+                          className="!w-auto !py-2 !px-4 !text-xs"
                         >
-                          <Plus size={14} strokeWidth={2.5} />
                           Add Flow Steps to Daily List
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -681,6 +712,30 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 )}
               </div>
 
+              {/* Time management pill */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTimeInputs(!showTimeInputs);
+                    setShowDateDropdown(false);
+                    setShowPriorityDropdown(false);
+                    setShowProjectDropdown(false);
+                    setShowReminderDropdown(false);
+                  }}
+                  className={`flex items-center gap-1.5 text-xs font-bold border rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none transition-colors ${
+                    startTime || endTime
+                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      : 'text-gray-600 border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <Clock size={13} className={startTime || endTime ? 'text-blue-500' : 'text-gray-500'} />
+                  <span>
+                    {startTime || endTime ? `${startTime} - ${endTime}` : 'Schedule Time'}
+                  </span>
+                </button>
+              </div>
+
               <div className="relative">
                 {reminderTime ? (
                   <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5 animate-scale-up">
@@ -761,6 +816,125 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
               </button>
             </div>
 
+            {/* Task Time Panel */}
+            {showTimeInputs && (
+              <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 space-y-3 animate-scale-up">
+                <p className="text-[10px] font-black text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                  🕒 Schedule Task Time
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="text-[10px] font-black text-blue-500 uppercase tracking-wider block mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={e => setStartTime(e.target.value)}
+                      className="w-full text-xs font-semibold text-gray-800 border border-blue-100 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] font-black text-blue-500 uppercase tracking-wider block mb-1">End Time</label>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={e => setEndTime(e.target.value)}
+                      className="w-full text-xs font-semibold text-gray-800 border border-blue-100 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Meeting Toggle Button */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setIsMeeting(!isMeeting)}
+                className={`flex items-center gap-1.5 text-xs font-black rounded-xl px-3 py-1.5 border transition-all cursor-pointer focus:outline-none ${
+                  isMeeting
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span>📅</span>
+                {isMeeting ? 'Meeting Added ✓' : 'Add as Meeting'}
+              </button>
+            </div>
+
+            {/* Meeting Fields Panel */}
+            {isMeeting && (
+              <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 space-y-3 animate-scale-up">
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                  📅 Meeting Details
+                </p>
+                <input
+                  type="text"
+                  placeholder="Meeting title (e.g. Sprint Planning)"
+                  value={meetingTitle}
+                  onChange={e => setMeetingTitle(e.target.value)}
+                  className="w-full text-xs font-semibold text-gray-800 border border-indigo-100 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 placeholder:text-gray-400"
+                />
+                <textarea
+                  placeholder="Meeting description (optional)"
+                  value={meetingDescription}
+                  onChange={e => setMeetingDescription(e.target.value)}
+                  rows={2}
+                  className="w-full text-xs font-semibold text-gray-700 border border-indigo-100 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 placeholder:text-gray-400 resize-none"
+                />
+                <div>
+                  <label className="text-[10px] font-black text-indigo-500 uppercase tracking-wider block mb-1.5">Member Emails</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      placeholder="member@email.com"
+                      value={meetingMemberInput}
+                      onChange={e => setMeetingMemberInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const email = meetingMemberInput.trim();
+                          if (email && !meetingMembers.includes(email)) {
+                            setMeetingMembers(prev => [...prev, email]);
+                          }
+                          setMeetingMemberInput('');
+                        }
+                      }}
+                      className="flex-1 text-xs font-semibold text-gray-800 border border-indigo-100 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 placeholder:text-gray-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const email = meetingMemberInput.trim();
+                        if (email && !meetingMembers.includes(email)) {
+                          setMeetingMembers(prev => [...prev, email]);
+                        }
+                        setMeetingMemberInput('');
+                      }}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {meetingMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {meetingMembers.map(email => (
+                        <span key={email} className="inline-flex items-center gap-1 text-[10px] font-black bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full px-2.5 py-1">
+                          {email}
+                          <button
+                            type="button"
+                            onClick={() => setMeetingMembers(prev => prev.filter(e => e !== email))}
+                            className="text-indigo-400 hover:text-red-500 cursor-pointer focus:outline-none ml-0.5"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Footer row */}
             <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
               <div className="relative">
@@ -810,7 +984,8 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                 </button>
                 <Button
                   type="submit"
-                  disabled={!title.trim()}
+                  disabled={!title.trim() || isSubmitting}
+                  loading={isSubmitting}
                   className="!w-auto !py-1.5 !px-4 !text-xs"
                 >
                   Add task
@@ -938,6 +1113,8 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     </button>
                     <Button
                       onClick={handleAddSubtasks}
+                      disabled={isSubmitting}
+                      loading={isSubmitting}
                       className="!w-auto !py-1.5 !px-4 !text-xs"
                     >
                       Confirm & Add Tasks
@@ -1076,6 +1253,8 @@ export const AddTaskModal = ({ isOpen, onClose, onAddTask }) => {
                     </button>
                     <Button
                       onClick={handleAddSubtasks}
+                      disabled={isSubmitting}
+                      loading={isSubmitting}
                       className="!w-auto !py-1.5 !px-4 !text-xs"
                     >
                       Confirm & Add Tasks
