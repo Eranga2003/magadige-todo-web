@@ -358,11 +358,12 @@ export const WeatherAssistantPage = ({ tasks }) => {
   const affectedTasks = todayTasks
     .map(task => {
       const analysis = analyzeTaskWeather(task.title, todayWeatherStatus, todayTemp);
+      const isAffected = task.isAffected || analysis.isAffected;
       return {
         ...task,
-        isAffected: analysis.isAffected,
-        reason: analysis.reason,
-        suggestion: analysis.suggestion,
+        isAffected,
+        reason: task.weatherReason || analysis.reason || 'Weather Warning',
+        suggestion: task.weatherSuggestion || analysis.suggestion || 'Move indoor or reschedule.',
       };
     })
     .filter(t => t.isAffected);

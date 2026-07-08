@@ -378,8 +378,12 @@ export const UpcomingPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTa
               <ul className="list-none m-0 p-0 flex flex-col gap-1.5 flex-1 z-10 overflow-y-auto max-h-[110px] pr-0.5 custom-scrollbar">
                 {dayTasks.length > 0 ? (
                   dayTasks.map((task) => {
-                    const isTaskAffected = !task.completed && dayForecast && analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp).isAffected;
-                    const weatherAnalysis = isTaskAffected ? analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp) : null;
+                    const localAnalysis = dayForecast ? analyzeTaskWeather(task.title, dayForecast.status, dayForecast.temp) : { isAffected: false, reason: '', suggestion: '' };
+                    const isTaskAffected = !task.completed && (task.isAffected || localAnalysis.isAffected);
+                    const weatherAnalysis = isTaskAffected ? {
+                      reason: task.weatherReason || localAnalysis.reason || 'Weather Warning',
+                      suggestion: task.weatherSuggestion || localAnalysis.suggestion || 'Move indoor or reschedule.'
+                    } : null;
 
                     return (
                       <li 

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Sun, Plus, Calendar, Flag, CheckCircle, Check, Pencil, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sun, Plus, Calendar, Flag, CheckCircle, Check, Pencil, MessageSquare, AlertTriangle } from 'lucide-react';
 import { getColor } from '../../utils/color';
 import { Button } from '../../components/Button';
 import { playTickSound, playChimeSound } from '../../utils/audio';
 import { MiniCalendarPicker } from '../../components/MiniCalendarPicker';
+import { weatherService } from '../../services/api';
+import { analyzeTaskWeather } from '../../utils/weatherService';
 
 export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -15,6 +17,21 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [completingTasks, setCompletingTasks] = useState({});
+  const [todayWeather, setTodayWeather] = useState(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await weatherService.getWeatherForecast('Colombo');
+        if (res && res.data && res.data.weekly && res.data.weekly.length > 0) {
+          setTodayWeather(res.data.weekly[0]);
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch weather in TodayPage:', err);
+      }
+    };
+    fetchWeather();
+  }, []);
 
   // Inline editing state
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -218,6 +235,12 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
           <div className="flex flex-col pl-1">
             {sortedTasks.map((task, index) => {
               const isLast = index === sortedTasks.length - 1;
+              const localAnalysis = todayWeather ? analyzeTaskWeather(task.title, todayWeather.status, todayWeather.temp) : { isAffected: false, reason: '', suggestion: '' };
+              const isTaskAffected = !task.completed && (task.isAffected || localAnalysis.isAffected);
+              const weatherAnalysis = isTaskAffected ? {
+                reason: task.weatherReason || localAnalysis.reason || 'Weather Warning',
+                suggestion: task.weatherSuggestion || localAnalysis.suggestion || 'Move indoor or reschedule.'
+              } : null;
             return (
               <div key={task.id} className="flex gap-4 w-full relative">
                 {/* Flow Axis (Left Column) */}
@@ -256,10 +279,12 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
 
                 {/* Task Card (Right Column) */}
                 <div className="flex-1 pb-6">
-                  <div className={`p-4 bg-white rounded-2xl border transition-all duration-300 relative group flex flex-col ${
+                  <div className={`p-4 rounded-2xl border transition-all duration-300 relative group flex flex-col ${
                     (task.completed || completingTasks[task.id])
                       ? 'border-gray-150 opacity-65 bg-gray-50/50 shadow-none'
-                      : 'border-gray-100 hover:border-gray-250 shadow-[0_4px_12px_rgba(37,99,235,0.02)] hover:shadow-[0_10px_20px_rgba(37,99,235,0.06)] hover:-translate-y-[1px]'
+                      : isTaskAffected
+                        ? 'weather-affected-task-card'
+                        : 'bg-white border-gray-100 hover:border-gray-250 shadow-[0_4px_12px_rgba(37,99,235,0.02)] hover:shadow-[0_10px_20px_rgba(37,99,235,0.06)] hover:-translate-y-[1px]'
                   }`}>
                     <div className="flex items-start gap-3 w-full justify-between">
                       {editingTaskId === task.id ? (
@@ -414,6 +439,19 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                                       <span key={idx} className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-md font-bold">{m}</span>
                                     ))}
                                   </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Weather warning alert block */}
+                            {isTaskAffected && weatherAnalysis && (
+                              <div className="mt-2 p-2.5 bg-red-50/80 border border-red-200 rounded-xl space-y-1 text-xxs font-semibold text-red-800">
+                                <div className="flex items-center gap-1.5 font-bold text-red-900">
+                                  <AlertTriangle size={12} className="text-red-600 animate-pulse" />
+                                  <span>Weather Disruption: {weatherAnalysis.reason}</span>
+                                </div>
+                                {weatherAnalysis.suggestion && (
+                                  <p className="text-[10px] text-red-750 leading-relaxed font-bold">{weatherAnalysis.suggestion}</p>
                                 )}
                               </div>
                             )}

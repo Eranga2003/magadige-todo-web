@@ -43,7 +43,7 @@ import { AiAssistantPanel } from './dashboard/AiAssistantPanel';
 import { WinMePage } from './dashboard/WinMePage';
 
 
-import { taskService, workspaceService, authService } from '../services/api';
+import { taskService, workspaceService, authService, weatherService, aiService } from '../services/api';
 
 export const DashboardPage = () => {
   const { user, logout, updateUser } = useAuth();
@@ -58,6 +58,23 @@ export const DashboardPage = () => {
   
   // Tasks list loaded from database
   const [tasks, setTasks] = useState([]);
+
+  // Weather forecast for AI analysis
+  const [weatherForecast, setWeatherForecast] = useState([]);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await weatherService.getWeatherForecast('Colombo');
+        if (res && res.data && res.data.weekly) {
+          setWeatherForecast(res.data.weekly);
+        }
+      } catch (err) {
+        console.error('❌ Failed to load weather for DashboardPage:', err);
+      }
+    };
+    fetchWeather();
+  }, []);
 
   // Workspaces list
   const [myWorkspaces, setMyWorkspaces] = useState([]);
@@ -222,16 +239,73 @@ export const DashboardPage = () => {
 
   if (!user) return null;
 
+  const getForecastForTaskDate = (dueDate) => {
+    if (!dueDate || dueDate === 'NONE' || !weatherForecast || weatherForecast.length === 0) return null;
+    
+    const today = new Date();
+    let targetDateStr = '';
+    
+    if (dueDate === 'TODAY') {
+      targetDateStr = today.toISOString().split('T')[0];
+    } else if (dueDate === 'TOMORROW') {
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+      targetDateStr = tomorrow.toISOString().split('T')[0];
+    } else if (dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      targetDateStr = dueDate;
+    } else {
+      // Custom date string like "5 Jul" or similar - let's parse it
+      const currentYear = today.getFullYear();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const parts = dueDate.split(' ');
+      if (parts.length >= 2) {
+        const dayNum = parseInt(parts[0], 10);
+        const monthShort = parts[1].substring(0, 3);
+        const monthIdx = months.indexOf(monthShort);
+        if (monthIdx !== -1 && !isNaN(dayNum)) {
+          const parsedDate = new Date(currentYear, monthIdx, dayNum);
+          targetDateStr = parsedDate.toISOString().split('T')[0];
+        }
+      }
+    }
+    
+    if (!targetDateStr) return weatherForecast[0]; // fallback to today
+
+    const match = weatherForecast.find(d => d.dateStr === targetDateStr);
+    return match || weatherForecast[0]; // fallback to today if not found
+  };
+
+  const enrichTaskWithWeatherAI = async (task) => {
+    const forecast = getForecastForTaskDate(task.dueDate);
+    if (!forecast) return task;
+
+    try {
+      const aiRes = await aiService.analyzeTaskWeather(task.title, forecast.status, forecast.temp);
+      if (aiRes && aiRes.data) {
+        return {
+          ...task,
+          isAffected: aiRes.data.isAffected,
+          weatherReason: aiRes.data.reason,
+          weatherSuggestion: aiRes.data.suggestion
+        };
+      }
+    } catch (err) {
+      console.error('❌ OpenAI weather disruption analysis failed:', err);
+    }
+    return task;
+  };
+
   // Add a new task
   const handleAddTask = async (newTask) => {
     try {
-      const response = await taskService.createTask(newTask);
+      const enriched = await enrichTaskWithWeatherAI(newTask);
+      const response = await taskService.createTask(enriched);
       if (response && response.data) {
         setTasks((prev) => [response.data, ...prev]);
         return response.data;
       } else {
-        setTasks((prev) => [newTask, ...prev]);
-        return newTask;
+        setTasks((prev) => [enriched, ...prev]);
+        return enriched;
       }
     } catch (err) {
       console.error('❌ Failed to save new task to Firestore:', err.message);
@@ -262,9 +336,10 @@ export const DashboardPage = () => {
   // Update a task (edit details, change date, add comments)
   const handleUpdateTask = async (updatedTask) => {
     try {
-      const response = await taskService.updateTask(updatedTask.id, updatedTask);
+      const enriched = await enrichTaskWithWeatherAI(updatedTask);
+      const response = await taskService.updateTask(enriched.id, enriched);
       setTasks((prev) =>
-        prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+        prev.map((t) => (t.id === enriched.id ? enriched : t))
       );
       return response;
     } catch (err) {
