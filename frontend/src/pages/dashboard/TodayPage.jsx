@@ -20,6 +20,11 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState('P4');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editMeetingMembers, setEditMeetingMembers] = useState([]);
+  const [editMeetingMemberInput, setEditMeetingMemberInput] = useState('');
 
   // Date picker state
   const [activeDatePickerTaskId, setActiveDatePickerTaskId] = useState(null);
@@ -32,6 +37,11 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
     setEditingTaskId(task.id);
     setEditTitle(task.title);
     setEditDescription(task.description || '');
+    setEditPriority(task.priority || 'P4');
+    setEditStartTime(task.startTime || '');
+    setEditEndTime(task.endTime || '');
+    setEditMeetingMembers(task.meeting?.members || []);
+    setEditMeetingMemberInput('');
   };
 
   const handleSaveEdit = (taskId) => {
@@ -42,6 +52,14 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
       ...task,
       title: editTitle.trim() || task.title,
       description: editDescription.trim(),
+      priority: editPriority,
+      startTime: editStartTime || null,
+      endTime: editEndTime || null,
+      meeting: task.meeting || editMeetingMembers.length > 0 ? {
+        title: editTitle.trim() || task.title,
+        description: editDescription.trim(),
+        members: editMeetingMembers,
+      } : null,
     };
     if (onUpdateTask) onUpdateTask(updatedTask);
     setEditingTaskId(null);
@@ -246,21 +264,111 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                     <div className="flex items-start gap-3 w-full justify-between">
                       {editingTaskId === task.id ? (
                         /* Inline Editor */
-                        <div className="flex-1 space-y-2">
-                          <input 
-                            type="text" 
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                            required
-                          />
-                          <textarea 
-                            value={editDescription}
-                            onChange={(e) => setEditDescription(e.target.value)}
-                            className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
-                            placeholder="Add description..."
-                          />
-                          <div className="flex justify-end gap-1.5">
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Task Title</label>
+                            <input 
+                              type="text" 
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              className="w-full text-xs font-bold text-gray-900 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Description</label>
+                            <textarea 
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              className="w-full text-xxs text-gray-600 border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-14 resize-none bg-white"
+                              placeholder="Add description..."
+                            />
+                          </div>
+
+                          {/* Time Slots */}
+                          <div className="flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl border border-gray-150">
+                            <div className="flex-1 flex flex-col gap-0.5">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">Start Time</span>
+                              <input
+                                type="time"
+                                value={editStartTime}
+                                onChange={(e) => setEditStartTime(e.target.value)}
+                                className="w-full text-[11px] font-semibold text-gray-800 border border-gray-200 bg-white rounded-lg p-1"
+                              />
+                            </div>
+                            <div className="flex-1 flex flex-col gap-0.5">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">End Time</span>
+                              <input
+                                type="time"
+                                value={editEndTime}
+                                onChange={(e) => setEditEndTime(e.target.value)}
+                                className="w-full text-[11px] font-semibold text-gray-800 border border-gray-200 bg-white rounded-lg p-1"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Priority */}
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Priority</label>
+                            <select
+                              value={editPriority}
+                              onChange={(e) => setEditPriority(e.target.value)}
+                              className="w-full text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-1.5 cursor-pointer focus:outline-none"
+                            >
+                              <option value="P1" className="text-red-500">🚩 Priority 1</option>
+                              <option value="P2" className="text-orange-500">🚩 Priority 2</option>
+                              <option value="P3" className="text-blue-500">🚩 Priority 3</option>
+                              <option value="P4" className="text-gray-400">🚩 Priority 4</option>
+                            </select>
+                          </div>
+
+                          {/* Meeting Section if task.meeting exists or editMeetingMembers has elements */}
+                          {(task.meeting || editMeetingMembers.length > 0) && (
+                            <div className="bg-blue-50/50 border border-blue-150 rounded-xl p-3 space-y-2">
+                              <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">👥 Edit Meeting Members</span>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Invitee email..."
+                                  value={editMeetingMemberInput}
+                                  onChange={(e) => setEditMeetingMemberInput(e.target.value)}
+                                  className="flex-1 text-xxs font-semibold border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const email = editMeetingMemberInput.trim();
+                                    if (email && !editMeetingMembers.includes(email)) {
+                                      setEditMeetingMembers(prev => [...prev, email]);
+                                    }
+                                    setEditMeetingMemberInput('');
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white text-xxs font-bold px-2 py-1 rounded-lg"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                              {editMeetingMembers.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {editMeetingMembers.map((m, idx) => (
+                                    <span key={idx} className="bg-blue-100 text-blue-850 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      {m}
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditMeetingMembers(prev => prev.filter(e => e !== m))}
+                                        className="text-blue-500 hover:text-blue-800 font-extrabold"
+                                      >
+                                        ×
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex justify-end gap-1.5 pt-1.5 border-t border-gray-100">
                             <button 
                               type="button" 
                               onClick={() => setEditingTaskId(null)}
@@ -288,6 +396,28 @@ export const TodayPage = ({ tasks = [], onAddTask, onCompleteTask, onUpdateTask 
                                 (task.completed || completingTasks[task.id]) ? 'text-gray-305 line-through opacity-70' : 'text-gray-500'
                               }`}>{task.description}</p>
                             )}
+
+                            {/* Meeting details display overlay */}
+                            {task.meeting && (
+                              <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1 text-xxs font-semibold text-blue-800">
+                                <div className="flex items-center gap-1.5 font-bold">
+                                  <span>📅</span> Meeting Details
+                                </div>
+                                <div><span className="font-extrabold text-blue-900">Title:</span> {task.meeting.title}</div>
+                                {task.meeting.description && (
+                                  <div><span className="font-extrabold text-blue-900">Desc:</span> {task.meeting.description}</div>
+                                )}
+                                {task.meeting.members && task.meeting.members.length > 0 && (
+                                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                                    <span className="font-extrabold text-blue-900">Members:</span>
+                                    {task.meeting.members.map((m, idx) => (
+                                      <span key={idx} className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-md font-bold">{m}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             {/* Inline mini indicators if set */}
                             {(task.dueDate !== 'TODAY' || task.comments?.length > 0 || task.startTime || task.endTime) && (
                               <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[10px] font-extrabold text-gray-400">
