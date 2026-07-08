@@ -302,7 +302,7 @@ export const DashboardPage = () => {
       case 'FILTERS':
         return <FiltersLabelsPage tasks={tasks} onCompleteTask={handleCompleteTask} onUpdateTask={handleUpdateTask} />;
       case 'REPORTING':
-        return <ReportingPage tasks={tasks} />;
+        return <ReportingPage tasks={tasks} workspaces={myWorkspaces} />;
       case 'WEATHER_ASSISTANT':
         return <WeatherAssistantPage tasks={tasks} />;
       case 'AI_ASSISTANT':
